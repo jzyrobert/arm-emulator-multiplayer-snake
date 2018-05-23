@@ -11,6 +11,7 @@
 
 typedef uint8_t byte;
 typedef uint32_t word;
+typedef int32_t wordS;
 typedef uint16_t address;
 
 typedef struct {
@@ -27,7 +28,7 @@ typedef struct {
     address Rs;
     address Rm;
     byte smallOffset;
-    word largeOffset;
+    wordS largeOffset;
 } INSTRUCTION;
 
 
@@ -76,6 +77,14 @@ void fetch(STATE* state) {
     state->pc += 4;
 }
 
+word extractBits(word data, int start, int end){
+    word r = 0;
+    for (int i=start; i<=end; i++)
+        r |= 1 << i;
+
+    return r & data;
+}
+
 enum I_Type getInstruction(word inst);
 
 
@@ -111,7 +120,8 @@ void decode(STATE* state) {
 }
 
 void decodeBranch(STATE *state) {
-
+    wordS offSet = extractBits(state->instruction.binary, 0, 23) << 2;
+    state->instruction.largeOffset = extractBits(state->instruction.binary, 0, 23);
 }
 
 void decodeTransfer(STATE *state) {
@@ -212,12 +222,6 @@ int main(int argc, char **argv) {
         char *file_name = argv[1];
     readFile(file_name, state.mem);
 
-    //prints hex
-    /*
-      for (int i = 0; i < MEM_SIZE; ++i) {
-          if (state.mem[i] != 0) {
-          printf("0x%02x \n", state.mem[i]);
-                     */
 
     fetch(&state);
     //decode

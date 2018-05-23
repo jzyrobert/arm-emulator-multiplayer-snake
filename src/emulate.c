@@ -155,6 +155,8 @@ void decodeMult(STATE *state) {
     state->instruction.Rm = (address) extractBits(b, 0, 3);
 }
 
+void execute(STATE* state);
+
 //quick int to binary
 int converted(int i) {
     if (i == 0) {

@@ -121,7 +121,7 @@ void decode(STATE* state) {
 
 void decodeBranch(STATE *state) {
     wordS offSet = extractBits(state->instruction.binary, 0, 23) << 2;
-    state->instruction.largeOffset = extractBits(state->instruction.binary, 0, 23);
+    state->instruction.largeOffset = offSet;
 }
 
 void decodeTransfer(STATE *state) {

@@ -42,9 +42,12 @@ typedef struct {
     word fetch;
     word decode;
     INSTRUCTION instruction;
+    bool instruction_exists;
+    bool decode_exists;
+    bool finished;
 } STATE;
 
-enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH};
+enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH, HALT};
 
 
 void initialise(STATE* state) {
@@ -60,6 +63,7 @@ void initialise(STATE* state) {
     state->decode = 0;
     INSTRUCTION I;
     state->instruction = I;
+    state->finished = false;
 }
 
 void readFile(char* file_name, byte* memory){
@@ -97,27 +101,40 @@ void decodeTransfer(STATE *state);
 
 void decodeBranch(STATE *state);
 
+void executeProcess(STATE *state);
+
+void executeMult(STATE *state);
+
+void executeTransfer(STATE *state);
+
+void executeBranch(STATE *state);
+
 void decode(STATE* state) {
-    state->instruction.binary = state->fetch;
-    state->instruction.type = getInstruction(state->fetch);
-    switch((int) state->instruction.type) {
-        case 1 :
-            decodeProcess(state);
-        break;
-        case 2:
-            decodeMult(state);
-            break;
-        case 3:
-            decodeTransfer(state);
-            break;
-        case 4:
+    if (state->decode_exists) {
+        state->instruction.binary = state->fetch;
+        state->instruction.type = getInstruction(state->fetch);
+        state->instruction_exists = true;
+        switch ((int) state->instruction.type) {
+            case 1 :
+                decodeProcess(state);
+                break;
+                case 2:
+                    decodeMult(state);
+                    break;
+                case 3:
+                    decodeTransfer(state);
+                    break;
+                    case 4:
             decodeBranch(state);
             break;
+            case 5:
+                break;
         default:
             printf("Invalid state!\n");
             exit(EXIT_FAILURE);
             //error
     }
+}
 }
 
 void decodeBranch(STATE *state) {
@@ -155,7 +172,46 @@ void decodeMult(STATE *state) {
     state->instruction.Rm = (address) extractBits(b, 0, 3);
 }
 
-void execute(STATE* state);
+void execute(STATE* state){
+    if (state->instruction_exists) {
+        switch ((int) state->instruction.type) {
+            case 1:
+                executeProcess(state);
+                break;
+            case 2:
+                executeMult(state);
+                break;
+            case 3:
+                executeTransfer(state);
+                break;
+            case 4:
+                executeBranch(state);
+                break;
+            case 5:
+                state->finished = true;
+                break;
+            default:
+                printf("Invalid instruction!");
+                exit(EXIT_FAILURE);
+        }
+    }
+}
+
+void executeBranch(STATE *state) {
+
+}
+
+void executeTransfer(STATE *state) {
+
+}
+
+void executeMult(STATE *state) {
+
+}
+
+void executeProcess(STATE *state) {
+
+}
 
 //quick int to binary
 int converted(int i) {
@@ -238,16 +294,22 @@ int main(int argc, char **argv) {
         //error
         printf("Provide only file name as argument\n");
         return EXIT_FAILURE;
-        }
+    }
 
-        char *file_name = argv[1];
+    char *file_name = argv[1];
     readFile(file_name, state.mem);
 
+    while (!state.finished) {
+
+    execute(&state);
+
+    decode(&state);
 
     fetch(&state);
-    //decode
-    //execute
+
     state.pc += 4;
+    }
+    //print out stuff
 
     return EXIT_SUCCESS;
 }

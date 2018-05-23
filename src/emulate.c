@@ -22,6 +22,7 @@ typedef struct {
     bool U;
     bool A;
     bool S;
+    bool L;
     address Rn;
     address Rd;
     address Operand2;
@@ -82,7 +83,7 @@ word extractBits(word data, int start, int end){
     for (int i=start; i<=end; i++)
         r |= 1 << i;
 
-    return r & data;
+    return (r & data) >> start;
 }
 
 enum I_Type getInstruction(word inst);
@@ -125,15 +126,33 @@ void decodeBranch(STATE *state) {
 }
 
 void decodeTransfer(STATE *state) {
-
+    word b = state->instruction.binary;
+    state->instruction.I = (b & (1<<25)) ? true : false;
+    state->instruction.P = (b & (1<<24)) ? true : false;
+    state->instruction.U = (b & (1<<23)) ? true : false;
+    state->instruction.L = (b & (1<<20)) ? true : false;
+    state->instruction.Rn = (address) extractBits(b, 16, 19);
+    state->instruction.Rd = (address) extractBits(b, 12, 15);
+    state->instruction.smallOffset = (byte) extractBits(b, 0, 11);
 }
 
 void decodeProcess(STATE *state) {
-
+    word b = state->instruction.binary;
+    state->instruction.I = (b & (1<<25)) ? true : false;
+    state->instruction.S = (b & (1<<20)) ? true : false;
+    state->instruction.Rn = (address) extractBits(b, 16, 19);
+    state->instruction.Rd = (address) extractBits(b, 12, 15);
+    state->instruction.Operand2 = (address) extractBits(b, 0, 11);
 }
 
 void decodeMult(STATE *state) {
-
+    word b = state->instruction.binary;
+    state->instruction.A = (b & (1<<21)) ? true : false;
+    state->instruction.S = (b & (1<<20)) ? true : false;
+    state->instruction.Rd = (address) extractBits(b, 16, 19);
+    state->instruction.Rn = (address) extractBits(b, 12, 15);
+    state->instruction.Rs = (address) extractBits(b, 8, 11);
+    state->instruction.Rm = (address) extractBits(b, 0, 3);
 }
 
 //quick int to binary

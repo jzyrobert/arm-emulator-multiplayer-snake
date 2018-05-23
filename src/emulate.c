@@ -30,6 +30,15 @@ void initialise(STATE* state) {
     }
 }
 
+void readFile(char* file_name, byte* memory){
+    FILE* binary = fopen(file_name, "rb");
+    if (binary == NULL) {
+        printf("Error occured!");
+    }
+    fread(memory, MEM_SIZE, 1, binary);
+    fclose(binary);
+}
+
 int main(int argc, char **argv) {
     STATE new;
     initialise(&new);
@@ -42,6 +51,14 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
+    char* file_name = argv[1];
+    readFile(file_name, new.mem);
+
+    for (int i = 0; i < MEM_SIZE; ++i) {
+        if (new.mem[i] != 0) {
+            printf("%d \n", new.mem[i]);
+        }
+    }
 
     //load into mem
     //fetch

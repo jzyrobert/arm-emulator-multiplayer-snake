@@ -6,6 +6,7 @@
 #define REG_SIZE 17
 #define PC 15
 #define CPSR 16
+#define PC_OFFSET 8
 
 typedef uint8_t byte;
 typedef uint32_t word;
@@ -40,9 +41,64 @@ void readFile(char* file_name, byte* memory){
     fclose(binary);
 }
 
+//quick int to binary
+int converted(int i) {
+    if (i == 0) {
+        return 0;
+    } else {
+        return (i % 2 + 10 * converted(i / 2));
+    }
+}
+
+//given a word, checks for cond (1 = go, 0 = no)
+int checkCond(word instruction, word cpsr) {
+    word op = 1;
+    int zSet = cpsr & 1<<30;
+    int nEqV = ((cpsr & 1<<31) == (cpsr & 1<<28));
+    if ((instruction & (op << 31)) == 1) {
+        //1xxx
+        if ((instruction & (op << 30)) == 1) {
+            //11xx
+            if ((instruction & (op << 28)) == 1) {
+                //11x1
+                return zSet || !nEqV;
+            } else{
+                //11x0
+                if ((instruction & (op << 29)) == 1) {
+                    //1110
+                    return 1;
+                } else{
+                    //1100
+                    return !zSet && nEqV ;
+                }
+            }
+        } else{
+            //10xx
+            if ((instruction & (op << 28)) == 1) {
+                //10x1
+                return !nEqV;
+            } else{
+                //10x0
+                return nEqV;
+            }
+        }
+    } else {
+        //0xxx
+        if ((instruction & (op << 28)) == 1) {
+            //0xx1
+            //checks if Z is not set
+            return !zSet;
+        } else{
+            //0xx0
+            //checks if Z is set
+            return zSet;
+        }
+    }
+}
+
 int main(int argc, char **argv) {
-    STATE new;
-    initialise(&new);
+    STATE state;
+    initialise(&state);
 
     //read file
     //1 argument only (so 2 in total)
@@ -53,17 +109,25 @@ int main(int argc, char **argv) {
     }
 
     char* file_name = argv[1];
-    readFile(file_name, new.mem);
+    readFile(file_name, state.mem);
 
-    for (int i = 0; i < MEM_SIZE; ++i) {
-        if (new.mem[i] != 0) {
-            printf("%d \n", new.mem[i]);
+    /*
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            if (state.mem[4*i + j] != 0) {
+            printf("%d", converted(state.mem[4*i + j]));
+            }
         }
+        printf("\n");
     }
+     */
+    //extra code for reading out the memory as binary (little endian, not organised)
+
 
     //fetch
     //decode
     //execute
+    state.pc += 4;
 
   return EXIT_SUCCESS;
 }

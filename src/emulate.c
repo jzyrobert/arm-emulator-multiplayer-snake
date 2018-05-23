@@ -1,11 +1,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #define MEM_SIZE 65536
 #define REG_SIZE 17
 #define PC 15
 #define CPSR 16
+#define PC_OFFSET 8
 
 typedef uint8_t byte;
 typedef uint32_t word;
@@ -20,6 +22,27 @@ typedef struct {
     word fetch;
     word decode;
 } STATE;
+
+
+enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH};
+
+typedef struct {
+    enum I_Type I;
+    word binary;
+    bool I;
+    bool P;
+    bool U;
+    bool A;
+    bool S;
+    bool S;
+    address Rn;
+    address Rd;
+    address Operand2;
+    address Rs;
+    address Rm;
+    byte smallOffset;
+    word largeOffset;
+} INSTRUCTION;
 
 void initialise(STATE* state) {
     //sets everything to 0
@@ -48,6 +71,80 @@ void fetch(STATE* state){
     int pc = state->pc;
     state->fetch = (state->mem[pc] << 24) + (state->mem[pc+1] << 16) + (state->mem[pc+2] << 8) + state->mem[pc+3];
     state->pc += 4;
+
+
+//quick int to binary
+int converted(int i) {
+    if (i == 0) {
+        return 0;
+    } else {
+        return (i % 2 + 10 * converted(i / 2));
+    }
+}
+
+//given a word, checks for cond (1 = go, 0 = no)
+int checkCond(word instruction, word cpsr) {
+    word op = 1;
+    int zSet = cpsr & 1<<30;
+    int nEqV = ((cpsr & 1<<31) == (cpsr & 1<<28));
+    if ((instruction & (op << 31)) == 1) {
+        //1xxx
+        if ((instruction & (op << 30)) == 1) {
+            //11xx
+            if ((instruction & (op << 28)) == 1) {
+                //11x1
+                return zSet || !nEqV;
+            } else{
+                //11x0
+                if ((instruction & (op << 29)) == 1) {
+                    //1110
+                    return 1;
+                } else{
+                    //1100
+                    return !zSet && nEqV ;
+                }
+            }
+        } else{
+            //10xx
+            if ((instruction & (op << 28)) == 1) {
+                //10x1
+                return !nEqV;
+            } else{
+                //10x0
+                return nEqV;
+            }
+        }
+    } else {
+        //0xxx
+        if ((instruction & (op << 28)) == 1) {
+            //0xx1
+            //checks if Z is not set
+            return !zSet;
+        } else{
+            //0xx0
+            //checks if Z is set
+            return zSet;
+
+
+enum I_type getInstruction(word inst) {
+    word op = 1;
+    if ((inst & op<<27) == 1) {
+        //1x
+        return BRANCH;
+    } else{
+        if ((inst & op<<26) == 1) {
+            //01x
+            return TRANSFER;
+        } else {
+            //00x
+            if (((inst & op<<7)== 1) && ((inst & op<<6)== 0) && ((inst & op<<5)== 0) && ((inst & op<<4)== 1)) {
+                //1001 at bits 7-4
+                return MULT;
+            } else{
+                return PROCESS;
+            }
+        }
+    }
 }
 
 int main(int argc, char **argv) {
@@ -68,13 +165,12 @@ int main(int argc, char **argv) {
     for (int i = 0; i < MEM_SIZE; ++i) {
         if (state.mem[i] != 0) {
             printf("0x%02x \n", state.mem[i]);
-        }
-    }
 
 
     fetch(&state);
     //decode
     //execute
+    state.pc += 4;
 
   return EXIT_SUCCESS;
 }

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #define MEM_SIZE 65536
 #define REG_SIZE 17
@@ -19,7 +20,26 @@ typedef struct {
     word pc;
 } STATE;
 
-enum Instruction {PROCESS = 1, MULT, TRANSFER, BRANCH};
+
+enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH};
+
+typedef struct {
+    enum I_Type I;
+    word binary;
+    bool I;
+    bool P;
+    bool U;
+    bool A;
+    bool S;
+    bool S;
+    address Rn;
+    address Rd;
+    address Operand2;
+    address Rs;
+    address Rm;
+    byte smallOffset;
+    word largeOffset;
+} INSTRUCTION;
 
 void initialise(STATE* state) {
     //sets everything to 0
@@ -42,7 +62,7 @@ void readFile(char* file_name, byte* memory){
     fclose(binary);
 }
 
-enum Instruction fetchInstruction(word inst) {
+enum I_type getInstruction(word inst) {
     word op = 1;
     if ((inst & op<<27) == 1) {
         //1x

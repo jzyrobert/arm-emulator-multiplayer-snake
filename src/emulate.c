@@ -72,6 +72,10 @@ void fetch(STATE* state) {
     state->pc += 4;
 }
 
+void decode(STATE* state) {
+
+}
+
 //quick int to binary
 int converted(int i) {
     if (i == 0) {
@@ -122,53 +126,52 @@ int checkCond(word instruction, word cpsr) {
 }
 
 
-            enum I_Type getInstruction(word inst) {
-                word op = 1;
-                if (inst & op << 27) {
-                    //1x
-                    return BRANCH;
+enum I_Type getInstruction(word inst) {
+    word op = 1;
+    if (inst & op << 27) {
+        //1x
+        return BRANCH;
+        } else {
+        if (inst & op << 26) {
+            //01x
+            return TRANSFER;
+            } else {
+            //00x
+            if (!(inst & op << 25) && (inst & op << 7) && (inst & op << 4)) {
+                //1001 at bits 7-4
+                return MULT;
                 } else {
-                    if (inst & op << 26) {
-                        //01x
-                        return TRANSFER;
-                    } else {
-                        //00x
-                        if (!(inst & op << 25) && (inst & op << 7) && (inst & op << 4)) {
-                            //1001 at bits 7-4
-                            return MULT;
-                        } else {
-                            return PROCESS;
-                        }
-                    }
+                return PROCESS;
                 }
-            }
+        }
+    }
+}
 
-            int main(int argc, char **argv) {
-                STATE state;
-                initialise(&state);
 
-                //read file
-                //1 argument only (so 2 in total)
-                if (argc != 2) {
-                    //error
-                    printf("Provide only file name as argument\n");
-                    return EXIT_FAILURE;
-                }
+int main(int argc, char **argv) {
+    STATE state;
+    initialise(&state);
+    //read file
+    //1 argument only (so 2 in total)
+    if (argc != 2) {
+        //error
+        printf("Provide only file name as argument\n");return EXIT_FAILURE;
+        }
 
-                char *file_name = argv[1];
-                readFile(file_name, state.mem);
+        char *file_name = argv[1];
+    readFile(file_name, state.mem);
 
-                //prints hex
-                /*
-                for (int i = 0; i < MEM_SIZE; ++i) {
-                    if (state.mem[i] != 0) {
-                        printf("0x%02x \n", state.mem[i]);
-                        */
+    //prints hex
+    /*
+      for (int i = 0; i < MEM_SIZE; ++i) {
+          if (state.mem[i] != 0) {
+          printf("0x%02x \n", state.mem[i]);
+                     */
 
-                fetch(&state);
-                //decode
-                //execute
-                state.pc += 4;
+    fetch(&state);
+    //decode
+    //execute
+    state.pc += 4;
 
-                return EXIT_SUCCESS;
-            }
+    return EXIT_SUCCESS;
+}

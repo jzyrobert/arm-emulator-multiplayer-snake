@@ -19,6 +19,8 @@ typedef struct {
     word pc;
 } STATE;
 
+enum Instruction {PROCESS = 1, MULT, TRANSFER, BRANCH};
+
 void initialise(STATE* state) {
     //sets everything to 0
     state->pc = 0;
@@ -38,6 +40,27 @@ void readFile(char* file_name, byte* memory){
     }
     fread(memory, MEM_SIZE, 1, binary);
     fclose(binary);
+}
+
+enum Instruction fetchInstruction(word inst) {
+    word op = 1;
+    if ((inst & op<<27) == 1) {
+        //1x
+        return BRANCH;
+    } else{
+        if ((inst & op<<26) == 1) {
+            //01x
+            return TRANSFER;
+        } else {
+            //00x
+            if (((inst & op<<7)== 1) && ((inst & op<<6)== 0) && ((inst & op<<5)== 0) && ((inst & op<<4)== 1)) {
+                //1001 at bits 7-4
+                return MULT;
+            } else{
+                return PROCESS;
+            }
+        }
+    }
 }
 
 int main(int argc, char **argv) {

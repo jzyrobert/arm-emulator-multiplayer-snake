@@ -14,6 +14,8 @@ typedef uint32_t word;
 typedef int32_t wordS;
 typedef uint16_t address;
 
+enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH, HALT};
+
 typedef struct {
     enum I_Type type;
     word binary;
@@ -47,8 +49,6 @@ typedef struct {
     bool finished;
 } STATE;
 
-enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH, HALT};
-
 
 void initialise(STATE* state) {
     //sets everything to 0
@@ -64,6 +64,8 @@ void initialise(STATE* state) {
     INSTRUCTION I;
     state->instruction = I;
     state->finished = false;
+    state->instruction_exists = false;
+    state->decode_exists = false;
 }
 
 void readFile(char* file_name, byte* memory){
@@ -80,6 +82,7 @@ void fetch(STATE* state) {
     int pc = state->pc;
     state->fetch = (state->mem[pc+3] << 24) + (state->mem[pc + 2] << 16) + (state->mem[pc + 1] << 8) + state->mem[pc];
     state->pc += 4;
+    state->decode_exists = true;
 }
 
 word extractBits(word data, int start, int end){
@@ -198,19 +201,19 @@ void execute(STATE* state){
 }
 
 void executeBranch(STATE *state) {
-
+    printf("test1");
 }
 
 void executeTransfer(STATE *state) {
-
+    printf("test2");
 }
 
 void executeMult(STATE *state) {
-
+    printf("test3");
 }
 
 void executeProcess(STATE *state) {
-
+    printf("test4");
 }
 
 //quick int to binary
@@ -299,8 +302,7 @@ int main(int argc, char **argv) {
     char *file_name = argv[1];
     readFile(file_name, state.mem);
 
-    while (!state.finished) {
-
+    //while (!state.finished) {
     execute(&state);
 
     decode(&state);
@@ -308,8 +310,24 @@ int main(int argc, char **argv) {
     fetch(&state);
 
     state.pc += 4;
-    }
+    //}
     //print out stuff
+    printf("Registers:\n");
+    for (int i = 0; i < 13; ++i) {
+        printf("$%d  :        ", i);
+        printf("%u (0x%x)\n", state.reg[i], state.reg[i]);
+    }
+
+    printf("Non-zero memory:\n");
+    for (int j = 0; j < MEM_SIZE/4; ++j) {
+        for (int i = 0; i < 4; ++i) {
+            if (state.mem[j*4 + i]) {
+                word data = (state.mem[j*4] << 24) + (state.mem[4*j + 1] << 16) + (state.mem[4*j + 2] << 8) + state.mem[4*j+3];
+                printf("0x%x: 0x%x\n",4*j, data);
+                break;
+            }
+        }
+    }
 
     return EXIT_SUCCESS;
 }

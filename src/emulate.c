@@ -85,92 +85,91 @@ int converted(int i) {
 //given a word, checks for cond (1 = go, 0 = no)
 int checkCond(word instruction, word cpsr) {
     word op = 1;
-    int zSet = cpsr & 1<<30;
-    int nEqV = ((cpsr & 1<<31) == (cpsr & 1<<28));
-    if ((instruction & (op << 31)) == 1) {
+    int zSet = cpsr & 1 << 30;
+    int nEqV = ((cpsr & 1 << 31) == (cpsr & 1 << 28));
+    if (instruction & (op << 31)) {
         //1xxx
-        if ((instruction & (op << 30)) == 1) {
+        if (instruction & (op << 30)) {
             //11xx
-            if ((instruction & (op << 28)) == 1) {
+            if (instruction & (op << 28)) {
                 //11x1
                 return zSet || !nEqV;
-            } else{
+            } else {
                 //11x0
-                if ((instruction & (op << 29)) == 1) {
+                if (instruction & (op << 29)) {
                     //1110
                     return 1;
-                } else{
+                } else {
                     //1100
-                    return !zSet && nEqV ;
+                    return !zSet && nEqV;
                 }
             }
-        } else{
-            //10xx
-            if ((instruction & (op << 28)) == 1) {
-                //10x1
-                return !nEqV;
-            } else{
-                //10x0
-                return nEqV;
-            }
+        } else {
+            return instruction & (op << 28) ? !nEqV : nEqV;
+            //10x1 or 10x0
         }
     } else {
         //0xxx
-        if ((instruction & (op << 28)) == 1) {
+        if (instruction & (op << 28)) {
             //0xx1
             //checks if Z is not set
             return !zSet;
-        } else{
+        } else {
             //0xx0
             //checks if Z is set
             return zSet;
-
-
-enum I_Type getInstruction(word inst) {
-    word op = 1;
-    if ((inst & op<<27) == 1) {
-        //1x
-        return BRANCH;
-    } else{
-        if ((inst & op<<26) == 1) {
-            //01x
-            return TRANSFER;
-        } else {
-            //00x
-            if (((inst & op<<25)== 0) && ((inst & op<<7)== 1) && ((inst & op<<4)== 1)) {
-                //1001 at bits 7-4
-                return MULT;
-            } else{
-                return PROCESS;
-            }
         }
     }
 }
 
-int main(int argc, char **argv) {
-    STATE state;
-    initialise(&state);
 
-    //read file
-    //1 argument only (so 2 in total)
-    if (argc != 2) {
-        //error
-        printf("Provide only file name as argument\n");
-        return EXIT_FAILURE;
-    }
+            enum I_Type getInstruction(word inst) {
+                word op = 1;
+                if (inst & op << 27) {
+                    //1x
+                    return BRANCH;
+                } else {
+                    if (inst & op << 26) {
+                        //01x
+                        return TRANSFER;
+                    } else {
+                        //00x
+                        if (!(inst & op << 25) && (inst & op << 7) && (inst & op << 4)) {
+                            //1001 at bits 7-4
+                            return MULT;
+                        } else {
+                            return PROCESS;
+                        }
+                    }
+                }
+            }
 
-    char* file_name = argv[1];
-    readFile(file_name, state.mem);
+            int main(int argc, char **argv) {
+                STATE state;
+                initialise(&state);
 
-    for (int i = 0; i < MEM_SIZE; ++i) {
-        if (state.mem[i] != 0) {
-            printf("0x%02x \n", state.mem[i]);
+                //read file
+                //1 argument only (so 2 in total)
+                if (argc != 2) {
+                    //error
+                    printf("Provide only file name as argument\n");
+                    return EXIT_FAILURE;
+                }
 
+                char *file_name = argv[1];
+                readFile(file_name, state.mem);
 
-    fetch(&state);
-    //decode
-    //execute
-    state.pc += 4;
+                //prints hex
+                /*
+                for (int i = 0; i < MEM_SIZE; ++i) {
+                    if (state.mem[i] != 0) {
+                        printf("0x%02x \n", state.mem[i]);
+                        */
 
-  return EXIT_SUCCESS;
-}
+                fetch(&state);
+                //decode
+                //execute
+                state.pc += 4;
+
+                return EXIT_SUCCESS;
+            }

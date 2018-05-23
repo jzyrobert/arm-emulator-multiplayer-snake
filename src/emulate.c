@@ -67,11 +67,11 @@ void readFile(char* file_name, byte* memory){
     fclose(binary);
 }
 
-void fetch(STATE* state){
+void fetch(STATE* state) {
     int pc = state->pc;
-    state->fetch = (state->mem[pc] << 24) + (state->mem[pc+1] << 16) + (state->mem[pc+2] << 8) + state->mem[pc+3];
+    state->fetch = (state->mem[pc] << 24) + (state->mem[pc + 1] << 16) + (state->mem[pc + 2] << 8) + state->mem[pc + 3];
     state->pc += 4;
-
+}
 
 //quick int to binary
 int converted(int i) {

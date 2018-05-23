@@ -38,12 +38,24 @@ int main(int argc, char **argv) {
     //1 argument only (so 2 in total)
     if (argc != 2) {
         //error
-        printf("Provide file name as argument\n");
+        printf("Provide only file name as argument\n");
         return EXIT_FAILURE;
     }
 
 
     //load into mem
+
+    FILE *fp;
+    fp = fopen(argv[1], "rb");
+
+    if(!fp) {
+        printf("Failed to open the file\n");
+        return EXIT_FAILURE;
+    }
+
+    fgets(new.mem, MEM_SIZE, fp);
+    fclose(fp);
+
     //fetch
     //decode
     //execute

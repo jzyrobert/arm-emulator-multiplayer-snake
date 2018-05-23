@@ -126,7 +126,7 @@ int checkCond(word instruction, word cpsr) {
             return zSet;
 
 
-enum I_type getInstruction(word inst) {
+enum I_Type getInstruction(word inst) {
     word op = 1;
     if ((inst & op<<27) == 1) {
         //1x
@@ -137,7 +137,7 @@ enum I_type getInstruction(word inst) {
             return TRANSFER;
         } else {
             //00x
-            if (((inst & op<<7)== 1) && ((inst & op<<6)== 0) && ((inst & op<<5)== 0) && ((inst & op<<4)== 1)) {
+            if (((inst & op<<25)== 0) && ((inst & op<<7)== 1) && ((inst & op<<4)== 1)) {
                 //1001 at bits 7-4
                 return MULT;
             } else{

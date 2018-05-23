@@ -14,19 +14,6 @@ typedef uint32_t word;
 typedef uint16_t address;
 
 typedef struct {
-    byte mem[MEM_SIZE];
-    //memory as 8 bit array
-    word reg[REG_SIZE];
-    //registers as 32 bit array
-    word pc;
-    word fetch;
-    word decode;
-} STATE;
-
-
-enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH};
-
-typedef struct {
     enum I_Type type;
     word binary;
     bool I;
@@ -42,6 +29,21 @@ typedef struct {
     byte smallOffset;
     word largeOffset;
 } INSTRUCTION;
+
+
+typedef struct {
+    byte mem[MEM_SIZE];
+    //memory as 8 bit array
+    word reg[REG_SIZE];
+    //registers as 32 bit array
+    word pc;
+    word fetch;
+    word decode;
+    INSTRUCTION instruction;
+} STATE;
+
+enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH};
+
 
 void initialise(STATE* state) {
     //sets everything to 0
@@ -68,11 +70,59 @@ void readFile(char* file_name, byte* memory){
 
 void fetch(STATE* state) {
     int pc = state->pc;
-    state->fetch = (state->mem[pc] << 24) + (state->mem[pc + 1] << 16) + (state->mem[pc + 2] << 8) + state->mem[pc + 3];
+    state->fetch = (state->mem[pc+3] << 24) + (state->mem[pc + 2] << 16) + (state->mem[pc + 1] << 8) + state->mem[pc];
     state->pc += 4;
 }
 
+enum I_Type getInstruction(word inst);
+
+
+void decodeMult(STATE *state);
+
+void decodeProcess(STATE *state);
+
+void decodeTransfer(STATE *state);
+
+void decodeBranch(STATE *state);
+
 void decode(STATE* state) {
+    INSTRUCTION I;
+    I.binary = state->fetch;
+    I.type = getInstruction(state->fetch);
+    state->instruction = I;
+    switch((int) I.type) {
+        case 1 :
+            decodeProcess(state);
+        break;
+        case 2:
+            decodeMult(state);
+            break;
+        case 3:
+            decodeTransfer(state);
+            break;
+        case 4:
+            decodeBranch(state);
+            break;
+        default:
+            printf("Invalid state!\n");
+            exit(EXIT_FAILURE);
+            //error
+    }
+}
+
+void decodeBranch(STATE *state) {
+
+}
+
+void decodeTransfer(STATE *state) {
+
+}
+
+void decodeProcess(STATE *state) {
+
+}
+
+void decodeMult(STATE *state) {
 
 }
 
@@ -155,7 +205,8 @@ int main(int argc, char **argv) {
     //1 argument only (so 2 in total)
     if (argc != 2) {
         //error
-        printf("Provide only file name as argument\n");return EXIT_FAILURE;
+        printf("Provide only file name as argument\n");
+        return EXIT_FAILURE;
         }
 
         char *file_name = argv[1];

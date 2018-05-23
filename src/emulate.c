@@ -11,20 +11,8 @@
 
 typedef uint8_t byte;
 typedef uint32_t word;
+typedef int32_t wordS;
 typedef uint16_t address;
-
-typedef struct {
-    byte mem[MEM_SIZE];
-    //memory as 8 bit array
-    word reg[REG_SIZE];
-    //registers as 32 bit array
-    word pc;
-    word fetch;
-    word decode;
-} STATE;
-
-
-enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH};
 
 typedef struct {
     enum I_Type type;
@@ -34,14 +22,30 @@ typedef struct {
     bool U;
     bool A;
     bool S;
+    bool L;
     address Rn;
     address Rd;
     address Operand2;
     address Rs;
     address Rm;
     byte smallOffset;
-    word largeOffset;
+    wordS largeOffset;
 } INSTRUCTION;
+
+
+typedef struct {
+    byte mem[MEM_SIZE];
+    //memory as 8 bit array
+    word reg[REG_SIZE];
+    //registers as 32 bit array
+    word pc;
+    word fetch;
+    word decode;
+    INSTRUCTION instruction;
+} STATE;
+
+enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH};
+
 
 void initialise(STATE* state) {
     //sets everything to 0
@@ -54,6 +58,8 @@ void initialise(STATE* state) {
     }
     state->fetch = 0;
     state->decode = 0;
+    INSTRUCTION I;
+    state->instruction = I;
 }
 
 void readFile(char* file_name, byte* memory){
@@ -68,8 +74,85 @@ void readFile(char* file_name, byte* memory){
 
 void fetch(STATE* state) {
     int pc = state->pc;
-    state->fetch = (state->mem[pc] << 24) + (state->mem[pc + 1] << 16) + (state->mem[pc + 2] << 8) + state->mem[pc + 3];
+    state->fetch = (state->mem[pc+3] << 24) + (state->mem[pc + 2] << 16) + (state->mem[pc + 1] << 8) + state->mem[pc];
     state->pc += 4;
+}
+
+word extractBits(word data, int start, int end){
+    word r = 0;
+    for (int i=start; i<=end; i++)
+        r |= 1 << i;
+
+    return (r & data) >> start;
+}
+
+enum I_Type getInstruction(word inst);
+
+
+void decodeMult(STATE *state);
+
+void decodeProcess(STATE *state);
+
+void decodeTransfer(STATE *state);
+
+void decodeBranch(STATE *state);
+
+void decode(STATE* state) {
+    state->instruction.binary = state->fetch;
+    state->instruction.type = getInstruction(state->fetch);
+    switch((int) state->instruction.type) {
+        case 1 :
+            decodeProcess(state);
+        break;
+        case 2:
+            decodeMult(state);
+            break;
+        case 3:
+            decodeTransfer(state);
+            break;
+        case 4:
+            decodeBranch(state);
+            break;
+        default:
+            printf("Invalid state!\n");
+            exit(EXIT_FAILURE);
+            //error
+    }
+}
+
+void decodeBranch(STATE *state) {
+    wordS offSet = extractBits(state->instruction.binary, 0, 23) << 2;
+    state->instruction.largeOffset = offSet;
+}
+
+void decodeTransfer(STATE *state) {
+    word b = state->instruction.binary;
+    state->instruction.I = (b & (1<<25)) ? true : false;
+    state->instruction.P = (b & (1<<24)) ? true : false;
+    state->instruction.U = (b & (1<<23)) ? true : false;
+    state->instruction.L = (b & (1<<20)) ? true : false;
+    state->instruction.Rn = (address) extractBits(b, 16, 19);
+    state->instruction.Rd = (address) extractBits(b, 12, 15);
+    state->instruction.smallOffset = (byte) extractBits(b, 0, 11);
+}
+
+void decodeProcess(STATE *state) {
+    word b = state->instruction.binary;
+    state->instruction.I = (b & (1<<25)) ? true : false;
+    state->instruction.S = (b & (1<<20)) ? true : false;
+    state->instruction.Rn = (address) extractBits(b, 16, 19);
+    state->instruction.Rd = (address) extractBits(b, 12, 15);
+    state->instruction.Operand2 = (address) extractBits(b, 0, 11);
+}
+
+void decodeMult(STATE *state) {
+    word b = state->instruction.binary;
+    state->instruction.A = (b & (1<<21)) ? true : false;
+    state->instruction.S = (b & (1<<20)) ? true : false;
+    state->instruction.Rd = (address) extractBits(b, 16, 19);
+    state->instruction.Rn = (address) extractBits(b, 12, 15);
+    state->instruction.Rs = (address) extractBits(b, 8, 11);
+    state->instruction.Rm = (address) extractBits(b, 0, 3);
 }
 
 //quick int to binary
@@ -122,53 +205,47 @@ int checkCond(word instruction, word cpsr) {
 }
 
 
-            enum I_Type getInstruction(word inst) {
-                word op = 1;
-                if (inst & op << 27) {
-                    //1x
-                    return BRANCH;
+enum I_Type getInstruction(word inst) {
+    word op = 1;
+    if (inst & op << 27) {
+        //1x
+        return BRANCH;
+        } else {
+        if (inst & op << 26) {
+            //01x
+            return TRANSFER;
+            } else {
+            //00x
+            if (!(inst & op << 25) && (inst & op << 7) && (inst & op << 4)) {
+                //1001 at bits 7-4
+                return MULT;
                 } else {
-                    if (inst & op << 26) {
-                        //01x
-                        return TRANSFER;
-                    } else {
-                        //00x
-                        if (!(inst & op << 25) && (inst & op << 7) && (inst & op << 4)) {
-                            //1001 at bits 7-4
-                            return MULT;
-                        } else {
-                            return PROCESS;
-                        }
-                    }
+                return PROCESS;
                 }
-            }
+        }
+    }
+}
 
-            int main(int argc, char **argv) {
-                STATE state;
-                initialise(&state);
 
-                //read file
-                //1 argument only (so 2 in total)
-                if (argc != 2) {
-                    //error
-                    printf("Provide only file name as argument\n");
-                    return EXIT_FAILURE;
-                }
+int main(int argc, char **argv) {
+    STATE state;
+    initialise(&state);
+    //read file
+    //1 argument only (so 2 in total)
+    if (argc != 2) {
+        //error
+        printf("Provide only file name as argument\n");
+        return EXIT_FAILURE;
+        }
 
-                char *file_name = argv[1];
-                readFile(file_name, state.mem);
+        char *file_name = argv[1];
+    readFile(file_name, state.mem);
 
-                //prints hex
-                /*
-                for (int i = 0; i < MEM_SIZE; ++i) {
-                    if (state.mem[i] != 0) {
-                        printf("0x%02x \n", state.mem[i]);
-                        */
 
-                fetch(&state);
-                //decode
-                //execute
-                state.pc += 4;
+    fetch(&state);
+    //decode
+    //execute
+    state.pc += 4;
 
-                return EXIT_SUCCESS;
-            }
+    return EXIT_SUCCESS;
+}

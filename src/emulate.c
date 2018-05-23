@@ -268,6 +268,9 @@ int checkCond(word instruction, word cpsr) {
 
 enum I_Type getInstruction(word inst) {
     word op = 1;
+    if (!inst) {
+        return HALT;
+    }
     if (inst & op << 27) {
         //1x
         return BRANCH;
@@ -302,7 +305,7 @@ int main(int argc, char **argv) {
     char *file_name = argv[1];
     readFile(file_name, state.mem);
 
-    //while (!state.finished) {
+    while (!state.finished) {
     execute(&state);
 
     decode(&state);
@@ -310,7 +313,7 @@ int main(int argc, char **argv) {
     fetch(&state);
 
     state.pc += 4;
-    //}
+    }
     //print out stuff
     printf("Registers:\n");
     for (int i = 0; i < 13; ++i) {

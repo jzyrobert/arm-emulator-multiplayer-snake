@@ -56,6 +56,8 @@ void initialise(STATE* state) {
     }
     state->fetch = 0;
     state->decode = 0;
+    INSTRUCTION I;
+    state->instruction = I;
 }
 
 void readFile(char* file_name, byte* memory){
@@ -86,11 +88,9 @@ void decodeTransfer(STATE *state);
 void decodeBranch(STATE *state);
 
 void decode(STATE* state) {
-    INSTRUCTION I;
-    I.binary = state->fetch;
-    I.type = getInstruction(state->fetch);
-    state->instruction = I;
-    switch((int) I.type) {
+    state->instruction.binary = state->fetch;
+    state->instruction.type = getInstruction(state->fetch);
+    switch((int) state->instruction.type) {
         case 1 :
             decodeProcess(state);
         break;

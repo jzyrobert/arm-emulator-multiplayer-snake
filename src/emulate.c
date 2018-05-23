@@ -27,13 +27,12 @@ typedef struct {
 enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH};
 
 typedef struct {
-    enum I_Type I;
+    enum I_Type type;
     word binary;
     bool I;
     bool P;
     bool U;
     bool A;
-    bool S;
     bool S;
     address Rn;
     address Rd;

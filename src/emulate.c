@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #define MEM_SIZE 65536
 #define REG_SIZE 17
@@ -19,6 +20,27 @@ typedef struct {
     //registers as 32 bit array
     word pc;
 } STATE;
+
+
+enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH};
+
+typedef struct {
+    enum I_Type I;
+    word binary;
+    bool I;
+    bool P;
+    bool U;
+    bool A;
+    bool S;
+    bool S;
+    address Rn;
+    address Rd;
+    address Operand2;
+    address Rs;
+    address Rm;
+    byte smallOffset;
+    word largeOffset;
+} INSTRUCTION;
 
 void initialise(STATE* state) {
     //sets everything to 0
@@ -92,6 +114,25 @@ int checkCond(word instruction, word cpsr) {
             //0xx0
             //checks if Z is set
             return zSet;
+
+
+enum I_type getInstruction(word inst) {
+    word op = 1;
+    if ((inst & op<<27) == 1) {
+        //1x
+        return BRANCH;
+    } else{
+        if ((inst & op<<26) == 1) {
+            //01x
+            return TRANSFER;
+        } else {
+            //00x
+            if (((inst & op<<7)== 1) && ((inst & op<<6)== 0) && ((inst & op<<5)== 0) && ((inst & op<<4)== 1)) {
+                //1001 at bits 7-4
+                return MULT;
+            } else{
+                return PROCESS;
+            }
         }
     }
 }

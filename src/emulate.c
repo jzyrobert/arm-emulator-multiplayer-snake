@@ -17,6 +17,8 @@ typedef struct {
     word reg[REG_SIZE];
     //registers as 32 bit array
     word pc;
+    word fetch;
+    word decode;
 } STATE;
 
 void initialise(STATE* state) {
@@ -28,6 +30,8 @@ void initialise(STATE* state) {
     for (int j = 0; j < MEM_SIZE; ++j) {
         state->mem[j] = 0;
     }
+    state->fetch = 0;
+    state->decode = 0;
 }
 
 void readFile(char* file_name, byte* memory){
@@ -40,9 +44,15 @@ void readFile(char* file_name, byte* memory){
     fclose(binary);
 }
 
+void fetch(STATE* state){
+    int pc = state->pc;
+    state->fetch = (state->mem[pc] << 24) + (state->mem[pc+1] << 16) + (state->mem[pc+2] << 8) + state->mem[pc+3];
+    state->pc += 4;
+}
+
 int main(int argc, char **argv) {
-    STATE new;
-    initialise(&new);
+    STATE state;
+    initialise(&state);
 
     //read file
     //1 argument only (so 2 in total)
@@ -53,15 +63,16 @@ int main(int argc, char **argv) {
     }
 
     char* file_name = argv[1];
-    readFile(file_name, new.mem);
+    readFile(file_name, state.mem);
 
     for (int i = 0; i < MEM_SIZE; ++i) {
-        if (new.mem[i] != 0) {
-            printf("%d \n", new.mem[i]);
+        if (state.mem[i] != 0) {
+            printf("0x%02x \n", state.mem[i]);
         }
     }
 
-    //fetch
+
+    fetch(&state);
     //decode
     //execute
 

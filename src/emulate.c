@@ -16,6 +16,7 @@ typedef uint16_t address;
 
 enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH, HALT};
 
+
 typedef struct {
     wordS largeOffset;
     word binary;
@@ -61,7 +62,8 @@ void readFile(char* file_name, byte* memory){
 
 void fetch(STATE* state) {
     int pc = state->reg[PC];
-    state->fetch = (state->mem[pc+3] << 24) + (state->mem[pc + 2] << 16) + (state->mem[pc + 1] << 8) + state->mem[pc];
+    state->fetch = (state->mem[pc+3] << 24) + (state->mem[pc + 2] << 16)
+            + (state->mem[pc + 1] << 8) + state->mem[pc];
     state->decode_exists = true;
 }
 
@@ -93,6 +95,15 @@ void executeTransfer(STATE *state);
 void executeBranch(STATE *state);
 
 void print(STATE *ptr);
+
+//given a word, checks for cond (1 = go, 0 = no)
+int checkCond(word instruction, word cpsr) ;
+
+void bitAnd(STATE *state, bool b);
+
+void bitEor(STATE *state, bool b);
+
+void subRO(STATE *state, bool b);
 
 void decode(STATE* state) {
     if (state->decode_exists) {
@@ -158,7 +169,8 @@ void decodeMult(STATE *state) {
 }
 
 void execute(STATE* state){
-    if (state->instruction_exists) {
+    //checks if cond is allowed to continue
+    if (state->instruction_exists && checkCond(state->instruction.binary, state->reg[CPSR])) {
         switch ((int) state->instruction.type) {
             case 1:
                 executeProcess(state);
@@ -183,7 +195,7 @@ void execute(STATE* state){
 }
 
 void executeBranch(STATE *state) {
-    printf("test1\n");
+    state->reg[PC] = (uint32_t) ((int32_t) state->reg[PC] + state->instruction.largeOffset);
 }
 
 void executeTransfer(STATE *state) {
@@ -194,8 +206,103 @@ void executeMult(STATE *state) {
     printf("test3\n");
 }
 
+
 void executeProcess(STATE *state) {
-    printf("test4\n");
+    switch (state->instruction.Opcode) {
+        case 0:
+            //bit AND
+            bitAnd(state, true);
+            break;
+        case 1:
+            //bit EOR
+            bitEor(state, true);
+            break;
+        case 2:
+            //Rn-op2
+            subRO(state, true);
+            break;
+        case 3:
+            //op2-Rn
+            subOR(state);
+            break;
+        case 4:
+            //addition
+            break;
+        case 8:
+            //bit AND without writing
+            bitAnd(state, false);
+            break;
+        case 9:
+            //bit EOR without writing
+            bitEor(state, false);
+            break;
+        case 10:
+            //Rn-op2 without writing
+            subRO(state, false);
+            break;
+        case 12:
+            //bit OR
+            break;
+        case 13:
+            //moving
+            break;
+        default:
+            printf("Invalid OPcode!");
+            exit(EXIT_FAILURE);
+    }
+}
+
+word processOp2(STATE *state) {
+    word result;
+    if (state->instruction.I) {
+        //rotate IMM
+        result = extractBits(state->instruction.Operand2, 0, 7);
+        int rotateAmount = 2 * extractBits(state->instruction.Operand2, 8, 11);
+        result = (result >> rotateAmount) | (result << (32 - rotateAmount));
+    } else {
+        //shift RM
+        result = state->reg[extractBits(state->instruction.Operand2, 0, 3)];
+        int shiftAmount = extractBits(state->instruction.Operand2, 7, 11);
+        int shiftType = extractBits(state->instruction.Operand2, 5, 6);
+        switch (shiftType) {
+            case 0:
+                if (state->instruction.S) {
+                    state->reg[CPSR] ^= ()
+                }
+                result <<= shiftAmount;
+                break;
+            case 1:
+                result >>= shiftAmount;
+                break;
+            case 2:
+                result = (word) ((int32_t) result >> shiftAmount);
+                break;
+            case 3:
+                result = (result >> 1) | (result << 31);
+                break;
+            default:
+                printf("Invalid shift!");
+                exit(EXIT_FAILURE);
+        }
+    }
+    return result;
+}
+
+void subRO(STATE *state, bool b) {
+
+}
+
+void bitEor(STATE *state, bool b) {
+
+}
+
+void bitAnd(STATE *state, bool b) {
+//b decides if content is written or not
+    word op2 = processOp2(state);
+    word result = state->reg[state->instruction.Rn] & op2;
+    if (b) {
+        state->reg[state->instruction.Rd] = result;
+    }
 }
 
 //quick int to binary

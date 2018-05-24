@@ -62,8 +62,7 @@ void readFile(char* file_name, byte* memory){
 
 void fetch(STATE* state) {
     int pc = state->reg[PC];
-    state->fetch = (state->mem[pc+3] << 24) + (state->mem[pc + 2] << 16)
-            + (state->mem[pc + 1] << 8) + state->mem[pc];
+    state->fetch = (state->mem[pc+3] << 24) + (state->mem[pc + 2] << 16) + (state->mem[pc + 1] << 8) + state->mem[pc];
     state->decode_exists = true;
 }
 
@@ -173,7 +172,7 @@ void decodeMult(STATE *state) {
 
 void execute(STATE* state){
     //checks if cond is allowed to continue
-    if (state->instruction_exists && checkCond(state->instruction.binary, state->reg[CPSR])) {
+    if (state->instruction_exists && (checkCond(state->instruction.binary, state->reg[CPSR]) || !state->instruction.binary)) {
         switch ((int) state->instruction.type) {
             case 1:
                 executeProcess(state);
@@ -264,6 +263,10 @@ void replaceBit(word* destination, int location, word source, int location2) {
     *destination = (*destination & (~(1 << location))) | (sourceBit << location);
 }
 
+void replaceBitDirect(word* destination, int location, int bit) {
+    *destination = (*destination & (~(1 << location))) | (bit << location);
+}
+
 word processOp2(STATE *state) {
     word result;
     if (state->instruction.I) {
@@ -321,6 +324,14 @@ void bitAnd(STATE *state, bool b) {
 //b decides if content is written or not
     word op2 = processOp2(state);
     word result = state->reg[state->instruction.Rn] & op2;
+    if (state->instruction.S) {
+        if (!result) {
+            replaceBitDirect(&state->reg[CPSR],30, 1);
+        } else {
+            replaceBitDirect(&state->reg[CPSR], 30, 0);
+        }
+        replaceBit(&state->reg[CPSR], 31, result, 31);
+    }
     if (b) {
         state->reg[state->instruction.Rd] = result;
     }

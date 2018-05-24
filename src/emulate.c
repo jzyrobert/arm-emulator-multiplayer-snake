@@ -253,6 +253,11 @@ void executeProcess(STATE *state) {
     }
 }
 
+void replaceBit(word* destination, int location, word source, int location2) {
+    int sourceBit = (source & (1<<location2)) >> location2;
+    *destination = (*destination & (~(1 << location))) | (sourceBit << location)
+}
+
 word processOp2(STATE *state) {
     word result;
     if (state->instruction.I) {
@@ -268,7 +273,7 @@ word processOp2(STATE *state) {
         switch (shiftType) {
             case 0:
                 if (state->instruction.S) {
-                    state->reg[CPSR] ^= ()
+                    replaceBit(&state->reg[CPSR], 29, result, (32-shiftAmount));
                 }
                 result <<= shiftAmount;
                 break;

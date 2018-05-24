@@ -224,6 +224,8 @@ void execute(STATE* state){
 
 void executeBranch(STATE *state) {
     state->reg[PC] = (uint32_t) ((int32_t) state->reg[PC] + state->instruction.largeOffset);
+    state->instruction_exists = false;
+    state->decode_exists = false;
 }
 
 void executeTransfer(STATE *state) {

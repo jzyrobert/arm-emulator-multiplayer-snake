@@ -324,7 +324,20 @@ void executeTransfer(STATE *state) {
         }
     }
     if (memLoc >= (1<<16)) {
-        printf("Error: Out of bounds memory access at address 0x%08x\n", memLoc);
+        if (memLoc == 0x20200000) {
+            printf("One GPIO pin from 0 to 9 has been accessed\n");
+        } else if (memLoc == 0x20200004){
+            printf("One GPIO pin from 10 to 19 has been accessed\n");
+        } else if (memLoc == 0x20200008) {
+            printf("One GPIO pin from 20 to 29 has been accessed\n");
+        } else if(memLoc == 0x20200028) {
+            printf("PIN OFF\n");
+        } else if (memLoc == 0x2020001C) {
+            printf("PIN ON\n");
+        } else {
+            printf("Error: Out of bounds memory access at address 0x%08x\n", memLoc);
+
+        }
     } else {
         if (state->instruction.L) {
             state->reg[state->instruction.Rd] = fetchData(state, (address) memLoc);

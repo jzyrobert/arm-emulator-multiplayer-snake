@@ -293,9 +293,14 @@ word processOp2(STATE *state) {
 }
 
 void executeTransfer(STATE *state) {
-    state->instruction.I = !state->instruction.I;
-    state->instruction.Operand2 = state->instruction.smallOffset;
-    word offSet = processOp2(state);
+    word offSet;
+    if (state->instruction.I) {
+        state->instruction.I = 0;
+        state->instruction.Operand2 = state->instruction.smallOffset;
+        offSet = processOp2(state);
+    } else {
+        offSet = state->instruction.smallOffset;
+    }
     address memLoc = state->reg[state->instruction.Rn];
     if(state->instruction.P){
         if(state->instruction.U){

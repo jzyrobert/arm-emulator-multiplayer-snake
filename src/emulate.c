@@ -175,6 +175,17 @@ void decodeMult(STATE *state) {
     state->instruction.Rm = (address) extractBits(b, 0, 3);
 }
 
+void updateCPSR(STATE *state, word result) {
+    if (state->instruction.S) {
+        if (!result) {
+            replaceBitDirect(&state->reg[CPSR],30, 1);
+        } else {
+            replaceBitDirect(&state->reg[CPSR], 30, 0);
+        }
+        replaceBit(&state->reg[CPSR], 31, result, 31);
+    }
+}
+
 void execute(STATE* state){
     //checks if cond is allowed to continue
     if (state->instruction_exists && (checkCond(state->instruction.binary
@@ -325,17 +336,6 @@ word processOp2(STATE *state) {
         }
     }
     return result;
-}
-
-void updateCPSR(STATE *state, word result) {
-    if (state->instruction.S) {
-        if (!result) {
-            replaceBitDirect(&state->reg[CPSR],30, 1);
-        } else {
-            replaceBitDirect(&state->reg[CPSR], 30, 0);
-        }
-        replaceBit(&state->reg[CPSR], 31, result, 31);
-    }
 }
 
 void processMove(STATE *state) {

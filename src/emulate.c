@@ -161,6 +161,9 @@ void decode(STATE* state) {
 
 void decodeBranch(STATE *state) {
     state->instruction.largeOffset = extractBits(state->instruction.binary, 0, 23) << 2;
+    if (state->instruction.largeOffset & (1<<18)) {
+        state->instruction.largeOffset = state->instruction.largeOffset | (word) 0xFC000000;
+    }
 }
 
 void decodeTransfer(STATE *state) {
@@ -242,7 +245,7 @@ void execute(STATE* state){
 }
 
 void executeBranch(STATE *state) {
-    state->reg[PC] = (uint32_t) ((int32_t) state->reg[PC] + state->instruction.largeOffset);
+    state->reg[PC] = (uint32_t) ((int32_t) state->reg[PC] + (int32_t) state->instruction.largeOffset);
     state->instruction_exists = false;
     state->decode_exists = false;
 }

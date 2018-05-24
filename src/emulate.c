@@ -17,21 +17,22 @@ typedef uint16_t address;
 enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH, HALT};
 
 typedef struct {
-    enum I_Type type;
+    wordS largeOffset;
     word binary;
+    address Rn;
+    address Rd;
+    address Operand2;
+    address Rs;
+    address Rm;
+    byte Opcode;
+    byte smallOffset;
     bool I;
     bool P;
     bool U;
     bool A;
     bool S;
     bool L;
-    address Rn;
-    address Rd;
-    address Operand2;
-    address Rs;
-    address Rm;
-    byte smallOffset;
-    wordS largeOffset;
+    enum I_Type type;
 } INSTRUCTION;
 
 
@@ -40,8 +41,8 @@ typedef struct {
     //memory as 8 bit array
     word reg[REG_SIZE];
     //registers as 32 bit array
-    word fetch;
     INSTRUCTION instruction;
+    word fetch;
     bool instruction_exists;
     bool decode_exists;
     bool finished;
@@ -158,6 +159,7 @@ void decodeProcess(STATE *state) {
     word b = state->instruction.binary;
     state->instruction.I = (b & (1<<25)) ? true : false;
     state->instruction.S = (b & (1<<20)) ? true : false;
+    state->instruction.Opcode = (byte) extractBits(b, 21, 24);
     state->instruction.Rn = (address) extractBits(b, 16, 19);
     state->instruction.Rd = (address) extractBits(b, 12, 15);
     state->instruction.Operand2 = (address) extractBits(b, 0, 11);

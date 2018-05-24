@@ -49,23 +49,6 @@ typedef struct {
 } STATE;
 
 
-void initialise(STATE* state) {
-    //sets everything to 0
-    state->reg[PC] = 0;
-    for (int i = 0; i < REG_SIZE; ++i) {
-        state->reg[i] = 0;
-    }
-    for (int j = 0; j < MEM_SIZE; ++j) {
-        state->mem[j] = 0;
-    }
-    state->fetch = 0;
-    INSTRUCTION I;
-    state->instruction = I;
-    state->finished = false;
-    state->instruction_exists = false;
-    state->decode_exists = false;
-}
-
 void readFile(char* file_name, byte* memory){
     FILE* binary = fopen(file_name, "rb");
     if (!binary) {
@@ -292,8 +275,8 @@ enum I_Type getInstruction(word inst) {
 
 
 int main(int argc, char **argv) {
-    STATE state;
-    initialise(&state);
+    STATE *state = calloc(1, sizeof(STATE));
+    //initialise(&state);
     //read file
     //1 argument only (so 2 in total)
     if (argc != 2) {
@@ -303,24 +286,24 @@ int main(int argc, char **argv) {
     }
 
     char *file_name = argv[1];
-    readFile(file_name, state.mem);
+    readFile(file_name, state->mem);
 
-    while (!state.finished) {
-    execute(&state);
+    while (!state->finished) {
+    execute(state);
 
     //prevents pointless execution of below for now
-    if (state.finished) {
+    if (state->finished) {
         break;
     }
 
-    decode(&state);
+    decode(state);
 
-    fetch(&state);
+    fetch(state);
 
-    state.reg[PC] += 4;
+    state->reg[PC] += 4;
     }
     //print out stuff
-    print(&state);
+    print(state);
 
 
     return EXIT_SUCCESS;

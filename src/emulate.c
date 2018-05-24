@@ -26,7 +26,7 @@ typedef struct {
     address Rs;
     address Rm;
     byte Opcode;
-    byte smallOffset;
+    address smallOffset;
     bool I;
     bool P;
     bool U;
@@ -65,7 +65,7 @@ word fetchData(STATE* state, int start){
            (state->mem[start + 1] << 8) + state->mem[start];
 }
 
-void writeData(STATE* state, int memLoc, word data){
+void writeData(STATE* state, word memLoc, word data){
     state->mem[memLoc] = data;
     data >>= 8;
     state->mem[memLoc+1] = data;
@@ -109,6 +109,8 @@ void executeMult(STATE *state);
 void executeTransfer(STATE *state);
 
 void executeBranch(STATE *state);
+
+word processOp2(STATE *state);
 
 void print(STATE *ptr);
 
@@ -292,8 +294,9 @@ word processOp2(STATE *state) {
 
 void executeTransfer(STATE *state) {
     state->instruction.I = !state->instruction.I;
+    state->instruction.Operand2 = state->instruction.smallOffset;
     word offSet = processOp2(state);
-    address memLoc = state->instruction.Rn;
+    address memLoc = state->reg[state->instruction.Rn];
     if(state->instruction.P){
         if(state->instruction.U){
             memLoc += offSet;
@@ -307,7 +310,7 @@ void executeTransfer(STATE *state) {
             state->reg[state->instruction.Rn] -= offSet;
         }
     }
-    if(state->instruction.S){
+    if(state->instruction.L){
         state->reg[state->instruction.Rd] = fetchData(state, memLoc);
     } else {
         writeData(state, memLoc, state->reg[state->instruction.Rd]);

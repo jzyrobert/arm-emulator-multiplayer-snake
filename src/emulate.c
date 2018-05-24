@@ -259,8 +259,13 @@ word processOp2(STATE *state) {
         result = (result >> rotateAmount) | (result << (32 - rotateAmount));
     } else {
         //shift RM
+        byte shiftAmount;
+        if (state->instruction.Operand2 & (1<<4)) {
+            shiftAmount = (byte) state->reg[extractBits(state->instruction.Operand2, 8, 11)];
+        } else {
+            shiftAmount = (byte) extractBits(state->instruction.Operand2, 7, 11);
+        }
         result = state->reg[extractBits(state->instruction.Operand2, 0, 3)];
-        byte shiftAmount = state->reg[extractBits(state->instruction.Operand2, 8, 11)];
         int shiftType = extractBits(state->instruction.Operand2, 5, 6);
         switch (shiftType) {
             case 0:

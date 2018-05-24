@@ -105,6 +105,8 @@ void bitEor(STATE *state, bool b);
 
 void subRO(STATE *state, bool b);
 
+void subOR(STATE *state);
+
 void decode(STATE* state) {
     if (state->decode_exists) {
         state->instruction.binary = state->fetch;
@@ -253,9 +255,13 @@ void executeProcess(STATE *state) {
     }
 }
 
+void subOR(STATE *state) {
+
+}
+
 void replaceBit(word* destination, int location, word source, int location2) {
     int sourceBit = (source & (1<<location2)) >> location2;
-    *destination = (*destination & (~(1 << location))) | (sourceBit << location)
+    *destination = (*destination & (~(1 << location))) | (sourceBit << location);
 }
 
 word processOp2(STATE *state) {

@@ -259,19 +259,19 @@ word processOp2(STATE *state) {
         int shiftType = extractBits(state->instruction.Operand2, 5, 6);
         switch (shiftType) {
             case 0:
-                if (state->instruction.S) {
-                    replaceBit(&state->reg[CPSR], 29, result, (31-shiftAmount));
+                if (state->instruction.S && (shiftAmount > 0)) {
+                    replaceBit(&state->reg[CPSR], 29, result, (32-shiftAmount));
                 }
                 result <<= shiftAmount;
                 break;
             case 1:
-                if (state->instruction.S) {
+                if (state->instruction.S && (shiftAmount > 0)) {
                     replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
                 }
                 result >>= shiftAmount;
                 break;
             case 2:
-                if (state->instruction.S) {
+                if (state->instruction.S && (shiftAmount > 0)) {
                     replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
                 }
                 result = (word) ((int32_t) result >> shiftAmount);

@@ -245,6 +245,51 @@ void executeBranch(STATE *state) {
     state->decode_exists = false;
 }
 
+word processOp2(STATE *state) {
+    word result;
+    if (state->instruction.I) {
+        //rotate IMM
+        result = extractBits(state->instruction.Operand2, 0, 7);
+        int rotateAmount = 2 * extractBits(state->instruction.Operand2, 8, 11);
+        result = (result >> rotateAmount) | (result << (32 - rotateAmount));
+    } else {
+        //shift RM
+        result = state->reg[extractBits(state->instruction.Operand2, 0, 3)];
+        int shiftAmount = extractBits(state->instruction.Operand2, 7, 11);
+        int shiftType = extractBits(state->instruction.Operand2, 5, 6);
+        switch (shiftType) {
+            case 0:
+                if (state->instruction.S) {
+                    replaceBit(&state->reg[CPSR], 29, result, (32-shiftAmount));
+                }
+                result <<= shiftAmount;
+                break;
+            case 1:
+                if (state->instruction.S) {
+                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
+                }
+                result >>= shiftAmount;
+                break;
+            case 2:
+                if (state->instruction.S) {
+                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
+                }
+                result = (word) ((int32_t) result >> shiftAmount);
+                break;
+            case 3:
+                if (state->instruction.S) {
+                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
+                }
+                result = (result >> 1) | (result << 31);
+                break;
+            default:
+                printf("Invalid shift!");
+                exit(EXIT_FAILURE);
+        }
+    }
+    return result;
+}
+
 void executeTransfer(STATE *state) {
     state->instruction.I = !state->instruction.I;
     word offSet = processOp2(state);
@@ -330,51 +375,6 @@ void executeProcess(STATE *state) {
     }
 }
 
-
-word processOp2(STATE *state) {
-    word result;
-    if (state->instruction.I) {
-        //rotate IMM
-        result = extractBits(state->instruction.Operand2, 0, 7);
-        int rotateAmount = 2 * extractBits(state->instruction.Operand2, 8, 11);
-        result = (result >> rotateAmount) | (result << (32 - rotateAmount));
-    } else {
-        //shift RM
-        result = state->reg[extractBits(state->instruction.Operand2, 0, 3)];
-        int shiftAmount = extractBits(state->instruction.Operand2, 7, 11);
-        int shiftType = extractBits(state->instruction.Operand2, 5, 6);
-        switch (shiftType) {
-            case 0:
-                if (state->instruction.S) {
-                    replaceBit(&state->reg[CPSR], 29, result, (32-shiftAmount));
-                }
-                result <<= shiftAmount;
-                break;
-            case 1:
-                if (state->instruction.S) {
-                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
-                }
-                result >>= shiftAmount;
-                break;
-            case 2:
-                if (state->instruction.S) {
-                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
-                }
-                result = (word) ((int32_t) result >> shiftAmount);
-                break;
-            case 3:
-                if (state->instruction.S) {
-                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
-                }
-                result = (result >> 1) | (result << 31);
-                break;
-            default:
-                printf("Invalid shift!");
-                exit(EXIT_FAILURE);
-        }
-    }
-    return result;
-}
 
 void processMove(STATE *state) {
     word op2 = processOp2(state);

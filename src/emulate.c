@@ -284,12 +284,21 @@ word processOp2(STATE *state) {
                 result <<= shiftAmount;
                 break;
             case 1:
+                if (state->instruction.S) {
+                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
+                }
                 result >>= shiftAmount;
                 break;
             case 2:
+                if (state->instruction.S) {
+                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
+                }
                 result = (word) ((int32_t) result >> shiftAmount);
                 break;
             case 3:
+                if (state->instruction.S) {
+                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
+                }
                 result = (result >> 1) | (result << 31);
                 break;
             default:

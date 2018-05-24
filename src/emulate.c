@@ -260,7 +260,7 @@ word processOp2(STATE *state) {
         switch (shiftType) {
             case 0:
                 if (state->instruction.S) {
-                    replaceBit(&state->reg[CPSR], 29, result, (32-shiftAmount));
+                    replaceBit(&state->reg[CPSR], 29, result, (31-shiftAmount));
                 }
                 result <<= shiftAmount;
                 break;
@@ -350,7 +350,7 @@ void executeProcess(STATE *state) {
             addRO(state);
             break;
         case 8:
-            //bit AND without writing
+            //bit addition without writing
             bitAnd(state, false);
             break;
         case 9:

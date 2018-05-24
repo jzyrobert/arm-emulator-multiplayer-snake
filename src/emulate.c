@@ -401,7 +401,7 @@ void addRO(STATE *state) {
 
 void subOR(STATE *state) {
     word op2 = processOp2(state);
-    uint64_t result = op2 - state->reg[state->instruction.Rn];
+    uint64_t result = (uint64_t) op2 - (uint64_t) state->reg[state->instruction.Rn];
     if (state->instruction.S) {
         replaceBit(&state->reg[CPSR], 29, (word) ~(result >> 32), 0);
     }
@@ -411,7 +411,7 @@ void subOR(STATE *state) {
 
 void subRO(STATE *state, bool b) {
     word op2 = processOp2(state);
-    uint64_t result = state->reg[state->instruction.Rn] - op2;
+    uint64_t result = (uint64_t) state->reg[state->instruction.Rn] - (uint64_t) op2;
     if (state->instruction.S) {
         replaceBit(&state->reg[CPSR], 29,(word) ~(result >> 32), 0);
     }

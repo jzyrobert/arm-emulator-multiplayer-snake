@@ -60,10 +60,27 @@ void readFile(char* file_name, byte* memory){
     fclose(binary);
 }
 
+word fetchData(STATE* state, int start){
+    return (state->mem[start + 3] << 24) + (state->mem[start + 2] << 16) +
+           (state->mem[start + 1] << 8) + state->mem[start];
+}
+
+void writeData(STATE* state, int memLoc, word data){
+    state->mem[memLoc] = data;
+    data >>= 8;
+    state->mem[memLoc+1] = data;
+    data >>= 8;
+    state->mem[memLoc+2] = data;
+    data >>= 8;
+    state->mem[memLoc+3] = data;
+}
+
+
 void fetch(STATE* state) {
     int pc = state->reg[PC];
-    state->fetch = (state->mem[pc+3] << 24) + (state->mem[pc + 2] << 16) + (state->mem[pc + 1] << 8) + state->mem[pc];
+    state->fetch = fetchData(state, pc);
     state->decode_exists = true;
+    state->reg[PC] += 4;
 }
 
 word extractBits(word data, int start, int end){
@@ -229,7 +246,27 @@ void executeBranch(STATE *state) {
 }
 
 void executeTransfer(STATE *state) {
-    printf("test2\n");
+    state->instruction.I = !state->instruction.I;
+    word offSet = processOp2(state);
+    address memLoc = state->instruction.Rn;
+    if(state->instruction.P){
+        if(state->instruction.U){
+            memLoc += offSet;
+        } else {
+            memLoc -= offSet;
+        }
+    } else {
+        if(state->instruction.U){
+            state->reg[state->instruction.Rn] += offSet;
+        } else {
+            state->reg[state->instruction.Rn] -= offSet;
+        }
+    }
+    if(state->instruction.S){
+        state->reg[state->instruction.Rd] = fetchData(state, memLoc);
+    } else {
+        writeData(state, memLoc, state->reg[state->instruction.Rd]);
+    }
 }
 
 void executeMult(STATE *state) {
@@ -503,8 +540,6 @@ int main(int argc, char **argv) {
     decode(state);
 
     fetch(state);
-
-    state->reg[PC] += 4;
     }
     //print out stuff
     print(state);

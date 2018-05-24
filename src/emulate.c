@@ -141,8 +141,7 @@ void decode(STATE* state) {
 }
 
 void decodeBranch(STATE *state) {
-    wordS offSet = extractBits(state->instruction.binary, 0, 23) << 2;
-    state->instruction.largeOffset = offSet;
+    state->instruction.largeOffset = extractBits(state->instruction.binary, 0, 23) << 2;
 }
 
 void decodeTransfer(STATE *state) {
@@ -178,7 +177,8 @@ void decodeMult(STATE *state) {
 
 void execute(STATE* state){
     //checks if cond is allowed to continue
-    if (state->instruction_exists && (checkCond(state->instruction.binary, state->reg[CPSR]) || !state->instruction.binary)) {
+    if (state->instruction_exists && (checkCond(state->instruction.binary
+            , state->reg[CPSR]) || !state->instruction.binary)) {
         switch ((int) state->instruction.type) {
             case 1:
                 executeProcess(state);
@@ -211,7 +211,15 @@ void executeTransfer(STATE *state) {
 }
 
 void executeMult(STATE *state) {
-    printf("test3\n");
+    state->reg[state->instruction.Rd] = state->reg[state->instruction.Rm]
+            * state->reg[state->instruction.Rs];
+
+    if(state->instruction.A){
+        state->reg[state->instruction.Rd] += state->reg[state->instruction.Rn];
+    }
+    if(state->instruction.S){
+        updateCPSR(state ,state->reg[state->instruction.Rd]);
+    }
 }
 
 

@@ -338,6 +338,9 @@ void executeTransfer(STATE *state) {
             printf("Error: Out of bounds memory access at address 0x%08x\n", memLoc);
 
         }
+        if ((memLoc >= 0x20200000) && (memLoc <= 0x2020001c) && state->instruction.L) {
+            state->reg[state->instruction.Rd] = memLoc;
+        }
     } else {
         if (state->instruction.L) {
             state->reg[state->instruction.Rd] = fetchData(state, (address) memLoc);

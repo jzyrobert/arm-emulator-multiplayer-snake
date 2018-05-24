@@ -175,6 +175,15 @@ void decodeMult(STATE *state) {
     state->instruction.Rm = (address) extractBits(b, 0, 3);
 }
 
+void replaceBitDirect(word* destination, int location, int bit) {
+    *destination = (*destination & (~(1 << location))) | (bit << location);
+}
+
+void replaceBit(word* destination, int location, word source, int location2) {
+    int sourceBit = (source & (1<<location2)) >> location2;
+    *destination = (*destination & (~(1 << location))) | (sourceBit << location);
+}
+
 void updateCPSR(STATE *state, word result) {
     if (state->instruction.S) {
         if (!result) {
@@ -282,16 +291,6 @@ void executeProcess(STATE *state) {
     }
 }
 
-
-
-void replaceBit(word* destination, int location, word source, int location2) {
-    int sourceBit = (source & (1<<location2)) >> location2;
-    *destination = (*destination & (~(1 << location))) | (sourceBit << location);
-}
-
-void replaceBitDirect(word* destination, int location, int bit) {
-    *destination = (*destination & (~(1 << location))) | (bit << location);
-}
 
 word processOp2(STATE *state) {
     word result;

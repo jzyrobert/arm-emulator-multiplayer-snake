@@ -512,16 +512,16 @@ void print(STATE *ptr) {
     for (int i = 0; i < 15; ++i) {
         switch (i) {
             case 13:
-                printf("%-4s:", "PC");
-                printf("%11u (0x%08x)\n", ptr->reg[i+2], ptr->reg[i+2]);
+                printf("%-4s: ", "PC");
+                printf("%10d (0x%08x)\n", ptr->reg[i+2], ptr->reg[i+2]);
                 break;
             case 14:
-                printf("%s:", "CPSR");
-                printf("%11u (0x%08x)\n", ptr->reg[i+2], ptr->reg[i+2]);
+                printf("%s: ", "CPSR");
+                printf("%10d (0x%08x)\n", ptr->reg[i+2], ptr->reg[i+2]);
                 break;
             default:
-                printf("$%-3d:", i);
-                printf("%11u (0x%08x)\n", ptr->reg[i], ptr->reg[i]);
+                printf("$%-3d: ", i);
+                printf("%10d (0x%08x)\n", ptr->reg[i], ptr->reg[i]);
         }
     }
 

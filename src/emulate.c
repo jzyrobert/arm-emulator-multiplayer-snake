@@ -174,7 +174,7 @@ void decodeTransfer(STATE *state) {
     state->instruction.L = (b & (1<<20)) ? true : false;
     state->instruction.Rn = (address) extractBits(b, 16, 19);
     state->instruction.Rd = (address) extractBits(b, 12, 15);
-    state->instruction.smallOffset = (byte) extractBits(b, 0, 11);
+    state->instruction.smallOffset = (address) extractBits(b, 0, 11);
 }
 
 void decodeProcess(STATE *state) {

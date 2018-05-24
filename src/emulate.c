@@ -301,7 +301,7 @@ void executeTransfer(STATE *state) {
     } else {
         offSet = state->instruction.smallOffset;
     }
-    address memLoc = state->reg[state->instruction.Rn];
+    word memLoc = state->reg[state->instruction.Rn];
     if(state->instruction.P){
         if(state->instruction.U){
             memLoc += offSet;
@@ -315,10 +315,14 @@ void executeTransfer(STATE *state) {
             state->reg[state->instruction.Rn] -= offSet;
         }
     }
-    if(state->instruction.L){
-        state->reg[state->instruction.Rd] = fetchData(state, memLoc);
+    if (memLoc >= (1<<16)) {
+        printf("Error: Out of bounds memory access at address 0x%08x\n", memLoc);
     } else {
-        writeData(state, memLoc, state->reg[state->instruction.Rd]);
+        if (state->instruction.L) {
+            state->reg[state->instruction.Rd] = fetchData(state, (address) memLoc);
+        } else {
+            writeData(state, (address) memLoc, state->reg[state->instruction.Rd]);
+        }
     }
 }
 

@@ -260,7 +260,7 @@ word processOp2(STATE *state) {
     } else {
         //shift RM
         result = state->reg[extractBits(state->instruction.Operand2, 0, 3)];
-        int shiftAmount = state->reg[extractBits(state->instruction.Operand2, 8, 11)];
+        int shiftAmount = extractBits(state->instruction.Operand2, 8, 11);
         int shiftType = extractBits(state->instruction.Operand2, 5, 6);
         switch (shiftType) {
             case 0:

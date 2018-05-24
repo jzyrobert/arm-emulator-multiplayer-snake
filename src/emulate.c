@@ -106,6 +106,12 @@ void subRO(STATE *state, bool b);
 
 void subOR(STATE *state);
 
+void addRO(STATE *state);
+
+void bitOR(STATE *state);
+
+void processMove(STATE *state);
+
 void decode(STATE* state) {
     if (state->decode_exists) {
         state->instruction.binary = state->fetch;
@@ -229,6 +235,7 @@ void executeProcess(STATE *state) {
             break;
         case 4:
             //addition
+            addRO(state);
             break;
         case 8:
             //bit AND without writing
@@ -244,9 +251,11 @@ void executeProcess(STATE *state) {
             break;
         case 12:
             //bit OR
+            bitOR(state);
             break;
         case 13:
             //moving
+            processMove(state);
             break;
         default:
             printf("Invalid OPcode!");
@@ -254,9 +263,7 @@ void executeProcess(STATE *state) {
     }
 }
 
-void subOR(STATE *state) {
 
-}
 
 void replaceBit(word* destination, int location, word source, int location2) {
     int sourceBit = (source & (1<<location2)) >> location2;
@@ -312,18 +319,7 @@ word processOp2(STATE *state) {
     return result;
 }
 
-void subRO(STATE *state, bool b) {
-
-}
-
-void bitEor(STATE *state, bool b) {
-
-}
-
-void bitAnd(STATE *state, bool b) {
-//b decides if content is written or not
-    word op2 = processOp2(state);
-    word result = state->reg[state->instruction.Rn] & op2;
+void updateCPSR(STATE *state, word result) {
     if (state->instruction.S) {
         if (!result) {
             replaceBitDirect(&state->reg[CPSR],30, 1);
@@ -332,6 +328,61 @@ void bitAnd(STATE *state, bool b) {
         }
         replaceBit(&state->reg[CPSR], 31, result, 31);
     }
+}
+
+void processMove(STATE *state) {
+    word op2 = processOp2(state);
+    updateCPSR(state, op2);
+    state->reg[state->instruction.Rd] = op2;
+}
+
+void bitOR(STATE *state) {
+    word op2 = processOp2(state);
+    word result = state->reg[state->instruction.Rn] | op2;
+    updateCPSR(state, result);
+    state->reg[state->instruction.Rd] = result;
+}
+
+void addRO(STATE *state) {
+    word op2 = processOp2(state);
+    uint64_t result = state->reg[state->instruction.Rn]+op2;
+    if (state->instruction.S) {
+        replaceBit(&state->reg[CPSR], 29, (word)(result >> 32), 0);
+    }
+    updateCPSR(state, (word) result);
+    state->reg[state->instruction.Rd] = (word) result;
+}
+
+void subOR(STATE *state) {
+    word op2 = processOp2(state);
+    word result = op2 - state->reg[state->instruction.Rn];
+    updateCPSR(state, result);
+    state->reg[state->instruction.Rd] = result;
+}
+
+void subRO(STATE *state, bool b) {
+    word op2 = processOp2(state);
+    word result = state->reg[state->instruction.Rn] - op2;
+    updateCPSR(state, result);
+    if (b) {
+        state->reg[state->instruction.Rd] = result;
+    }
+}
+
+void bitEor(STATE *state, bool b) {
+    word op2 = processOp2(state);
+    word result = state->reg[state->instruction.Rn] ^ op2;
+    updateCPSR(state, result);
+    if (b) {
+        state->reg[state->instruction.Rd] = result;
+    }
+}
+
+void bitAnd(STATE *state, bool b) {
+//b decides if content is written or not
+    word op2 = processOp2(state);
+    word result = state->reg[state->instruction.Rn] & op2;
+    updateCPSR(state, result);
     if (b) {
         state->reg[state->instruction.Rd] = result;
     }

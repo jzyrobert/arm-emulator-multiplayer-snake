@@ -503,16 +503,16 @@ void print(STATE *ptr) {
     for (int i = 0; i < 15; ++i) {
         switch (i) {
             case 13:
-                printf("%-4s:%9s", "PC", " ");
-                printf("%2u (0x%08x)\n", ptr->reg[i+2], ptr->reg[i+2]);
+                printf("%-4s:", "PC");
+                printf("%11u (0x%08x)\n", ptr->reg[i+2], ptr->reg[i+2]);
                 break;
             case 14:
-                printf("%s:%9s", "CPSR", " ");
-                printf("%2u (0x%08x)\n", ptr->reg[i+2], ptr->reg[i+2]);
+                printf("%s:", "CPSR");
+                printf("%11u (0x%08x)\n", ptr->reg[i+2], ptr->reg[i+2]);
                 break;
             default:
-                printf("$%-3d:%9s", i, " ");
-                printf("%2u (0x%08x)\n", ptr->reg[i], ptr->reg[i]);
+                printf("$%-3d:", i);
+                printf("%11u (0x%08x)\n", ptr->reg[i], ptr->reg[i]);
         }
     }
 
@@ -521,7 +521,7 @@ void print(STATE *ptr) {
         for (int i = 0; i < 4; ++i) {
             if (ptr->mem[j*4 + i]) {
                 word data = (ptr->mem[j*4] << 24) + (ptr->mem[4*j + 1] << 16) + (ptr->mem[4*j + 2] << 8) + ptr->mem[4*j+3];
-                printf("0x%08u: 0x%08x\n",4*j, data);
+                printf("0x%08x: 0x%08x\n",4*j, data);
                 break;
             }
         }

@@ -88,8 +88,16 @@ word evalSub(ASSEMBLY *as, STATE *state){
     return output;
 }
 
+word calculateBOffset(STATE *State, char *offset) {
+
+}
+
 word evalBranc(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    setAlwaysCond(&output);
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as->tokens[0]);
+    return output;
 }
 
 word evalMov(ASSEMBLY *as, STATE *state){
@@ -104,7 +112,9 @@ word evalMov(ASSEMBLY *as, STATE *state){
     }
     printf("%d\n", op2);
     long rn = strtol(as->tokens[0] + 1, NULL, 10);
-    output |= (1 << 25);
+    if (strchr(as->tokens[1], 'r') == NULL) {
+        output |= (1 << 25);
+    }
     output |= (13 << 21);
     output |= (rn << 12);
     output |= op2;

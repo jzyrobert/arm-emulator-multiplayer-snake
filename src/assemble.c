@@ -90,6 +90,7 @@ word evalSub(ASSEMBLY *as, STATE *state){
 
 word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
     word address;
+    offset[strlen(offset)-1] = '\0';
     for (int i = 0; i < state->noOfLabels; ++i) {
         if (strcmp(offset, state->labels[i].label) == 0) {
             address = state->labels[i].address;

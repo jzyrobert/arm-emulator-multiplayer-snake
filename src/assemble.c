@@ -10,7 +10,7 @@ typedef uint8_t byte;
 
 typedef struct {
     char label[20];
-    address address;
+    word address;
 } LABEL;
 
 typedef struct {
@@ -26,7 +26,7 @@ typedef struct {
 
 typedef struct {
     char* tokens[6];
-    address address;
+    word address;
     int noOfTokens;
 } ASSEMBLY;
 
@@ -88,15 +88,22 @@ word evalSub(ASSEMBLY *as, STATE *state){
     return output;
 }
 
-word calculateBOffset(STATE *State, char *offset) {
-
+word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
+    word address;
+    for (int i = 0; i < state->noOfLabels; ++i) {
+        if (strcmp(offset, state->labels[i].label) == 0) {
+            address = state->labels[i].address;
+        }
+    }
+    address = (word) (((((int32_t) address - (int32_t) as->address) - 8) >> 2) & ((1 << 25)-1));
+    return address;
 }
 
 word evalBranc(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
     output |= (5 << 25);
-    output |= calculateBOffset(state, as->tokens[0]);
+    output |= calculateBOffset(state, as,as->tokens[0]);
     return output;
 }
 

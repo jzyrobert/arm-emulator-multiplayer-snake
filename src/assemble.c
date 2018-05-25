@@ -29,7 +29,6 @@ typedef struct {
 } nameToFunc;
 
 word evalAdd(char **line, STATE *state){
-    return 0;
 }
 
 word evalSub(char **line, STATE *state){
@@ -97,15 +96,42 @@ word evalOrr(char **line, STATE *state){
 word evalMov(char **line, STATE *state){
     word output = 0;
     output |= (0xE << 28);
-    byte op2 = (byte) strtol(line[1] + 1, NULL, 10);
+    byte op2;
+    printf("%s\n", line[1]);
+    if (strchr(line[1], 'x') != NULL) {
+      op2 = (byte) strtol(line[1] + 3, NULL, 16);
+    } else {
+      op2 = (byte) strtol(line[1] + 1, NULL, 10);
+    }
+    printf("%d\n", op2);
     long rn = strtol(line[0] + 1, NULL, 10);
     output |= (1 << 25);
-    output |= (0xD << 21);
-    output |= (rn << 16);
+    output |= (13 << 21);
+    output |= (rn << 12);
     output |= op2;
     printf("Output is %x\n", output);
     return output;
 }
+/* redundant add test code
+word output = 0;
+output |= (0xE << 28);
+byte op2;
+if (strchr(line[2], 'x') != NULL) {
+  op2 = (byte) strtol(line[2] + 3, NULL, 16);
+} else {
+  op2 = (byte) strtol(line[2] + 1, NULL, 10);
+}
+if (strchr(line[2], 'r') == NULL) {
+   output |= (1 << 25);
+}
+long rd = strtol(line[0] + 1, NULL, 10);
+long rn = strtol(line[1] + 1, NULL, 10);
+output |= (4 << 21);
+output |= (rn << 16);
+output |= (rd << 12);
+output |= op2;
+return output;
+*/
 
 word evalTst(char **line, STATE *state){
     return 0;
@@ -260,5 +286,3 @@ int main(int argc, char **argv) {
 
   return EXIT_SUCCESS;
 }
-
-

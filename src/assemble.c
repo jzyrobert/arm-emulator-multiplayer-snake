@@ -11,14 +11,29 @@ typedef uint8_t byte;
 typedef word (*evalFunc)(char **line);
 
 typedef struct {
-    char name[4];
+    char name[3];
     evalFunc func;
 } nameToFunc;
 
-const nameToFunc funcMap[] = {{"add", evalAdd}};
-
 word evalAdd(char **line){
     return 0;
+}
+
+word evalSub(char **line){
+    return 0;
+}
+
+
+const nameToFunc funcMap[] = {{"add", evalAdd},
+                              {"sub", evalSub}};
+
+evalFunc functionLookup(char *lookUp){
+    for(int i = 0; i < (sizeof(funcMap) / sizeof(funcMap[0])); i++ ){
+        if(strcmp(lookUp, funcMap[i].name)){
+            return funcMap[i].func;
+        }
+    }
+    return NULL;
 }
 
 typedef struct {

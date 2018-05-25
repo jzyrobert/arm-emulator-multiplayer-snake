@@ -148,6 +148,9 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
         }
     } else {
         //[Rn - Expression]
+        if (strchr(as->tokens[2], 'r') != NULL) {
+            *output |= (1 << 25);
+        }
         *output |= (1 << 24);
         *output |= (1 << 23);
         *output |= (getRegNum(as->tokens[1] + 1) << 16);

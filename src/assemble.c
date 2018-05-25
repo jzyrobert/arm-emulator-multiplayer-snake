@@ -8,6 +8,19 @@ typedef uint16_t address;
 typedef uint32_t word;
 typedef uint8_t byte;
 
+typedef word (*evalFunc)(char **line);
+
+typedef struct {
+    char name[4];
+    evalFunc func;
+} nameToFunc;
+
+const nameToFunc funcMap[] = {{"add", evalAdd}};
+
+word evalAdd(char **line){
+    return 0;
+}
+
 typedef struct {
     char label[20];
     address address;
@@ -71,6 +84,7 @@ void pass2(STATE *state) {
         //copies next line into string
         if (strcmp(buffer, "\n") != 0) {
             //process the buffer
+
         }
     }
     fclose(input);
@@ -94,6 +108,12 @@ int main(int argc, char **argv) {
 
   //2nd pass through
     pass2(state);
+
+
+
+
+
+    fclose(state->outputFile);
 
   return EXIT_SUCCESS;
 }

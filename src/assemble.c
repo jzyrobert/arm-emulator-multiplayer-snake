@@ -8,7 +8,20 @@ typedef uint16_t address;
 typedef uint32_t word;
 typedef uint8_t byte;
 
-typedef word (*evalFunc)(char **line);
+typedef struct {
+    char label[20];
+    address address;
+} LABEL;
+
+typedef struct {
+    LABEL labels[10];
+    int noOfLabels;
+    char* input;
+    char* output;
+    FILE* outputFile;
+} STATE;
+
+typedef word (*evalFunc)(char **line, STATE *state);
 
 typedef struct {
     char *name;
@@ -41,18 +54,9 @@ evalFunc functionLookup(char *lookUp){
     return NULL;
 }
 
-typedef struct {
-    char label[20];
-    address address;
-} LABEL;
 
-typedef struct {
-    LABEL labels[10];
-    int noOfLabels;
-    char* input;
-    char* output;
-    FILE* outputFile;
-} STATE;
+
+
 
 void assignLabels(STATE *state){
     FILE* source = fopen(state->input, "r");
@@ -129,6 +133,7 @@ void pass2(STATE *state) {
                 token = strtok(NULL, ",");
                 n++;
             }
+            word result = (functionLookup(tokens[0]))(tokens + 1, state);
             for (int i = 0; i < n; ++i) {
                 printf("The %dth value is %s\n",i, tokens[i]);
             }
@@ -156,7 +161,7 @@ int main(int argc, char **argv) {
   //2nd pass through
     pass2(state);
 
-    
+
 
     fclose(state->outputFile);
 

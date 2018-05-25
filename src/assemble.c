@@ -91,7 +91,7 @@ word evalBranc(ASSEMBLY *as, STATE *state){
 
 word evalMov(ASSEMBLY *as, STATE *state){
     word output = 0;
-    output |= (0xE << 28);
+    setAlwaysCond(&output);
     byte op2;
     printf("%s\n", as->tokens[1]);
     if (strchr(as->tokens[1], 'x') != NULL) {
@@ -118,21 +118,27 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
         word address = (word) strtol(as->tokens[1] + 1, NULL,0);
         if (address > 0xFF) {
             state->extras[state->noOfExtraLines] = address;
+            as->noOfTokens = 4;
+            as->tokens[2] = "[PC";
+            as->tokens[3] = "#";
+            word offset = ((state->noOfLines * 4 - as->address) - 8);
+            char str[10];
+            sprintf(str, "%u", offset);
+            strcat(as->tokens[3], str);
+            strcat(as->tokens[3], "]");
+            printf("Printing new instructions:\n");
+            for (int i = 0; i < 4; ++i) {
+                printf("%s\n", as->tokens[i]);
+            }
             state->extras[state->noOfExtraLines] ++;
-            char *newI[4];
-            newI[0] = "ldr";
-            newI[1] = "r0";
-            newI[2] = "[PC";
-            newI[3] = "#";
-            //append offset to newI[3]
-            return evalLDR(newI, state);
+            return evalLDR(as, state);
         } else {
             return evalMov(as, state);
         }
     } else {
         //pre/post indexed address
     word output = 0;
-    output |= (0xE << 28);
+    setAlwaysCond(&output);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);
     output |= (rd << 12);
     output |= (1 << 26);
@@ -286,20 +292,20 @@ word evalCmp(ASSEMBLY *as, STATE *state){
     return 0;
 }
 
-word evalMul(char **line, STATE *state){
+word evalMul(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, getRegNum(line[0]), 16); //sets Rd
-    setBits(&output, getRegNum(line[1]), 12); //sets Rn
-    setBits(&output, getRegNum(line[2]), 8);  //sets Rs
+    setBits(&output, getRegNum(as->tokens[0]), 16); //sets Rd
+    setBits(&output, getRegNum(as->tokens[1]), 12); //sets Rn
+    setBits(&output, getRegNum(as->tokens[2]), 8);  //sets Rs
     setBits(&output, 10, 4);
     return output;
 }
 
-word evalMla(char **line, STATE *state){
-    word output = evalMul(line, state);
+word evalMla(ASSEMBLY *as, STATE *state){
+    word output = evalMul(as, state);
     setBits(&output, 1, 21);
-    setBits(&output, getRegNum(line[3]), 0);
+    setBits(&output, getRegNum(as->tokens[3]), 0);
     return output;
 }
 
@@ -395,10 +401,11 @@ void pass2(STATE *state) {
         if ((buffer[0] != 0) && (strcmp(buffer, "\n") != 0) && (strchr(buffer, ':') == NULL)) {
             //process the buffer
             ASSEMBLY *as = malloc(sizeof(ASSEMBLY));
-            int n = 1;
+            int n = 0;
+            char* instruction;
             char* token;
             token = strtok(buffer, " ");
-            as->tokens[0] = token;
+            instruction = token;
             token = strtok(NULL, ",");
             while (token != NULL) {
                 RemoveSpaces(token);
@@ -408,7 +415,7 @@ void pass2(STATE *state) {
             }
             as->noOfTokens = n;
             as->address = address;
-            word result = (functionLookup(as->tokens[0]))(as, state);
+            word result = (functionLookup(instruction))(as, state);
             writeToFile(state, result);
             address += 4;
         }

@@ -148,7 +148,7 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
         *output |= (1 << 24);
         *output |= (1 << 23);
         *output |= (getRegNum(as->tokens[1] + 1) << 16);
-        as->tokens[2][strlen(as->tokens[2])-2] = '\0';
+        as->tokens[2][strlen(as->tokens[2])-1] = '\0';
         *output |= decodeEXP(as->tokens[2]);
     }
 }

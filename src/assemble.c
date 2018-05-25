@@ -64,7 +64,7 @@ word evalAdd(ASSEMBLY *as, STATE *state){
     output |= (rn << 12);
     output |= op2;
 
-    printf("Output is %x\n", output);
+    //printf("Output is %x\n", output);
     return output;
 }
 
@@ -81,7 +81,7 @@ word evalSub(ASSEMBLY *as, STATE *state){
     output |= (rn << 12);
     output |= op2;
 
-    printf("Output is %x\n", output);
+    //printf("Output is %x\n", output);
     return output;
 }
 
@@ -105,7 +105,7 @@ word evalMov(ASSEMBLY *as, STATE *state){
     output |= (13 << 21);
     output |= (rn << 12);
     output |= op2;
-    printf("Output is %x\n", output);
+    //printf("Output is %x\n", output);
     return output;
 }
 
@@ -195,7 +195,7 @@ word evalRsb(ASSEMBLY *as, STATE *state){
     output |= (rn << 12);
     output |= op2;
 
-    printf("Output is %x\n", output);
+    //printf("Output is %x\n", output);
     return output;
 }
 
@@ -211,7 +211,7 @@ word evalAnd(ASSEMBLY *as, STATE *state){
     output |= (rn << 12);
     output |= op2;
 
-    printf("Output is %x\n", output);
+    //printf("Output is %x\n", output);
     return output;
 }
 
@@ -229,7 +229,7 @@ word evalEor(ASSEMBLY *as, STATE *state){
     output |= (rn << 12);
     output |= op2;
 
-    printf("Output is %x\n", output);
+    //printf("Output is %x\n", output);
     return output;
 }
 
@@ -269,7 +269,7 @@ word evalTst(ASSEMBLY *as, STATE *state){
     output |= (rn << 12);
     output |= op2;
 
-    printf("Output is %x\n", output);
+    //printf("Output is %x\n", output);
     return output;
 }
 
@@ -284,7 +284,7 @@ word evalTeq(ASSEMBLY *as, STATE *state){
     output |= (rn << 12);
     output |= op2;
 
-    printf("Output is %x\n", output);
+    //printf("Output is %x\n", output);
     return output;
 }
 
@@ -296,16 +296,17 @@ word evalMul(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
     setBits(&output, getRegNum(as->tokens[0]), 16); //sets Rd
-    setBits(&output, getRegNum(as->tokens[1]), 12); //sets Rn
+    setBits(&output, getRegNum(as->tokens[1]), 0); //sets Rm
     setBits(&output, getRegNum(as->tokens[2]), 8);  //sets Rs
-    setBits(&output, 10, 4);
+
+    setBits(&output, 9, 4);
     return output;
 }
 
 word evalMla(ASSEMBLY *as, STATE *state){
     word output = evalMul(as, state);
     setBits(&output, 1, 21);
-    setBits(&output, getRegNum(as->tokens[3]), 0);
+    setBits(&output, getRegNum(as->tokens[3]), 12); //sets Rn;
     return output;
 }
 
@@ -416,6 +417,7 @@ void pass2(STATE *state) {
             as->noOfTokens = n;
             as->address = address;
             word result = (functionLookup(instruction))(as, state);
+            printf("Output is %x\n", result);
             writeToFile(state, result);
             address += 4;
         }

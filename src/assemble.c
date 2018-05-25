@@ -60,6 +60,22 @@ void writeToFile(STATE *state, word binary) {
     fwrite(&last, sizeof(byte),1,state->outputFile);
 }
 
+void pass2(STATE *state) {
+    FILE *input = fopen(state->input ,"r");
+    //we know at this point first pass through worked so no further check needed
+    char buffer[200];
+    while (!feof(input)) {
+        memset(buffer, 0, strlen(buffer));
+        //clears the string
+        fgets(buffer, 200, input);
+        //copies next line into string
+        if (strcmp(buffer, "\n") != 0) {
+            //process the buffer
+        }
+    }
+    fclose(input);
+}
+
 int main(int argc, char **argv) {
 
   if (argc != 3) {
@@ -77,6 +93,9 @@ int main(int argc, char **argv) {
   assignLabels(state);
 
   //2nd pass through
+    pass2(state);
 
   return EXIT_SUCCESS;
 }
+
+

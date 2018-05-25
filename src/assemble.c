@@ -37,9 +37,24 @@ typedef struct {
     evalFunc func;
 } nameToFunc;
 
+void setAlwaysCond(word *output){
+    *output |= (0xE << 28);
+}
+
+word getRegNum(char *name){
+    name++;
+    return (word) atoi(name);
+}
+
+void setBits(word *output, word bits, word end){
+    //the bits are set leading to the end bit
+    //end bit is the lowest bit of the section being set
+    *output |= (bits << end);
+}
+
 word evalAdd(ASSEMBLY *as, STATE *state){
     word output = 0;
-
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);
@@ -56,6 +71,7 @@ word evalAdd(ASSEMBLY *as, STATE *state){
 word evalSub(ASSEMBLY *as, STATE *state){
     word output = 0;
 
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);
@@ -163,6 +179,7 @@ word evalBeq(ASSEMBLY *as, STATE *state){
 word evalRsb(ASSEMBLY *as, STATE *state){
     word output = 0;
 
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);
@@ -179,6 +196,7 @@ word evalRsb(ASSEMBLY *as, STATE *state){
 word evalAnd(ASSEMBLY *as, STATE *state){
     word output = 0;
 
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);
@@ -194,6 +212,8 @@ word evalAnd(ASSEMBLY *as, STATE *state){
 word evalEor(ASSEMBLY *as, STATE *state){
     word output = 0;
 
+
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);
@@ -235,6 +255,7 @@ return output;
 word evalTst(ASSEMBLY *as, STATE *state){
     word output = 0;
 
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[1] + 1, NULL, 10);
     long rn = strtol(as->tokens[0] + 1, NULL, 10);
 
@@ -249,6 +270,7 @@ word evalTst(ASSEMBLY *as, STATE *state){
 word evalTeq(ASSEMBLY *as, STATE *state){
     word output = 0;
 
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[1] + 1, NULL, 10);
     long rn = strtol(as->tokens[0] + 1, NULL, 10);
 
@@ -264,12 +286,21 @@ word evalCmp(ASSEMBLY *as, STATE *state){
     return 0;
 }
 
-word evalMul(ASSEMBLY *as, STATE *state){
-    return 0;
+word evalMul(char **line, STATE *state){
+    word output = 0;
+    setAlwaysCond(&output);
+    setBits(&output, getRegNum(line[0]), 16); //sets Rd
+    setBits(&output, getRegNum(line[1]), 12); //sets Rn
+    setBits(&output, getRegNum(line[2]), 8);  //sets Rs
+    setBits(&output, 10, 4);
+    return output;
 }
 
-word evalMla(ASSEMBLY *as, STATE *state){
-    return 0;
+word evalMla(char **line, STATE *state){
+    word output = evalMul(line, state);
+    setBits(&output, 1, 21);
+    setBits(&output, getRegNum(line[3]), 0);
+    return output;
 }
 
 

@@ -163,7 +163,7 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
             char *test = malloc(30 * sizeof(char));
             test[0] = '#';
             test[1] = '\0';
-            word offset = ((state->noOfLines * 4 - as->address) - 8);
+            word offset = (((state->noOfLines - 1) * 4 - as->address) - 8);
             char str[10];
             sprintf(str, "%u", offset);
             strcat(test, str);

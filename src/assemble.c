@@ -39,8 +39,40 @@ word evalBranc(char **line, STATE *state){
     return 0;
 }
 
-word evalLDR(char **line, STATE *state){
-    return 0;
+word evalMov(char **line, STATE *state){
+    word output = 0;
+    output |= (0xE << 28);
+    byte op2;
+    printf("%s\n", line[1]);
+    if (strchr(line[1], 'x') != NULL) {
+      op2 = (byte) strtol(line[1] + 3, NULL, 16);
+    } else {
+      op2 = (byte) strtol(line[1] + 1, NULL, 10);
+    }
+    printf("%d\n", op2);
+    long rn = strtol(line[0] + 1, NULL, 10);
+    output |= (1 << 25);
+    output |= (13 << 21);
+    output |= (rn << 12);
+    output |= op2;
+    printf("Output is %x\n", output);
+    return output;
+}
+
+word evalLDR(char **line, STATE *state) {
+    if (strtol(line[1] + 3, NULL, 16) <= 0xFF) {
+        return evalMov(line, state);
+    } else {
+    word output = 0;
+    output |= (0xE << 28);
+    long rd = strtol(line[0] + 1, NULL, 10);
+    output |= (rd << 12);
+    output |= (1 << 26);
+    output |= (1 << 20);
+
+    printf("%s", line[0]);
+    return output;
+    }
 }
 word evalSTR(char **line, STATE *state){
     return 0;
@@ -93,26 +125,7 @@ word evalOrr(char **line, STATE *state){
     return 0;
 }
 
-word evalMov(char **line, STATE *state){
-    word output = 0;
-    output |= (0xE << 28);
-    byte op2;
-    printf("%s\n", line[1]);
-    if (strchr(line[1], 'x') != NULL) {
-      op2 = (byte) strtol(line[1] + 3, NULL, 16);
-    } else {
-      op2 = (byte) strtol(line[1] + 1, NULL, 10);
-    }
-    printf("%d\n", op2);
-    long rn = strtol(line[0] + 1, NULL, 10);
-    output |= (1 << 25);
-    output |= (13 << 21);
-    output |= (rn << 12);
-    output |= op2;
-    printf("Output is %x\n", output);
-    return output;
-}
-/* redundant add test code
+/* redundant evaladd test code
 word output = 0;
 output |= (0xE << 28);
 byte op2;

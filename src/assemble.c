@@ -138,6 +138,9 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
             *output |= (1 << 23);
         } else {
             //post index [RN], expression
+            if (strchr(as->tokens[2], 'r') != NULL) {
+                *output |= (1 << 25);
+            }
             stripBrackets(as->tokens[1]);
             *output |= (1 << 23);
             *output |= (getRegNum(as->tokens[1]) << 16);

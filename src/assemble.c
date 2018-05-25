@@ -95,7 +95,16 @@ word evalOrr(char **line, STATE *state){
 }
 
 word evalMov(char **line, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (0xE << 28);
+    byte op2 = (byte) strtol(line[1] + 1, NULL, 10);
+    long rn = strtol(line[0] + 1, NULL, 10);
+    output |= (1 << 25);
+    output |= (0xD << 21);
+    output |= (rn << 16);
+    output |= op2;
+    printf("Output is %x\n", output);
+    return output;
 }
 
 word evalTst(char **line, STATE *state){
@@ -170,10 +179,6 @@ void assignLabels(STATE *state){
         }
     }
     fclose(source);
-    for (int i = 0; i < state->noOfLabels; ++i) {
-        printf("Label: %s\n", state->labels[i].label);
-        printf("Label address: 0x%08x\n", state->labels[i].address);
-    }
 }
 
 void writeToFile(STATE *state, word binary) {
@@ -224,9 +229,7 @@ void pass2(STATE *state) {
                 n++;
             }
             word result = (functionLookup(tokens[0]))(tokens + 1, state);
-            for (int i = 0; i < n; ++i) {
-                printf("The %dth value is %s\n",i, tokens[i]);
-            }
+            writeToFile(state, result);
         }
     }
     fclose(input);

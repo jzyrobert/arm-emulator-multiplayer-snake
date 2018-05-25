@@ -1,10 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <mem.h>
+#include <string.h>
 #include <stdint.h>
 
 
 typedef uint16_t address;
+typedef uint32_t word;
+typedef uint8_t byte;
 
 typedef struct {
     char label[20];
@@ -47,6 +49,17 @@ void assignLabels(STATE *state){
     }
 }
 
+void writeToFile(STATE *state, word binary) {
+    byte first = (byte) binary;
+    byte second = (byte) (binary >> 8);
+    byte third = (byte) (binary >> 16);
+    byte last = (byte) (binary >> 24);
+    fwrite(&first, sizeof(byte),1,state->outputFile);
+    fwrite(&second, sizeof(byte),1,state->outputFile);
+    fwrite(&third, sizeof(byte),1,state->outputFile);
+    fwrite(&last, sizeof(byte),1,state->outputFile);
+}
+
 int main(int argc, char **argv) {
 
   if (argc != 3) {
@@ -60,7 +73,7 @@ int main(int argc, char **argv) {
   STATE *state = calloc(1, sizeof(STATE));
   state->input = input;
   state->output = output;
-  state->outputFile = fopen(state->output, "rw");
+  state->outputFile = fopen(state->output, "wb");
   assignLabels(state);
 
   //2nd pass through

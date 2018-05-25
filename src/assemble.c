@@ -110,7 +110,10 @@ word evalMov(ASSEMBLY *as, STATE *state){
 }
 
 void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
-
+    printf("Processing index assembly:\n");
+    for (int i = 0; i < as->noOfTokens; ++i) {
+        printf("%s\n", as->tokens[i]);
+    }
 }
 
 word evalLDR(ASSEMBLY *as, STATE *state) {

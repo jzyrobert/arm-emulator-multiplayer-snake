@@ -88,6 +88,19 @@ void writeToFile(STATE *state, word binary) {
     fwrite(&last, sizeof(byte),1,state->outputFile);
 }
 
+void RemoveSpaces(char* source)
+{
+    char* i = source;
+    char* j = source;
+    while(*j != 0)
+    {
+        *i = *j++;
+        if(*i != ' ')
+            i++;
+    }
+    *i = 0;
+}
+
 void pass2(STATE *state) {
     FILE *input = fopen(state->input ,"r");
     //we know at this point first pass through worked so no further check needed
@@ -97,9 +110,23 @@ void pass2(STATE *state) {
         //clears the string
         fgets(buffer, 200, input);
         //copies next line into string
-        if (strcmp(buffer, "\n") != 0) {
+        if ((strcmp(buffer, "\n") != 0) && (strchr(buffer, ':') == NULL)) {
             //process the buffer
-
+            int n = 1;
+            char *tokens[6];
+            char* token;
+            token = strtok(buffer, " ");
+            tokens[0] = token;
+            token = strtok(NULL, ",");
+            while (token != NULL) {
+                RemoveSpaces(token);
+                tokens[n] = token;
+                token = strtok(NULL, ",");
+                n++;
+            }
+            for (int i = 0; i < n; ++i) {
+                printf("The %dth value is %s\n",i, tokens[i]);
+            }
         }
     }
     fclose(input);

@@ -43,7 +43,7 @@ void setAlwaysCond(word *output){
 
 word getRegNum(char *name){
     name++;
-    if (strchr(name, 'P')) {
+    if (strchr(name, 'C')) {
         return 15;
     }
     return (word) atoi(name);

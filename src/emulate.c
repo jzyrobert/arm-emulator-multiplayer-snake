@@ -138,10 +138,10 @@ void decodeBranch(STATE *state) {
 
 void decodeTransfer(STATE *state) {
     word b = state->instruction.binary;
-    state->instruction.I = (b & (1<<25));
-    state->instruction.P = (b & (1<<24));
-    state->instruction.U = (b & (1<<23));
-    state->instruction.L = (b & (1<<20));
+    state->instruction.I = (bool) (b & (1<<25));
+    state->instruction.P = (bool) (b & (1<<24));
+    state->instruction.U = (bool) (b & (1<<23));
+    state->instruction.L = (bool) (b & (1<<20));
     state->instruction.Rn = (address) extractBits(b, 16, 19);
     state->instruction.Rd = (address) extractBits(b, 12, 15);
     state->instruction.smallOffset = (address) extractBits(b, 0, 11);
@@ -149,8 +149,8 @@ void decodeTransfer(STATE *state) {
 
 void decodeProcess(STATE *state) {
     word b = state->instruction.binary;
-    state->instruction.I = (b & (1<<25));
-    state->instruction.S = (b & (1<<20));
+    state->instruction.I = (bool) (b & (1<<25));
+    state->instruction.S = (bool) (b & (1<<20));
     state->instruction.Opcode = (byte) extractBits(b, 21, 24);
     state->instruction.Rn = (address) extractBits(b, 16, 19);
     state->instruction.Rd = (address) extractBits(b, 12, 15);
@@ -159,8 +159,8 @@ void decodeProcess(STATE *state) {
 
 void decodeMult(STATE *state) {
     word b = state->instruction.binary;
-    state->instruction.A = (b & (1<<21));
-    state->instruction.S = (b & (1<<20));
+    state->instruction.A = (bool) (b & (1<<21));
+    state->instruction.S = (bool) (b & (1<<20));
     state->instruction.Rd = (address) extractBits(b, 16, 19);
     state->instruction.Rn = (address) extractBits(b, 12, 15);
     state->instruction.Rs = (address) extractBits(b, 8, 11);

@@ -115,7 +115,7 @@ void pass2(STATE *state) {
         //clears the string
         fgets(buffer, 200, input);
         //copies next line into string
-        if ((strcmp(buffer, "\n") != 0) && (strchr(buffer, ':') == NULL)) {
+        if ((buffer[0] != 0) && (strcmp(buffer, "\n") != 0) && (strchr(buffer, ':') == NULL)) {
             //process the buffer
             int n = 1;
             char *tokens[6];

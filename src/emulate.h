@@ -1,3 +1,13 @@
+#ifndef TYPEDEFS
+#define TYPEDEFS
+typedef struct instruction INSTRUCTION;
+typedef struct state STATE;
+typedef uint8_t byte;
+typedef uint32_t word;
+typedef int32_t wordS;
+typedef uint16_t address;
+#endif
+
 void decodeMult(STATE *state);
 
 void decodeProcess(STATE *state);

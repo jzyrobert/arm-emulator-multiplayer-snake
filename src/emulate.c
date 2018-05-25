@@ -24,15 +24,9 @@
 #define PC_OFFSET 8
 #endif
 
-typedef uint8_t byte;
-typedef uint32_t word;
-typedef int32_t wordS;
-typedef uint16_t address;
-
 enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH, HALT};
 
-
-typedef struct {
+struct instruction {
     wordS largeOffset;
     word binary;
     address Rn;
@@ -49,10 +43,9 @@ typedef struct {
     bool S;
     bool L;
     enum I_Type type;
-} INSTRUCTION;
+};
 
-
-typedef struct {
+struct state {
     byte mem[MEM_SIZE];
     //memory as 8 bit array
     word reg[REG_SIZE];
@@ -62,8 +55,7 @@ typedef struct {
     bool instruction_exists;
     bool decode_exists;
     bool finished;
-} STATE;
-
+};
 
 void readFile(char* file_name, byte* memory){
     FILE* binary = fopen(file_name, "rb");

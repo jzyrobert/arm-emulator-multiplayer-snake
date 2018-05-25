@@ -151,7 +151,7 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
             for (int i = 0; i < as->noOfTokens; ++i) {
                 printf("%s\n", as->tokens[i]);
             }
-            state->extras[state->noOfExtraLines] ++;
+            state->noOfExtraLines ++;
             return evalLDR(as, state);
         } else {
             return evalMov(as, state);

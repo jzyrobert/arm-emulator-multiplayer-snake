@@ -2,12 +2,27 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "emulate.h"
 
+#ifndef MEM_SIZE
 #define MEM_SIZE 65536
+#endif
+
+#ifndef REG_SIZE
 #define REG_SIZE 17
+#endif
+
+#ifndef PC
 #define PC 15
+#endif
+
+#ifndef CPSR
 #define CPSR 16
+#endif
+
+#ifndef PC_OFFSET
 #define PC_OFFSET 8
+#endif
 
 typedef uint8_t byte;
 typedef uint32_t word;
@@ -92,44 +107,6 @@ word extractBits(word data, int start, int end){
 }
 
 enum I_Type getInstruction(word inst);
-
-
-void decodeMult(STATE *state);
-
-void decodeProcess(STATE *state);
-
-void decodeTransfer(STATE *state);
-
-void decodeBranch(STATE *state);
-
-void executeProcess(STATE *state);
-
-void executeMult(STATE *state);
-
-void executeTransfer(STATE *state);
-
-void executeBranch(STATE *state);
-
-word processOp2(STATE *state);
-
-void print(STATE *ptr);
-
-//given a word, checks for cond (1 = go, 0 = no)
-int checkCond(word instruction, word cpsr) ;
-
-void bitAnd(STATE *state, bool b);
-
-void bitEor(STATE *state, bool b);
-
-void subRO(STATE *state, bool b);
-
-void subOR(STATE *state);
-
-void addRO(STATE *state);
-
-void bitOR(STATE *state);
-
-void processMove(STATE *state);
 
 void decode(STATE* state) {
     if (state->decode_exists) {

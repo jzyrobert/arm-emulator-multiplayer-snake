@@ -225,23 +225,42 @@ word evalSTR(ASSEMBLY *as, STATE *state){
 }
 
 word evalBNE(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (1 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalBLT(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (11 << 28);
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalBGE(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (10 << 28);
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalBGT(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (12 << 28);
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalBLE(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (13 << 28);
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalLSL(ASSEMBLY *as, STATE *state){
@@ -252,7 +271,10 @@ word evalANDEQ(ASSEMBLY *as, STATE *state){
     return 0;
 }
 word evalBeq(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalRsb(ASSEMBLY *as, STATE *state){

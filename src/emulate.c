@@ -2,22 +2,32 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "emulate.h"
 
+// MEM_SIZE must be greater than 8 to prevent
+#ifndef MEM_SIZE
 #define MEM_SIZE 65536
-#define REG_SIZE 17
-#define PC 15
-#define CPSR 16
-#define PC_OFFSET 8
+#endif
 
-typedef uint8_t byte;
-typedef uint32_t word;
-typedef int32_t wordS;
-typedef uint16_t address;
+#ifndef REG_SIZE
+#define REG_SIZE 17
+#endif
+
+#ifndef PC
+#define PC 15
+#endif
+
+#ifndef CPSR
+#define CPSR 16
+#endif
+
+#ifndef PC_OFFSET
+#define PC_OFFSET 8
+#endif
 
 enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH, HALT};
 
-
-typedef struct {
+struct instruction {
     wordS largeOffset;
     word binary;
     address Rn;
@@ -34,10 +44,9 @@ typedef struct {
     bool S;
     bool L;
     enum I_Type type;
-} INSTRUCTION;
+};
 
-
-typedef struct {
+struct state {
     byte mem[MEM_SIZE];
     //memory as 8 bit array
     word reg[REG_SIZE];
@@ -47,8 +56,7 @@ typedef struct {
     bool instruction_exists;
     bool decode_exists;
     bool finished;
-} STATE;
-
+};
 
 void readFile(char* file_name, byte* memory){
     FILE* binary = fopen(file_name, "rb");
@@ -66,13 +74,13 @@ word fetchData(STATE* state, int start){
 }
 
 void writeData(STATE* state, word memLoc, word data){
-    state->mem[memLoc] = data;
+    state->mem[memLoc] = (byte) data;
     data >>= 8;
-    state->mem[memLoc+1] = data;
+    state->mem[memLoc+1] = (byte) data;
     data >>= 8;
-    state->mem[memLoc+2] = data;
+    state->mem[memLoc+2] = (byte) data;
     data >>= 8;
-    state->mem[memLoc+3] = data;
+    state->mem[memLoc+3] = (byte) data;
 }
 
 
@@ -92,44 +100,6 @@ word extractBits(word data, int start, int end){
 }
 
 enum I_Type getInstruction(word inst);
-
-
-void decodeMult(STATE *state);
-
-void decodeProcess(STATE *state);
-
-void decodeTransfer(STATE *state);
-
-void decodeBranch(STATE *state);
-
-void executeProcess(STATE *state);
-
-void executeMult(STATE *state);
-
-void executeTransfer(STATE *state);
-
-void executeBranch(STATE *state);
-
-word processOp2(STATE *state);
-
-void print(STATE *ptr);
-
-//given a word, checks for cond (1 = go, 0 = no)
-int checkCond(word instruction, word cpsr) ;
-
-void bitAnd(STATE *state, bool b);
-
-void bitEor(STATE *state, bool b);
-
-void subRO(STATE *state, bool b);
-
-void subOR(STATE *state);
-
-void addRO(STATE *state);
-
-void bitOR(STATE *state);
-
-void processMove(STATE *state);
 
 void decode(STATE* state) {
     if (state->decode_exists) {
@@ -168,10 +138,10 @@ void decodeBranch(STATE *state) {
 
 void decodeTransfer(STATE *state) {
     word b = state->instruction.binary;
-    state->instruction.I = (b & (1<<25)) ? true : false;
-    state->instruction.P = (b & (1<<24)) ? true : false;
-    state->instruction.U = (b & (1<<23)) ? true : false;
-    state->instruction.L = (b & (1<<20)) ? true : false;
+    state->instruction.I = (bool) (b & (1<<25));
+    state->instruction.P = (bool) (b & (1<<24));
+    state->instruction.U = (bool) (b & (1<<23));
+    state->instruction.L = (bool) (b & (1<<20));
     state->instruction.Rn = (address) extractBits(b, 16, 19);
     state->instruction.Rd = (address) extractBits(b, 12, 15);
     state->instruction.smallOffset = (address) extractBits(b, 0, 11);
@@ -179,8 +149,8 @@ void decodeTransfer(STATE *state) {
 
 void decodeProcess(STATE *state) {
     word b = state->instruction.binary;
-    state->instruction.I = (b & (1<<25)) ? true : false;
-    state->instruction.S = (b & (1<<20)) ? true : false;
+    state->instruction.I = (bool) (b & (1<<25));
+    state->instruction.S = (bool) (b & (1<<20));
     state->instruction.Opcode = (byte) extractBits(b, 21, 24);
     state->instruction.Rn = (address) extractBits(b, 16, 19);
     state->instruction.Rd = (address) extractBits(b, 12, 15);
@@ -189,8 +159,8 @@ void decodeProcess(STATE *state) {
 
 void decodeMult(STATE *state) {
     word b = state->instruction.binary;
-    state->instruction.A = (b & (1<<21)) ? true : false;
-    state->instruction.S = (b & (1<<20)) ? true : false;
+    state->instruction.A = (bool) (b & (1<<21));
+    state->instruction.S = (bool) (b & (1<<20));
     state->instruction.Rd = (address) extractBits(b, 16, 19);
     state->instruction.Rn = (address) extractBits(b, 12, 15);
     state->instruction.Rs = (address) extractBits(b, 8, 11);
@@ -508,20 +478,12 @@ int checkCond(word instruction, word cpsr) {
                 }
             }
         } else {
-            return instruction & (op << 28) ? !nEqV : nEqV;
+            return ((instruction & (op << 28)) != 0) == !nEqV;
             //10x1 or 10x0
         }
     } else {
         //0xxx
-        if (instruction & (op << 28)) {
-            //0xx1
-            //checks if Z is not set
-            return !zSet;
-        } else {
-            //0xx0
-            //checks if Z is set
-            return zSet;
-        }
+        return ((instruction & (op << 28)) != 0) == !zSet;
     }
 }
 

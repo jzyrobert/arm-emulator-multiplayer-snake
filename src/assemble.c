@@ -121,16 +121,19 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
         word address = (word) strtol(as->tokens[1] + 1, NULL,0);
         if (address > 0xFF) {
             state->extras[state->noOfExtraLines] = address;
-            as->noOfTokens = 4;
-            as->tokens[2] = "[PC";
-            as->tokens[3] = "#";
+            as->noOfTokens = 3;
+            as->tokens[1] = "[PC";
+            char *test = malloc(30 * sizeof(char));
+            test[0] = '#';
+            test[1] = '\0';
             word offset = ((state->noOfLines * 4 - as->address) - 8);
             char str[10];
             sprintf(str, "%u", offset);
-            strcat(as->tokens[3], str);
-            strcat(as->tokens[3], "]");
+            strcat(test, str);
+            strcat(test, "]");
+            as->tokens[2] = test;
             printf("Printing new instructions:\n");
-            for (int i = 0; i < 4; ++i) {
+            for (int i = 0; i < as->noOfTokens; ++i) {
                 printf("%s\n", as->tokens[i]);
             }
             state->extras[state->noOfExtraLines] ++;

@@ -402,9 +402,10 @@ void pass2(STATE *state) {
             //process the buffer
             ASSEMBLY *as = malloc(sizeof(ASSEMBLY));
             int n = 1;
+            char* instruction;
             char* token;
             token = strtok(buffer, " ");
-            as->tokens[0] = token;
+            instruction = token;
             token = strtok(NULL, ",");
             while (token != NULL) {
                 RemoveSpaces(token);
@@ -414,7 +415,7 @@ void pass2(STATE *state) {
             }
             as->noOfTokens = n;
             as->address = address;
-            word result = (functionLookup(as->tokens[0]))(as, state);
+            word result = (functionLookup(instruction))(as, state);
             writeToFile(state, result);
             address += 4;
         }

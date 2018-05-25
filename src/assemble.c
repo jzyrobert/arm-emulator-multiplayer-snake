@@ -136,7 +136,8 @@ const nameToFunc funcMap[] = {{"add", evalAdd}, {"sub", evalSub},
 
 evalFunc functionLookup(char *lookUp){
     for(int i = 0; i < (sizeof(funcMap) / sizeof(funcMap[0])); i++ ){
-        if(strcmp(lookUp, funcMap[i].name)){
+        if(strcmp(lookUp, funcMap[i].name) == 0){
+            printf("Match found for %s\n", funcMap[i].name);
             return funcMap[i].func;
         }
     }

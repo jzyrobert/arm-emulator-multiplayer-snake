@@ -28,93 +28,93 @@ typedef struct {
     evalFunc func;
 } nameToFunc;
 
-word evalAdd(char **line){
+word evalAdd(char **line, STATE *state){
     return 0;
 }
 
-word evalSub(char **line){
+word evalSub(char **line, STATE *state){
     return 0;
 }
 
-word evalBranc(char **line){
+word evalBranc(char **line, STATE *state){
     return 0;
 }
 
-word evalLDR(char **line){
+word evalLDR(char **line, STATE *state){
     return 0;
 }
-word evalSTR(char **line){
-    return 0;
-}
-
-word evalBNE(char **line){
+word evalSTR(char **line, STATE *state){
     return 0;
 }
 
-word evalBLT(char **line){
+word evalBNE(char **line, STATE *state){
     return 0;
 }
 
-word evalBGE(char **line){
+word evalBLT(char **line, STATE *state){
     return 0;
 }
 
-word evalBGT(char **line){
+word evalBGE(char **line, STATE *state){
     return 0;
 }
 
-word evalBLE(char **line){
+word evalBGT(char **line, STATE *state){
     return 0;
 }
 
-word evalLSL(char **line){
+word evalBLE(char **line, STATE *state){
     return 0;
 }
 
-word evalANDEQ(char **line){
-    return 0;
-}
-word evalBeq(char **line){
+word evalLSL(char **line, STATE *state){
     return 0;
 }
 
-word evalRsb(char **line){
+word evalANDEQ(char **line, STATE *state){
+    return 0;
+}
+word evalBeq(char **line, STATE *state){
     return 0;
 }
 
-word evalAnd(char **line){
+word evalRsb(char **line, STATE *state){
     return 0;
 }
 
-word evalEor(char **line){
+word evalAnd(char **line, STATE *state){
     return 0;
 }
 
-word evalOrr(char **line){
+word evalEor(char **line, STATE *state){
     return 0;
 }
 
-word evalMov(char **line){
+word evalOrr(char **line, STATE *state){
     return 0;
 }
 
-word evalTst(char **line){
+word evalMov(char **line, STATE *state){
     return 0;
 }
 
-word evalTeq(char **line){
+word evalTst(char **line, STATE *state){
     return 0;
 }
 
-word evalCmp(char **line){
+word evalTeq(char **line, STATE *state){
     return 0;
 }
 
-word evalMul(char **line){
+word evalCmp(char **line, STATE *state){
     return 0;
 }
 
-word evalMla(char **line){
+word evalMul(char **line, STATE *state){
+    return 0;
+}
+
+word evalMla(char **line, STATE *state){
     return 0;
 }
 

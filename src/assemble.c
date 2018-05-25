@@ -191,7 +191,14 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
     }
 }
 word evalSTR(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    setAlwaysCond(&output);
+    output |= (1 << 26);
+    output |= (1 << 25);
+    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    output |= (rd << 12);
+    processTransfers(as, state, &output);
+    return output;
 }
 
 word evalBNE(ASSEMBLY *as, STATE *state){

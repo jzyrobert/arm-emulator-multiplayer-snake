@@ -401,7 +401,7 @@ void pass2(STATE *state) {
         if ((buffer[0] != 0) && (strcmp(buffer, "\n") != 0) && (strchr(buffer, ':') == NULL)) {
             //process the buffer
             ASSEMBLY *as = malloc(sizeof(ASSEMBLY));
-            int n = 1;
+            int n = 0;
             char* instruction;
             char* token;
             token = strtok(buffer, " ");

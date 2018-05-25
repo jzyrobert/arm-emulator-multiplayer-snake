@@ -28,10 +28,25 @@ typedef struct {
     evalFunc func;
 } nameToFunc;
 
+void setAlwaysCond(word *output){
+    *output |= (0xE << 28);
+}
+
+word getRegNum(char *name){
+    name++;
+    return (word) atoi(name);
+}
+
+void setBits(word *output, word bits, word end){
+    //the bits are set leading to the end bit
+    //end bit is the lowest bit of the section being set
+    *output |= (bits << end);
+}
+
 word evalAdd(char **line, STATE *state){
     word output = 0;
 
-    output |= (0xE << 28);
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
     long rn = strtol(line[1] + 1, NULL, 10);
     long rd = strtol(line[0] + 1, NULL, 10);
@@ -48,7 +63,7 @@ word evalAdd(char **line, STATE *state){
 word evalSub(char **line, STATE *state){
     word output = 0;
 
-    output |= (0xE << 28);
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
     long rn = strtol(line[1] + 1, NULL, 10);
     long rd = strtol(line[0] + 1, NULL, 10);
@@ -107,7 +122,7 @@ word evalBeq(char **line, STATE *state){
 word evalRsb(char **line, STATE *state){
     word output = 0;
 
-    output |= (0xE << 28);
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
     long rn = strtol(line[1] + 1, NULL, 10);
     long rd = strtol(line[0] + 1, NULL, 10);
@@ -124,7 +139,7 @@ word evalRsb(char **line, STATE *state){
 word evalAnd(char **line, STATE *state){
     word output = 0;
 
-    output |= (0xE << 28);
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
     long rn = strtol(line[1] + 1, NULL, 10);
     long rd = strtol(line[0] + 1, NULL, 10);
@@ -140,7 +155,7 @@ word evalAnd(char **line, STATE *state){
 word evalEor(char **line, STATE *state){
     word output = 0;
 
-    output |= (0xE << 28);
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
     long rn = strtol(line[1] + 1, NULL, 10);
     long rd = strtol(line[0] + 1, NULL, 10);
@@ -165,7 +180,7 @@ word evalMov(char **line, STATE *state){
 word evalTst(char **line, STATE *state){
     word output = 0;
 
-    output |= (0xE << 28);
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(line[1] + 1, NULL, 10);
     long rn = strtol(line[0] + 1, NULL, 10);
 
@@ -180,7 +195,7 @@ word evalTst(char **line, STATE *state){
 word evalTeq(char **line, STATE *state){
     word output = 0;
 
-    output |= (0xE << 28);
+    setAlwaysCond(&output);
     byte op2 = (byte) strtol(line[1] + 1, NULL, 10);
     long rn = strtol(line[0] + 1, NULL, 10);
 
@@ -197,11 +212,20 @@ word evalCmp(char **line, STATE *state){
 }
 
 word evalMul(char **line, STATE *state){
-    return 0;
+    word output = 0;
+    setAlwaysCond(&output);
+    setBits(&output, getRegNum(line[0]), 16); //sets Rd
+    setBits(&output, getRegNum(line[1]), 12); //sets Rn
+    setBits(&output, getRegNum(line[2]), 8);  //sets Rs
+    setBits(&output, 10, 4);
+    return output;
 }
 
 word evalMla(char **line, STATE *state){
-    return 0;
+    word output = evalMul(line, state);
+    setBits(&output, 1, 21);
+    setBits(&output, getRegNum(line[3]), 0);
+    return output;
 }
 
 

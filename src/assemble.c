@@ -29,6 +29,7 @@ typedef struct {
 } nameToFunc;
 
 word evalAdd(char **line, STATE *state){
+    return 0;
 }
 
 word evalSub(char **line, STATE *state){

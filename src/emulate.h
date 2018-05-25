@@ -3,8 +3,8 @@
 
 #ifndef PROCESSOR_FLOW_TYPEDEFS
 #define PROCESSOR_FLOW_TYPEDEFS
-typedef struct {}INSTRUCTION;
-typedef struct {}STATE;
+typedef struct instruction INSTRUCTION;
+typedef struct state STATE;
 #endif
 
 #ifndef ARM_TYPE_TYPEDEFS

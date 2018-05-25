@@ -29,11 +29,35 @@ typedef struct {
 } nameToFunc;
 
 word evalAdd(char **line, STATE *state){
-    return 0;
+    word output = 0;
+
+    byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
+    long rn = strtol(line[1] + 1, NULL, 10);
+    long rd = strtol(line[0] + 1, NULL, 10);
+
+    output |= (0x00800000);
+    output |= (rd << 16);
+    output |= (rn << 12);
+    output |= op2;
+
+    printf("Output is %x\n", output);
+    return output;
 }
 
 word evalSub(char **line, STATE *state){
-    return 0;
+    word output = 0;
+
+    byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
+    long rn = strtol(line[1] + 1, NULL, 10);
+    long rd = strtol(line[0] + 1, NULL, 10);
+
+    output |= (0x00400000);
+    output |= (rd << 16);
+    output |= (rn << 12);
+    output |= op2;
+
+    printf("Output is %x\n", output);
+    return output;
 }
 
 word evalBranc(char **line, STATE *state){
@@ -79,15 +103,50 @@ word evalBeq(char **line, STATE *state){
 }
 
 word evalRsb(char **line, STATE *state){
-    return 0;
+    word output = 0;
+
+    byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
+    long rn = strtol(line[1] + 1, NULL, 10);
+    long rd = strtol(line[0] + 1, NULL, 10);
+
+    output |= (0x00600000);
+    output |= (rd << 16);
+    output |= (rn << 12);
+    output |= op2;
+
+    printf("Output is %x\n", output);
+    return output;
 }
 
 word evalAnd(char **line, STATE *state){
-    return 0;
+    word output = 0;
+
+    byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
+    long rn = strtol(line[1] + 1, NULL, 10);
+    long rd = strtol(line[0] + 1, NULL, 10);
+
+    output |= (rd << 16);
+    output |= (rn << 12);
+    output |= op2;
+
+    printf("Output is %x\n", output);
+    return output;
 }
 
 word evalEor(char **line, STATE *state){
-    return 0;
+    word output = 0;
+
+    byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
+    long rn = strtol(line[1] + 1, NULL, 10);
+    long rd = strtol(line[0] + 1, NULL, 10);
+
+    output |= (0x00200000);
+    output |= (rd << 16);
+    output |= (rn << 12);
+    output |= op2;
+
+    printf("Output is %x\n", output);
+    return output;
 }
 
 word evalOrr(char **line, STATE *state){
@@ -99,11 +158,31 @@ word evalMov(char **line, STATE *state){
 }
 
 word evalTst(char **line, STATE *state){
-    return 0;
+    word output = 0;
+
+    byte op2 = (byte) strtol(line[1] + 1, NULL, 10);
+    long rn = strtol(line[0] + 1, NULL, 10);
+
+    output |= (0x01100000);
+    output |= (rn << 12);
+    output |= op2;
+
+    printf("Output is %x\n", output);
+    return output;
 }
 
 word evalTeq(char **line, STATE *state){
-    return 0;
+    word output = 0;
+
+    byte op2 = (byte) strtol(line[1] + 1, NULL, 10);
+    long rn = strtol(line[0] + 1, NULL, 10);
+
+    output |= (0x01300000);
+    output |= (rn << 12);
+    output |= op2;
+
+    printf("Output is %x\n", output);
+    return output;
 }
 
 word evalCmp(char **line, STATE *state){

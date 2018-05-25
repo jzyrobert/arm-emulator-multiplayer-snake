@@ -36,7 +36,7 @@ word evalSub(char **line){
     return 0;
 }
 
-word evalBranch(char **line){
+word evalBranc(char **line){
     return 0;
 }
 
@@ -74,18 +74,64 @@ word evalLSL(char **line){
 word evalANDEQ(char **line){
     return 0;
 }
+word evalBeq(char **line){
+    return 0;
+}
 
-const nameToFunc funcMap[] = {{"add" ,evalAdd},
-                              {"sub" ,evalSub},
-                              {"b" , evalBranch},
-                              {"ldr", evalLDR},
-                              {"str", evalSTR},
-                              {"bne", evalBNE},
-                              {"bge", evalBGE},
-                              {"blt", evalBLT},
-                              {"bgt", evalBGT},
-                              {"ble", evalBLE},
-                              {"lsl", evalLSL},
+word evalRsb(char **line){
+    return 0;
+}
+
+word evalAnd(char **line){
+    return 0;
+}
+
+word evalEor(char **line){
+    return 0;
+}
+
+word evalOrr(char **line){
+    return 0;
+}
+
+word evalMov(char **line){
+    return 0;
+}
+
+word evalTst(char **line){
+    return 0;
+}
+
+word evalTeq(char **line){
+    return 0;
+}
+
+word evalCmp(char **line){
+    return 0;
+}
+
+word evalMul(char **line){
+    return 0;
+}
+
+word evalMla(char **line){
+    return 0;
+}
+
+
+
+const nameToFunc funcMap[] = {{"add", evalAdd}, {"sub", evalSub},
+                              {"rsb", evalRsb}, {"and", evalAnd},
+                              {"eor", evalEor}, {"orr", evalOrr},
+                              {"mov", evalMov}, {"tst", evalTst},
+                              {"teq", evalTeq}, {"cmp", evalCmp},
+                              {"mul", evalMul}, {"mla", evalMla},
+                              {"b", evalBranc}, {"beq", evalBeq},
+                              {"add" ,evalAdd}, {"sub" ,evalSub},
+                              {"ldr", evalLDR}, {"str", evalSTR},
+                              {"bne", evalBNE}, {"bge", evalBGE},
+                              {"blt", evalBLT}, {"bgt", evalBGT},
+                              {"ble", evalBLE}, {"lsl", evalLSL},
                               {"andeq", evalANDEQ}};
 
 evalFunc functionLookup(char *lookUp){

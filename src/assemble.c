@@ -109,10 +109,25 @@ word evalMov(ASSEMBLY *as, STATE *state){
     return output;
 }
 
+void stripBrackets(char* string) {
+    size_t len = strlen(string);
+    memmove(string, string+1, len-2);
+    string[len-2] = 0;
+}
+
 void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
     printf("Processing index assembly:\n");
-    for (int i = 0; i < as->noOfTokens; ++i) {
-        printf("%s\n", as->tokens[i]);
+    if (strchr(as->tokens[1], ']') != NULL) {
+        //[RN]- something?
+        if (as->noOfTokens == 2) {
+            //pre-index RN
+            stripBrackets(as->tokens[1]);
+            *output |= (getRegNum(as->tokens[1]) << 16);
+            *output |= (1 << 24);
+            *output |= (1 << 23);
+        } else {
+            //post index [RN], expression
+        }
     }
 }
 

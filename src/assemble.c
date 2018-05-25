@@ -40,10 +40,53 @@ word evalBranch(char **line){
     return 0;
 }
 
+word evalLDR(char **line){
+    return 0;
+}
+word evalSTR(char **line){
+    return 0;
+}
+
+word evalBNE(char **line){
+    return 0;
+}
+
+word evalBLT(char **line){
+    return 0;
+}
+
+word evalBGE(char **line){
+    return 0;
+}
+
+word evalBGT(char **line){
+    return 0;
+}
+
+word evalBLE(char **line){
+    return 0;
+}
+
+word evalLSL(char **line){
+    return 0;
+}
+
+word evalANDEQ(char **line){
+    return 0;
+}
 
 const nameToFunc funcMap[] = {{"add" ,evalAdd},
                               {"sub" ,evalSub},
-                              {"b" , evalBranch}};
+                              {"b" , evalBranch},
+                              {"ldr", evalLDR},
+                              {"str", evalSTR},
+                              {"bne", evalBNE},
+                              {"bge", evalBGE},
+                              {"blt", evalBLT},
+                              {"bgt", evalBGT},
+                              {"ble", evalBLE},
+                              {"lsl", evalLSL},
+                              {"andeq", evalANDEQ}};
 
 evalFunc functionLookup(char *lookUp){
     for(int i = 0; i < (sizeof(funcMap) / sizeof(funcMap[0])); i++ ){

@@ -115,6 +115,14 @@ void stripBrackets(char* string) {
     string[len-2] = 0;
 }
 
+long decodeEXP(char *str) {
+    if (strchr(str, 'x') != NULL) {
+        return strtol(str + 3 , NULL, 16);
+    } else {
+        return strtol(str + 1, NULL, 10);
+    }
+}
+
 void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
     printf("Processing index assembly:\n");
     if (strchr(as->tokens[1], ']') != NULL) {
@@ -127,7 +135,18 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
             *output |= (1 << 23);
         } else {
             //post index [RN], expression
+            stripBrackets(as->tokens[1]);
+            *output |= (1 << 23);
+            *output |= (getRegNum(as->tokens[1]) << 16);
+            *output |= decodeEXP(as->tokens[2]);
         }
+    } else {
+        //[Rn - Expression]
+        *output |= (1 << 24);
+        *output |= (1 << 23);
+        *output |= (getRegNum(as->tokens[1] + 1) << 16);
+        as->tokens[2][strlen(as->tokens[2])-2] = '\0';
+        *output |= decodeEXP(as->tokens[2]);
     }
 }
 

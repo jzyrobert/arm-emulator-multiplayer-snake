@@ -31,6 +31,7 @@ typedef struct {
 word evalAdd(char **line, STATE *state){
     word output = 0;
 
+    output |= (0xE << 28);
     byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
     long rn = strtol(line[1] + 1, NULL, 10);
     long rd = strtol(line[0] + 1, NULL, 10);
@@ -47,6 +48,7 @@ word evalAdd(char **line, STATE *state){
 word evalSub(char **line, STATE *state){
     word output = 0;
 
+    output |= (0xE << 28);
     byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
     long rn = strtol(line[1] + 1, NULL, 10);
     long rd = strtol(line[0] + 1, NULL, 10);
@@ -105,6 +107,7 @@ word evalBeq(char **line, STATE *state){
 word evalRsb(char **line, STATE *state){
     word output = 0;
 
+    output |= (0xE << 28);
     byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
     long rn = strtol(line[1] + 1, NULL, 10);
     long rd = strtol(line[0] + 1, NULL, 10);
@@ -121,6 +124,7 @@ word evalRsb(char **line, STATE *state){
 word evalAnd(char **line, STATE *state){
     word output = 0;
 
+    output |= (0xE << 28);
     byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
     long rn = strtol(line[1] + 1, NULL, 10);
     long rd = strtol(line[0] + 1, NULL, 10);
@@ -136,6 +140,7 @@ word evalAnd(char **line, STATE *state){
 word evalEor(char **line, STATE *state){
     word output = 0;
 
+    output |= (0xE << 28);
     byte op2 = (byte) strtol(line[2] + 1, NULL, 10);
     long rn = strtol(line[1] + 1, NULL, 10);
     long rd = strtol(line[0] + 1, NULL, 10);
@@ -160,6 +165,7 @@ word evalMov(char **line, STATE *state){
 word evalTst(char **line, STATE *state){
     word output = 0;
 
+    output |= (0xE << 28);
     byte op2 = (byte) strtol(line[1] + 1, NULL, 10);
     long rn = strtol(line[0] + 1, NULL, 10);
 
@@ -174,6 +180,7 @@ word evalTst(char **line, STATE *state){
 word evalTeq(char **line, STATE *state){
     word output = 0;
 
+    output |= (0xE << 28);
     byte op2 = (byte) strtol(line[1] + 1, NULL, 10);
     long rn = strtol(line[0] + 1, NULL, 10);
 

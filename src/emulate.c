@@ -27,16 +27,16 @@
 
 enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH, HALT};
 
-struct instruction {
+typedef struct {
     wordS largeOffset;
     word binary;
     address Rn, Rd, Operand2, Rs, Rm, smallOffset;
     byte Opcode;
     bool I, P, U, A, S, L;
     enum I_Type type;
-};
+} INSTRUCTION ;
 
-struct state {
+typedef struct {
     byte mem[MEM_SIZE];
     //memory as 8 bit array
     word reg[REG_SIZE], fetch;

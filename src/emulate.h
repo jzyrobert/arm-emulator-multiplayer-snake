@@ -1,7 +1,10 @@
+#include <stdint.h>
+#include <stdbool.h>
+
 #ifndef PROCESSOR_FLOW_TYPEDEFS
 #define PROCESSOR_FLOW_TYPEDEFS
-typedef struct instruction INSTRUCTION;
-typedef struct state STATE;
+typedef struct {}INSTRUCTION;
+typedef struct {}STATE;
 #endif
 
 #ifndef ARM_TYPE_TYPEDEFS

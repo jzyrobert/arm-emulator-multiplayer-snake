@@ -55,13 +55,13 @@ void setBits(word *output, word bits, word end){
     *output |= (bits << end);
 }
 
-void evalOperand2(ASSEMBLY *as, STATE *state, word *output);
+void evalOperand2(ASSEMBLY *as, STATE *state, word *output, int op2Point);
 
 word evalAdd(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
     setBits(&output, 4, 21);
-    evalOperand2(as, state, &output);
+    evalOperand2(as, state, &output, 2);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);
     output |= (rd << 12);
@@ -112,7 +112,7 @@ word evalMov(ASSEMBLY *as, STATE *state){
     long rn = strtol(as->tokens[0] + 1, NULL, 10);
     output |= (13 << 21);
     output |= (rn << 12);
-    evalOperand2(as, state, &output);
+    evalOperand2(as, state, &output, 1);
     return output;
 }
 
@@ -398,10 +398,6 @@ word evalMla(ASSEMBLY *as, STATE *state){
     return output;
 }
 
-void evalShifts (ASSEMBLY *as, STATE *state, word *output);
-
-void evalExp (ASSEMBLY *as, STATE *state, word *output);
-
 int rangeOfBits(word imm);
 
 int lowestBit(word imm) ;
@@ -410,18 +406,16 @@ int isEven(word num) {
     return !(num % 2);
 }
 
-void evalOperand2(ASSEMBLY *as, STATE *state, word *output){
-    int op2Point = as->noOfTokens - 1;
+void evalOperand2(ASSEMBLY *as, STATE *state, word *output, int op2Point){
 
     if (strchr(as->tokens[op2Point], '#') != NULL){
-        evalExp(as, state, output);
+        evalExp(as, state, output, op2Point);
     } else {
-         evalShifts(as, state, output);
+         evalShifts(as, state, output, op2Point);
     }
 }
 
-void evalExp (ASSEMBLY *as, STATE *state, word *output){
-    int op2Point = as->noOfTokens - 1;
+void evalExp (ASSEMBLY *as, STATE *state, word *output, int op2Point){
     stripBrackets(as->tokens[op2Point]);
 
     setBits(output, 1, 25);
@@ -487,22 +481,14 @@ int rangeOfBits(word imm) {
 }
 
 
-void evalShifts (ASSEMBLY *as, STATE *state, word *output){
-
-//    byte op2 = (byte) strtol(operand2[0] + 1, NULL, 10);
-
-    /*
-    if (strcmp(operand2[1], "asr") == 0){
-        op2 |= 0x00000050;
+void evalShifts (ASSEMBLY *as, STATE *state, word *output, int op2Point) {
+    if ((as->noOfTokens - op2Point) < 2) {
+        //no shift
+        as->tokens[op2Point][strlen(as->tokens[op2Point]) - 1] = '\0';
+        setBits(output, getRegNum(as->tokens[op2Point]), 0);
+    } else {
+        //shift
     }
-    else if (strcmp(operand2[1], "lsr") == 0){
-        op2 |= 0x00000020;
-    }
-    else if (strcmp(operand2[1], "ror") == 0){
-        op2 |= 0x00000040;
-    }
-     */
-
 }
 
 

@@ -56,7 +56,7 @@ void setBits(word *output, word bits, word end){
 }
 
 word evalAdd(ASSEMBLY *as, STATE *state){
-    word output = 0;
+    word output = 0xE0000000;
     setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
@@ -72,7 +72,7 @@ word evalAdd(ASSEMBLY *as, STATE *state){
 }
 
 word evalSub(ASSEMBLY *as, STATE *state){
-    word output = 0;
+    word output = 0xE0000000;
 
     setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
@@ -286,7 +286,7 @@ word evalBeq(ASSEMBLY *as, STATE *state){
 }
 
 word evalRsb(ASSEMBLY *as, STATE *state){
-    word output = 0;
+    word output = 0xE0000000;
 
     setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
@@ -303,7 +303,7 @@ word evalRsb(ASSEMBLY *as, STATE *state){
 }
 
 word evalAnd(ASSEMBLY *as, STATE *state){
-    word output = 0;
+    word output = 0xE0000000;
 
     setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
@@ -319,7 +319,7 @@ word evalAnd(ASSEMBLY *as, STATE *state){
 }
 
 word evalEor(ASSEMBLY *as, STATE *state){
-    word output = 0;
+    word output = 0xE0000000;
 
 
     setAlwaysCond(&output);
@@ -362,30 +362,29 @@ return output;
 */
 
 word evalTst(ASSEMBLY *as, STATE *state){
-    word output = 0;
+    word output = 0xE0000000;
 
     setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[1] + 1, NULL, 10);
     long rn = strtol(as->tokens[0] + 1, NULL, 10);
 
+    output |= op2 | (rn << 12);
     output |= (0x01100000);
-    output |= (rn << 12);
-    output |= op2;
 
     //printf("Output is %x\n", output);
     return output;
 }
 
 word evalTeq(ASSEMBLY *as, STATE *state){
-    word output = 0;
+    word output = 0xE0000000;
 
     setAlwaysCond(&output);
     byte op2 = (byte) strtol(as->tokens[1] + 1, NULL, 10);
     long rn = strtol(as->tokens[0] + 1, NULL, 10);
 
+    output |= op2 | (rn << 12);
     output |= (0x01300000);
-    output |= (rn << 12);
-    output |= op2;
+
 
     //printf("Output is %x\n", output);
     return output;
@@ -413,7 +412,42 @@ word evalMla(ASSEMBLY *as, STATE *state){
     return output;
 }
 
+word evalOperand2(char** operand2){
 
+    if (operand2[0][0] = '#'){
+        return evalExp(&operand2[0][1], 255);
+    }
+
+    return evalShifts(operand2);
+}
+
+word evalExp (char* operand2, word maxSize){
+
+    byte op2 = (byte) strtol(operand2, NULL, 0);
+
+    if (op2 > maxSize){
+        printf ("Operand2 too large");
+        exit (EXIT_FAILURE);
+    }
+
+    return op2;
+}
+
+word evalShifts (char** operand2){
+
+    byte op2 = (byte) strtol(as->tokens[0] + 1, NULL, 10);
+
+    if (strcmp(op2[1], "asr") == 0){
+        op2 |= 0x00000050;
+    }
+    else if (strcmp(op2[1], "lsr") == 0){
+        op2 |= 0x00000020;
+    }
+    else if (strcmp(op2[1], "ror") == 0){
+        op2 |= 0x00000040;
+    }
+
+}
 
 const nameToFunc funcMap[] = {{"add", evalAdd}, {"sub", evalSub},
                               {"rsb", evalRsb}, {"and", evalAnd},

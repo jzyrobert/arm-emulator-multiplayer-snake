@@ -306,7 +306,16 @@ word evalEor(ASSEMBLY *as, STATE *state){
 }
 
 word evalOrr(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    setAlwaysCond(&output);
+    long rn = strtol(as->tokens[1] + 1, NULL, 10);
+    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    setBits(&output, 12, 21);
+    setBits(&output, rd, 12);
+    setBits(&output, rn, 16);
+    evalOperand2(as, state, &output, 2);
+    //printf("Output is %x\n", output);
+    return output;
 }
 
 /* redundant evaladd test code
@@ -331,36 +340,42 @@ return output;
 */
 
 word evalTst(ASSEMBLY *as, STATE *state){
-    word output = 0xE0000000;
-
+    word output = 0;
     setAlwaysCond(&output);
-    byte op2 = (byte) strtol(as->tokens[1] + 1, NULL, 10);
-    long rn = strtol(as->tokens[0] + 1, NULL, 10);
-
-    output |= op2 | (rn << 12);
-    output |= (0x01100000);
-
+    long rn = strtol(as->tokens[1] + 1, NULL, 10);
+    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    setBits(&output, 8, 21);
+    setBits(&output, rd, 12);
+    setBits(&output, rn, 16);
+    evalOperand2(as, state, &output, 1);
     //printf("Output is %x\n", output);
     return output;
 }
 
 word evalTeq(ASSEMBLY *as, STATE *state){
-    word output = 0xE0000000;
-
+    word output = 0;
     setAlwaysCond(&output);
-    byte op2 = (byte) strtol(as->tokens[1] + 1, NULL, 10);
-    long rn = strtol(as->tokens[0] + 1, NULL, 10);
-
-    output |= op2 | (rn << 12);
-    output |= (0x01300000);
-
-
+    long rn = strtol(as->tokens[1] + 1, NULL, 10);
+    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    setBits(&output, 9, 21);
+    setBits(&output, rd, 12);
+    setBits(&output, rn, 16);
+    evalOperand2(as, state, &output, 1);
     //printf("Output is %x\n", output);
     return output;
 }
 
 word evalCmp(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    setAlwaysCond(&output);
+    long rn = strtol(as->tokens[1] + 1, NULL, 10);
+    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    setBits(&output, 10, 21);
+    setBits(&output, rd, 12);
+    setBits(&output, rn, 16);
+    evalOperand2(as, state, &output, 1);
+    //printf("Output is %x\n", output);
+    return output;
 }
 
 word evalMul(ASSEMBLY *as, STATE *state){

@@ -60,6 +60,7 @@ void evalOperand2(ASSEMBLY *as, STATE *state, word *output);
 word evalAdd(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
+    setBits(&output, 4, 21);
     evalOperand2(as, state, &output);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);

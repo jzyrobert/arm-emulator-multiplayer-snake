@@ -109,22 +109,10 @@ word evalBranc(ASSEMBLY *as, STATE *state){
 word evalMov(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    byte op2;
-    printf("%s\n", as->tokens[1]);
-    if (strchr(as->tokens[1], 'x') != NULL) {
-      op2 = (byte) strtol(as->tokens[1] + 3, NULL, 16);
-    } else {
-      op2 = (byte) strtol(as->tokens[1] + 1, NULL, 10);
-    }
-    printf("%d\n", op2);
     long rn = strtol(as->tokens[0] + 1, NULL, 10);
-    if (strchr(as->tokens[1], 'r') == NULL) {
-        output |= (1 << 25);
-    }
     output |= (13 << 21);
     output |= (rn << 12);
-    output |= op2;
-    //printf("Output is %x\n", output);
+    evalOperand2(as, state, &output);
     return output;
 }
 
@@ -423,8 +411,9 @@ int isEven(word num) {
 }
 
 void evalOperand2(ASSEMBLY *as, STATE *state, word *output){
+    int op2Point = as->noOfTokens - 1;
 
-    if (strchr(as->tokens[2], '#') != NULL){
+    if (strchr(as->tokens[op2Point], '#') != NULL){
         evalExp(as, state, output);
     } else {
          evalShifts(as, state, output);
@@ -432,20 +421,21 @@ void evalOperand2(ASSEMBLY *as, STATE *state, word *output){
 }
 
 void evalExp (ASSEMBLY *as, STATE *state, word *output){
-    stripBrackets(as->tokens[2]);
+    int op2Point = as->noOfTokens - 1;
+    stripBrackets(as->tokens[op2Point]);
 
     setBits(output, 1, 25);
     word imm;
 
-    if (strchr(as->tokens[2], 'x')) {
-        imm = (word) strtol(as->tokens[2] + 2, NULL, 16);
+    if (strchr(as->tokens[op2Point], 'x')) {
+        imm = (word) strtol(as->tokens[op2Point] + 2, NULL, 16);
     } else {
-        imm = (word) strtol(as->tokens[2], NULL, 10);
+        imm = (word) strtol(as->tokens[op2Point], NULL, 10);
     }
     if (imm < 256) {
         //no shift needed
-        setBits(output, (word) strtol(as->tokens[2], NULL, 10), 0);
-    } else if (imm > ((255 < 24) + 1)) {
+        setBits(output, (word) strtol(as->tokens[op2Point], NULL, 10), 0);
+    } else if (imm > ((255 << 24) + 1)) {
         printf("Number too big!");
         exit(EXIT_FAILURE);
     } else {
@@ -458,12 +448,12 @@ void evalExp (ASSEMBLY *as, STATE *state, word *output){
          printf("Odd shift cannot be represented!");
         }
         word rotate = 0;
-        while ((imm > 256) && !isEven((word) rotate)) {
+        while ((imm > 256) || !isEven((word) rotate)) {
             //rotate left 1
             imm = (imm << 1) | (imm >> 31);
             rotate++;
         }
-        rotate /= 2;
+        rotate = rotate / 2;
         setBits(output, imm, 0);
         setBits(output, rotate, 8);
     }

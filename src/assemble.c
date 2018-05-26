@@ -64,11 +64,8 @@ word evalAdd(ASSEMBLY *as, STATE *state){
     evalOperand2(as, state, &output);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);
-
     output |= (rd << 12);
     output |= (rn << 16);
-
-    //printf("Output is %x\n", output);
     return output;
 }
 
@@ -417,12 +414,20 @@ void evalShifts (ASSEMBLY *as, STATE *state, word *output);
 
 void evalExp (ASSEMBLY *as, STATE *state, word *output);
 
+int rangeOfBits(word imm);
+
+int lowestBit(word imm) ;
+
+int isEven(word num) {
+    return !(num % 2);
+}
+
 void evalOperand2(ASSEMBLY *as, STATE *state, word *output){
 
     if (strchr(as->tokens[2], '#') != NULL){
         evalExp(as, state, output);
     } else {
-         //evalShifts(as, state, output);
+         evalShifts(as, state, output);
     }
 }
 
@@ -430,20 +435,72 @@ void evalExp (ASSEMBLY *as, STATE *state, word *output){
     stripBrackets(as->tokens[2]);
 
     setBits(output, 1, 25);
+    word imm;
 
     if (strchr(as->tokens[2], 'x')) {
-        setBits(output, (word) strtol(as->tokens[2] + 2, NULL, 16), 0);
+        imm = (word) strtol(as->tokens[2] + 2, NULL, 16);
     } else {
+        imm = (word) strtol(as->tokens[2], NULL, 10);
+    }
+    if (imm < 256) {
+        //no shift needed
         setBits(output, (word) strtol(as->tokens[2], NULL, 10), 0);
+    } else if (imm > ((255 < 24) + 1)) {
+        printf("Number too big!");
+        exit(EXIT_FAILURE);
+    } else {
+        int n = rangeOfBits(imm);
+        if (n > 7) {
+            printf("Number can't be represented!");
+            exit(EXIT_FAILURE);
+        }
+        if ((n == 7) && !isEven((word) lowestBit(imm))) {
+         printf("Odd shift cannot be represented!");
+        }
+        word rotate = 0;
+        while ((imm > 256) && !isEven((word) rotate)) {
+            //rotate left 1
+            imm = (imm << 1) | (imm >> 31);
+            rotate++;
+        }
+        rotate /= 2;
+        setBits(output, imm, 0);
+        setBits(output, rotate, 8);
     }
 
 }
 
-/*
+int lowestBit(word imm) {
+    int lowest = 0;
+    for (int i = 0; i < 32; ++i) {
+        if (imm & (1 << i)) {
+            lowest = i;
+            break;
+        }
+    }
+    return lowest;
+}
+
+int highestBit(word imm) {
+    int highest=0;
+    for (int j = 31; j >=0 ; --j) {
+        if (imm & (1 << j)) {
+            highest = j;
+            break;
+        }
+    }
+}
+
+int rangeOfBits(word imm) {
+    return highestBit(imm) - lowestBit(imm);
+}
+
+
 void evalShifts (ASSEMBLY *as, STATE *state, word *output){
 
-    byte op2 = (byte) strtol(operand2[0] + 1, NULL, 10);
+//    byte op2 = (byte) strtol(operand2[0] + 1, NULL, 10);
 
+    /*
     if (strcmp(operand2[1], "asr") == 0){
         op2 |= 0x00000050;
     }
@@ -453,9 +510,10 @@ void evalShifts (ASSEMBLY *as, STATE *state, word *output){
     else if (strcmp(operand2[1], "ror") == 0){
         op2 |= 0x00000040;
     }
+     */
 
 }
-*/
+
 
 const nameToFunc funcMap[] = {{"add", evalAdd}, {"sub", evalSub},
                               {"rsb", evalRsb}, {"and", evalAnd},

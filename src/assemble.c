@@ -369,7 +369,7 @@ int isEven(word num) {
 
 void evalOperand2(ASSEMBLY *as, STATE *state, word *output, int op2Point){
 
-    if (strchr(as->tokens[op2Point], '#') != NULL){
+    if ((strchr(as->tokens[op2Point], '#') != NULL) || (strchr(as->tokens[op2Point], 'x') != NULL)){
         evalExp(as, state, output, op2Point);
     } else {
          evalShifts(as, state, output, op2Point);

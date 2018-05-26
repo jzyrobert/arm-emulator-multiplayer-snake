@@ -449,7 +449,7 @@ void evalExp (ASSEMBLY *as, STATE *state, word *output, int op2Point){
          printf("Odd shift cannot be represented!");
         }
         word rotate = 0;
-        while ((imm > 256) || !isEven((word) rotate)) {
+        while ((imm > 255) || !isEven((word) rotate)) {
             //rotate left 1
             imm = (imm << 1) | (imm >> 31);
             rotate++;

@@ -62,23 +62,18 @@ word evalAdd(ASSEMBLY *as, STATE *state){
     setAlwaysCond(&output);
     setBits(&output, 4, 21);
     evalOperand2(as, state, &output, 2);
-    long rn = strtol(as->tokens[1] + 1, NULL, 10);
-    long rd = strtol(as->tokens[0] + 1, NULL, 10);
-    output |= (rd << 12);
-    output |= (rn << 16);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
+    setBits(&output, getRegNum(as->tokens[1]), 16);
     return output;
 }
 
 word evalSub(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[1] + 1, NULL, 10);
-    long rd = strtol(as->tokens[0] + 1, NULL, 10);
     setBits(&output, 2, 21);
-    setBits(&output, rd, 12);
-    setBits(&output, rn, 16);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
+    setBits(&output, getRegNum(as->tokens[1]), 16);
     evalOperand2(as, state, &output, 2);
-    //printf("Output is %x\n", output);
     return output;
 }
 
@@ -104,7 +99,7 @@ void setBranchOffset(STATE *state, ASSEMBLY *as, word *output) {
 word evalBranc(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    output |= (5 << 25);
+    setBits(&output, 5, 25);
     setBranchOffset(state, as, &output);
     return output;
 }
@@ -112,9 +107,8 @@ word evalBranc(ASSEMBLY *as, STATE *state){
 word evalMov(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[0] + 1, NULL, 10);
-    output |= (13 << 21);
-    output |= (rn << 12);
+    setBits(&output, 13, 21);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
     evalOperand2(as, state, &output, 1);
     return output;
 }
@@ -195,10 +189,9 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
         //pre/post indexed address
     word output = 0;
     setAlwaysCond(&output);
-    long rd = strtol(as->tokens[0] + 1, NULL, 10);
-    output |= (rd << 12);
-    output |= (1 << 26);
-    output |= (1 << 20);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
+    setBits(&output, 1, 26);
+    setBits(&output, 1, 20);
     processTransfers(as, state, &output);
     return output;
     }
@@ -206,49 +199,49 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
 word evalSTR(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    output |= (1 << 26);
-    long rd = strtol(as->tokens[0] + 1, NULL, 10);
-    output |= (rd << 12);
+    setBits(&output, 1, 26);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
     processTransfers(as, state, &output);
     return output;
 }
 
 word evalBNE(ASSEMBLY *as, STATE *state){
     word output = 0;
-    output |= (1 << 28);
-    output |= (5 << 25);
+    setBits(&output, 1, 28);
+    setBits(&output, 1, 27);
+    setBits(&output, 1, 25);
     setBranchOffset(state, as, &output);
     return output;
 }
 
 word evalBLT(ASSEMBLY *as, STATE *state){
     word output = 0;
-    output |= (11 << 28);
-    output |= (5 << 25);
+    setBits(&output, 11, 28);
+    setBits(&output, 5, 25);
     setBranchOffset(state, as, &output);
     return output;
 }
 
 word evalBGE(ASSEMBLY *as, STATE *state){
     word output = 0;
-    output |= (10 << 28);
-    output |= (5 << 25);
+    setBits(&output, 10, 28);
+    setBits(&output, 5, 25);
     setBranchOffset(state, as, &output);
     return output;
 }
 
 word evalBGT(ASSEMBLY *as, STATE *state){
     word output = 0;
-    output |= (12 << 28);
-    output |= (5 << 25);
+    setBits(&output, 12, 28);
+    setBits(&output, 5, 25);
     setBranchOffset(state, as, &output);
     return output;
 }
 
 word evalBLE(ASSEMBLY *as, STATE *state){
     word output = 0;
-    output |= (13 << 28);
-    output |= (5 << 25);
+    setBits(&output, 13, 28);
+    setBits(&output, 5, 25);
     setBranchOffset(state, as, &output);
     return output;
 }
@@ -270,7 +263,7 @@ word evalANDEQ(ASSEMBLY *as, STATE *state){
 }
 word evalBeq(ASSEMBLY *as, STATE *state){
     word output = 0;
-    output |= (5 << 25);
+    setBits(&output, 5, 25);
     setBranchOffset(state, as, &output);
     return output;
 }
@@ -278,87 +271,69 @@ word evalBeq(ASSEMBLY *as, STATE *state){
 word evalRsb(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[1] + 1, NULL, 10);
-    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
+    setBits(&output, getRegNum(as->tokens[1]), 16);
     setBits(&output, 3, 21);
-    setBits(&output, rd, 12);
-    setBits(&output, rn, 16);
     evalOperand2(as, state, &output, 2);
-    //printf("Output is %x\n", output);
     return output;
 }
 
 word evalAnd(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[1] + 1, NULL, 10);
-    long rd = strtol(as->tokens[0] + 1, NULL, 10);
-    setBits(&output, rd, 12);
-    setBits(&output, rn, 16);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
+    setBits(&output, getRegNum(as->tokens[1]), 16);
     evalOperand2(as, state, &output, 2);
-    //printf("Output is %x\n", output);
     return output;
 }
 
 word evalEor(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[1] + 1, NULL, 10);
-    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
+    setBits(&output, getRegNum(as->tokens[1]), 16);
     setBits(&output, 1, 21);
-    setBits(&output, rd, 12);
-    setBits(&output, rn, 16);
-    evalOperand2(as, state, &output, 2);
-    //printf("Output is %x\n", output);
+    evalOperand2(as, state, &output, 2);;
     return output;
 }
 
 word evalOrr(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[1] + 1, NULL, 10);
-    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
+    setBits(&output, getRegNum(as->tokens[1]), 16);
     setBits(&output, 12, 21);
-    setBits(&output, rd, 12);
-    setBits(&output, rn, 16);
     evalOperand2(as, state, &output, 2);
-    //printf("Output is %x\n", output);
     return output;
 }
 
 word evalTst(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[0] + 1, NULL, 10);
     setBits(&output, 1, 20);
     setBits(&output, 8, 21);
-    setBits(&output, rn, 16);
+    setBits(&output, getRegNum(as->tokens[0]), 16);
     evalOperand2(as, state, &output, 1);
-    //printf("Output is %x\n", output);
     return output;
 }
 
 word evalTeq(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[0] + 1, NULL, 10);
     setBits(&output, 1, 20);
     setBits(&output, 9, 21);
-    setBits(&output, rn, 16);
+    setBits(&output, getRegNum(as->tokens[0]), 16);
     evalOperand2(as, state, &output, 1);
-    //printf("Output is %x\n", output);
     return output;
 }
 
 word evalCmp(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[0] + 1, NULL, 10);
     setBits(&output, 1, 20);
     setBits(&output, 10, 21);
-    setBits(&output, rn, 16);
+    setBits(&output, getRegNum(as->tokens[0]), 16);
     evalOperand2(as, state, &output, 1);
-    //printf("Output is %x\n", output);
     return output;
 }
 

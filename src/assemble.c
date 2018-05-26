@@ -88,6 +88,7 @@ word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
     for (int i = 0; i < state->noOfLabels; ++i) {
         if (strcmp(offset, state->labels[i].label) == 0) {
             address = state->labels[i].address;
+            break;
         }
     }
     address = (word) (((((int32_t) address - (int32_t) as->address) - 8) >> 2) & ((1 << 25)-1));
@@ -210,7 +211,9 @@ word evalBNE(ASSEMBLY *as, STATE *state){
     word output = 0;
     output |= (1 << 28);
     output |= (5 << 25);
-    output |= calculateBOffset(state, as,as->tokens[0]);
+    word offset = calculateBOffset(state, as,as->tokens[0]);
+    offset &= 0xFFFFFF;
+    output |= offset;
     return output;
 }
 

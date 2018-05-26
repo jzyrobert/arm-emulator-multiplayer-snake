@@ -343,9 +343,8 @@ word evalTst(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
-    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    setBits(&output, 1, 20);
     setBits(&output, 8, 21);
-    setBits(&output, rd, 12);
     setBits(&output, rn, 16);
     evalOperand2(as, state, &output, 1);
     //printf("Output is %x\n", output);
@@ -356,9 +355,8 @@ word evalTeq(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
-    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    setBits(&output, 1, 20);
     setBits(&output, 9, 21);
-    setBits(&output, rd, 12);
     setBits(&output, rn, 16);
     evalOperand2(as, state, &output, 1);
     //printf("Output is %x\n", output);
@@ -369,9 +367,8 @@ word evalCmp(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
-    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    setBits(&output, 1, 20);
     setBits(&output, 10, 21);
-    setBits(&output, rd, 12);
     setBits(&output, rn, 16);
     evalOperand2(as, state, &output, 1);
     //printf("Output is %x\n", output);

@@ -174,6 +174,10 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
         } else {
             //optional shift case
             setBits(output, 1, 25);
+            if (strchr(as->tokens[2], '-') != NULL) {
+                //if negative remove sign before processing;
+                as->tokens[2] = as->tokens[2] + 1;
+            }
             as->tokens[3][strlen(as->tokens[3])-2] = '\n';
             as->tokens[3][strlen(as->tokens[3])-1] = '\0';
             evalShifts(as, state, output, 2);

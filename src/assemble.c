@@ -465,7 +465,11 @@ void evalShifts (ASSEMBLY *as, STATE *state, word *output, int op2Point) {
         }
         //process Rs or OP
         if (strchr(as->tokens[op2Point + 1], '#')) {
-            setBits(output, (word) strtol(as->tokens[op2Point + 1] + 4, NULL, 10), 7);
+            if (strchr(as->tokens[op2Point+1], 'x')) {
+                setBits(output, (word) strtol(as->tokens[op2Point + 1] + 6, NULL, 16), 7);
+            } else {
+                setBits(output, (word) strtol(as->tokens[op2Point + 1] + 4, NULL, 10), 7);
+            }
         } else {
             setBits(output,1 ,4);
             setBits(output, getRegNum(as->tokens[op2Point + 1] + 3),8);

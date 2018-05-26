@@ -10,7 +10,7 @@ typedef uint8_t byte;
 
 typedef struct {
     char label[20];
-    address address;
+    word address;
 } LABEL;
 
 typedef struct {
@@ -26,7 +26,7 @@ typedef struct {
 
 typedef struct {
     char* tokens[6];
-    address address;
+    word address;
     int noOfTokens;
 } ASSEMBLY;
 
@@ -43,6 +43,9 @@ void setAlwaysCond(word *output){
 
 word getRegNum(char *name){
     name++;
+    if (strchr(name, 'C')) {
+        return 15;
+    }
     return (word) atoi(name);
 }
 
@@ -85,8 +88,24 @@ word evalSub(ASSEMBLY *as, STATE *state){
     return output;
 }
 
+word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
+    word address;
+    offset[strlen(offset)-1] = '\0';
+    for (int i = 0; i < state->noOfLabels; ++i) {
+        if (strcmp(offset, state->labels[i].label) == 0) {
+            address = state->labels[i].address;
+        }
+    }
+    address = (word) (((((int32_t) address - (int32_t) as->address) - 8) >> 2) & ((1 << 25)-1));
+    return address;
+}
+
 word evalBranc(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    setAlwaysCond(&output);
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalMov(ASSEMBLY *as, STATE *state){
@@ -101,7 +120,9 @@ word evalMov(ASSEMBLY *as, STATE *state){
     }
     printf("%d\n", op2);
     long rn = strtol(as->tokens[0] + 1, NULL, 10);
-    output |= (1 << 25);
+    if (strchr(as->tokens[1], 'r') == NULL) {
+        output |= (1 << 25);
+    }
     output |= (13 << 21);
     output |= (rn << 12);
     output |= op2;
@@ -109,8 +130,51 @@ word evalMov(ASSEMBLY *as, STATE *state){
     return output;
 }
 
-void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
+void stripBrackets(char* string) {
+    size_t len = strlen(string);
+    memmove(string, string+1, len-2);
+    string[len-2] = 0;
+}
 
+long decodeEXP(char *str) {
+    if (strchr(str, 'x') != NULL) {
+        return strtol(str + 3 , NULL, 16);
+    } else {
+        return strtol(str + 1, NULL, 10);
+    }
+}
+
+void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
+    printf("Processing index assembly:\n");
+    if (strchr(as->tokens[1], ']') != NULL) {
+        //[RN]- something?
+        if (as->noOfTokens == 2) {
+            //pre-index RN
+            stripBrackets(as->tokens[1]);
+            *output |= (getRegNum(as->tokens[1]) << 16);
+            *output |= (1 << 24);
+            *output |= (1 << 23);
+        } else {
+            //post index [RN], expression
+            if (strchr(as->tokens[2], 'r') != NULL) {
+                *output |= (1 << 25);
+            }
+            stripBrackets(as->tokens[1]);
+            *output |= (1 << 23);
+            *output |= (getRegNum(as->tokens[1]) << 16);
+            *output |= decodeEXP(as->tokens[2]);
+        }
+    } else {
+        //[Rn - Expression]
+        if (strchr(as->tokens[2], 'r') != NULL) {
+            *output |= (1 << 25);
+        }
+        *output |= (1 << 24);
+        *output |= (1 << 23);
+        *output |= (getRegNum(as->tokens[1] + 1) << 16);
+        as->tokens[2][strlen(as->tokens[2])-1] = '\0';
+        *output |= decodeEXP(as->tokens[2]);
+    }
 }
 
 word evalLDR(ASSEMBLY *as, STATE *state) {
@@ -118,19 +182,22 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
         word address = (word) strtol(as->tokens[1] + 1, NULL,0);
         if (address > 0xFF) {
             state->extras[state->noOfExtraLines] = address;
-            as->noOfTokens = 4;
-            as->tokens[2] = "[PC";
-            as->tokens[3] = "#";
-            word offset = ((state->noOfLines * 4 - as->address) - 8);
+            as->noOfTokens = 3;
+            as->tokens[1] = "[PC";
+            char *test = malloc(30 * sizeof(char));
+            test[0] = '#';
+            test[1] = '\0';
+            word offset = (((state->noOfLines - 1) * 4 - as->address) - 8);
             char str[10];
             sprintf(str, "%u", offset);
-            strcat(as->tokens[3], str);
-            strcat(as->tokens[3], "]");
+            strcat(test, str);
+            strcat(test, "]");
+            as->tokens[2] = test;
             printf("Printing new instructions:\n");
-            for (int i = 0; i < 4; ++i) {
+            for (int i = 0; i < as->noOfTokens; ++i) {
                 printf("%s\n", as->tokens[i]);
             }
-            state->extras[state->noOfExtraLines] ++;
+            state->noOfExtraLines ++;
             return evalLDR(as, state);
         } else {
             return evalMov(as, state);
@@ -148,38 +215,74 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
     }
 }
 word evalSTR(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    setAlwaysCond(&output);
+    output |= (1 << 26);
+    long rd = strtol(as->tokens[0] + 1, NULL, 10);
+    output |= (rd << 12);
+    processTransfers(as, state, &output);
+    return output;
 }
 
 word evalBNE(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (1 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalBLT(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (11 << 28);
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalBGE(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (10 << 28);
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalBGT(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (12 << 28);
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalBLE(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (13 << 28);
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalLSL(ASSEMBLY *as, STATE *state){
-    return 0;
+    as->tokens[1][strlen(as->tokens[1])-1] = '\0';
+    char *lsl = (char*) malloc(20 * sizeof(char));
+    lsl[0] = '\0';
+    strcat(lsl, "lsl");
+    strcat(lsl, as->tokens[1]);
+    as->tokens[2] = lsl;
+    strcpy(as->tokens[1], as->tokens[0]);
+    as->noOfTokens = 3;
+    return evalMov(as, state);
 }
 
 word evalANDEQ(ASSEMBLY *as, STATE *state){
     return 0;
 }
 word evalBeq(ASSEMBLY *as, STATE *state){
-    return 0;
+    word output = 0;
+    output |= (5 << 25);
+    output |= calculateBOffset(state, as,as->tokens[0]);
+    return output;
 }
 
 word evalRsb(ASSEMBLY *as, STATE *state){

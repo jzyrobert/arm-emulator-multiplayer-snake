@@ -27,23 +27,23 @@
 
 enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH, HALT};
 
-typedef struct {
+struct instruction {
     wordS largeOffset;
     word binary;
     address Rn, Rd, Operand2, Rs, Rm, smallOffset;
     byte Opcode;
     bool I, P, U, A, S, L;
     enum I_Type type;
-} INSTRUCTION ;
+};
 
-typedef struct {
+struct state {
     byte mem[MEM_SIZE];
     //memory as 8 bit array
     word reg[REG_SIZE], fetch;
     //registers as 32 bit array
     INSTRUCTION instruction;
     bool instruction_exists, decode_exists, finished;
-} STATE;
+};
 
 
 void readFile(char* file_name, byte* memory){

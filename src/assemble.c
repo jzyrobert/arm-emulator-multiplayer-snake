@@ -326,27 +326,6 @@ word evalOrr(ASSEMBLY *as, STATE *state){
     return output;
 }
 
-/* redundant evaladd test code
-word output = 0;
-output |= (0xE << 28);
-byte op2;
-if (strchr(as->tokens[2], 'x') != NULL) {
-  op2 = (byte) strtol(as->tokens[2] + 3, NULL, 16);
-} else {
-  op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
-}
-if (strchr(as->tokens[2], 'r') == NULL) {
-   output |= (1 << 25);
-}
-long rd = strtol(as->tokens[0] + 1, NULL, 10);
-long rn = strtol(as->tokens[1] + 1, NULL, 10);
-output |= (4 << 21);
-output |= (rn << 16);
-output |= (rd << 12);
-output |= op2;
-return output;
-*/
-
 word evalTst(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
@@ -537,6 +516,7 @@ void assignLabels(STATE *state){
     address count = 0;
     char buffer[200];
     while (!feof(source)) {
+        memset(buffer, 0, strlen(buffer));
         fgets(buffer, 200, source);
         char *check = strchr(buffer, ':');
         //if starts with character and ends in :
@@ -546,8 +526,10 @@ void assignLabels(STATE *state){
             state->labels[state->noOfLabels].address = count;
             state->noOfLabels ++;
         } else {
-            state->noOfLines ++;
+            if (strcmp(buffer, "\n") != 0) {
+                state->noOfLines++;
             count += 4;
+            }
         }
     }
     fclose(source);

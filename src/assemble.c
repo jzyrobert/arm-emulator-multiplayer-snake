@@ -120,10 +120,16 @@ void stripBrackets(char* string) {
 }
 
 long decodeEXP(char *str) {
+    int offset = 0;
+    if (strchr(str, '-') != NULL) {
+        offset++;
+    }
     if (strchr(str, 'x') != NULL) {
-        return strtol(str + 3 , NULL, 16);
+        offset +=3;
+        return strtol(str + offset , NULL, 16);
     } else {
-        return strtol(str + 1, NULL, 10);
+        offset++;
+        return strtol(str + offset, NULL, 10);
     }
 }
 
@@ -153,7 +159,10 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
             *output |= (1 << 25);
         }
         *output |= (1 << 24);
-        *output |= (1 << 23);
+        if (strchr(as->tokens[2], '-') == NULL) {
+            //its not negative;
+            *output |= (1 << 23);
+        }
         *output |= (getRegNum(as->tokens[1] + 1) << 16);
         as->tokens[2][strlen(as->tokens[2])-1] = '\0';
         *output |= decodeEXP(as->tokens[2]);

@@ -264,7 +264,15 @@ word evalBLE(ASSEMBLY *as, STATE *state){
 }
 
 word evalLSL(ASSEMBLY *as, STATE *state){
-    return 0;
+    as->tokens[1][strlen(as->tokens[1])-1] = '\0';
+    char *lsl = (char*) malloc(20 * sizeof(char));
+    lsl[0] = '\0';
+    strcat(lsl, "lsl");
+    strcat(lsl, as->tokens[1]);
+    as->tokens[2] = lsl;
+    strcpy(as->tokens[1], as->tokens[0]);
+    as->noOfTokens = 3;
+    return evalMov(as, state);
 }
 
 word evalANDEQ(ASSEMBLY *as, STATE *state){

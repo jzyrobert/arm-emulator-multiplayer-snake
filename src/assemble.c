@@ -133,6 +133,8 @@ long decodeEXP(char *str) {
     }
 }
 
+void evalShifts (ASSEMBLY *as, STATE *state, word *output, int op2Point) ;
+
 void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
     printf("Processing index assembly:\n");
     if (strchr(as->tokens[1], ']') != NULL) {
@@ -155,17 +157,27 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
         }
     } else {
         //[Rn - Expression]
-        if (strchr(as->tokens[2], 'r') != NULL) {
-            *output |= (1 << 25);
-        }
         *output |= (1 << 24);
+        //Sets P
         if (strchr(as->tokens[2], '-') == NULL) {
-            //its not negative;
+            //its not negative, sets U;
             *output |= (1 << 23);
         }
+        //Setting RN
         *output |= (getRegNum(as->tokens[1] + 1) << 16);
-        as->tokens[2][strlen(as->tokens[2])-1] = '\0';
-        *output |= decodeEXP(as->tokens[2]);
+        if (as->noOfTokens == 3) {
+            if (strchr(as->tokens[2], 'r') != NULL) {
+                *output |= (1 << 25);
+            }
+            as->tokens[2][strlen(as->tokens[2]) - 1] = '\0';
+            *output |= decodeEXP(as->tokens[2]);
+        } else {
+            //optional shift case
+            setBits(output, 1, 25);
+            as->tokens[3][strlen(as->tokens[3])-2] = '\n';
+            as->tokens[3][strlen(as->tokens[3])-1] = '\0';
+            evalShifts(as, state, output, 2);
+        }
     }
 }
 

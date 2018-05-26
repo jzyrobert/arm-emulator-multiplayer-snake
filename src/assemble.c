@@ -489,6 +489,7 @@ int highestBit(word imm) {
             break;
         }
     }
+    return highest;
 }
 
 int rangeOfBits(word imm) {

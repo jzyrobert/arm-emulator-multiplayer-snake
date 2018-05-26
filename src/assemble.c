@@ -293,19 +293,14 @@ word evalAnd(ASSEMBLY *as, STATE *state){
 }
 
 word evalEor(ASSEMBLY *as, STATE *state){
-    word output = 0xE0000000;
-
-
+    word output = 0;
     setAlwaysCond(&output);
-    byte op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);
-
-    output |= (0x00200000);
-    output |= (rd << 16);
-    output |= (rn << 12);
-    output |= op2;
-
+    setBits(&output, 1, 21);
+    setBits(&output, rd, 12);
+    setBits(&output, rn, 16);
+    evalOperand2(as, state, &output, 2);
     //printf("Output is %x\n", output);
     return output;
 }

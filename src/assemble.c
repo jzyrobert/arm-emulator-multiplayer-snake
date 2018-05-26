@@ -55,17 +55,18 @@ void setBits(word *output, word bits, word end){
     *output |= (bits << end);
 }
 
+void evalOperand2(ASSEMBLY *as, STATE *state, word *output);
+
 word evalAdd(ASSEMBLY *as, STATE *state){
-    word output = 0xE0000000;
+    word output = 0;
     setAlwaysCond(&output);
-    byte op2 = (byte) strtol(as->tokens[2] + 1, NULL, 10);
+    evalOperand2(as, state, &output);
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);
 
-    output |= (0x00800000);
+    setBits(&output, 1, 20);
     output |= (rd << 16);
     output |= (rn << 12);
-    output |= op2;
 
     //printf("Output is %x\n", output);
     return output;
@@ -412,42 +413,49 @@ word evalMla(ASSEMBLY *as, STATE *state){
     return output;
 }
 
-word evalOperand2(char** operand2){
+void evalShifts (ASSEMBLY *as, STATE *state, word *output);
 
-    if (operand2[0][0] = '#'){
-        return evalExp(&operand2[0][1], 255);
+void evalExp (ASSEMBLY *as, STATE *state, word *output);
+
+void evalOperand2(ASSEMBLY *as, STATE *state, word *output){
+
+    if (strchr(as->tokens[2], '#') != NULL){
+        evalExp(as, state, output);
+    } else {
+         //evalShifts(as, state, output);
     }
-
-    return evalShifts(operand2);
 }
 
-word evalExp (char* operand2, word maxSize){
+void evalExp (ASSEMBLY *as, STATE *state, word *output){
+    stripBrackets(as->tokens[2]);
 
-    byte op2 = (byte) strtol(operand2, NULL, 0);
+    setBits(output, 1, 25);
 
-    if (op2 > maxSize){
-        printf ("Operand2 too large");
-        exit (EXIT_FAILURE);
+    if (strchr(as->tokens[2], 'x')) {
+        setBits(output, (word) strtol(as->tokens[2] + 2, NULL, 16), 0);
+    } else {
+        setBits(output, (word) strtol(as->tokens[2], NULL, 10), 0);
     }
 
-    return op2;
 }
 
-word evalShifts (char** operand2){
+/*
+void evalShifts (ASSEMBLY *as, STATE *state, word *output){
 
-    byte op2 = (byte) strtol(as->tokens[0] + 1, NULL, 10);
+    byte op2 = (byte) strtol(operand2[0] + 1, NULL, 10);
 
-    if (strcmp(op2[1], "asr") == 0){
+    if (strcmp(operand2[1], "asr") == 0){
         op2 |= 0x00000050;
     }
-    else if (strcmp(op2[1], "lsr") == 0){
+    else if (strcmp(operand2[1], "lsr") == 0){
         op2 |= 0x00000020;
     }
-    else if (strcmp(op2[1], "ror") == 0){
+    else if (strcmp(operand2[1], "ror") == 0){
         op2 |= 0x00000040;
     }
 
 }
+*/
 
 const nameToFunc funcMap[] = {{"add", evalAdd}, {"sub", evalSub},
                               {"rsb", evalRsb}, {"and", evalAnd},
@@ -513,8 +521,7 @@ void writeToFile(STATE *state, word binary) {
     fwrite(&last, sizeof(byte),1,state->outputFile);
 }
 
-void RemoveSpaces(char* source)
-{
+void RemoveSpaces(char* source) {
     char* i = source;
     char* j = source;
     while(*j != 0)

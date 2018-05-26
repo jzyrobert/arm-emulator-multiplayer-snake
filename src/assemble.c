@@ -208,7 +208,8 @@ word evalSTR(ASSEMBLY *as, STATE *state){
 
 word evalBNE(ASSEMBLY *as, STATE *state){
     word output = 0;
-    output |= (1 << 25);
+    output |= (1 << 28);
+    output |= (5 << 25);
     output |= calculateBOffset(state, as,as->tokens[0]);
     return output;
 }

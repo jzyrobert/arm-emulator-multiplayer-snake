@@ -428,7 +428,7 @@ void evalExp (ASSEMBLY *as, STATE *state, word *output, int op2Point){
     }
     if (imm < 256) {
         //no shift needed
-        setBits(output, (word) strtol(as->tokens[op2Point], NULL, 10), 0);
+        setBits(output, imm, 0);
     } else if (imm > ((255 << 24) + 1)) {
         printf("Number too big!");
         exit(EXIT_FAILURE);

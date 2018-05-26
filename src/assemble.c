@@ -342,7 +342,7 @@ return output;
 word evalTst(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[1] + 1, NULL, 10);
+    long rn = strtol(as->tokens[0] + 1, NULL, 10);
     setBits(&output, 1, 20);
     setBits(&output, 8, 21);
     setBits(&output, rn, 16);
@@ -354,7 +354,7 @@ word evalTst(ASSEMBLY *as, STATE *state){
 word evalTeq(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[1] + 1, NULL, 10);
+    long rn = strtol(as->tokens[0] + 1, NULL, 10);
     setBits(&output, 1, 20);
     setBits(&output, 9, 21);
     setBits(&output, rn, 16);
@@ -366,7 +366,7 @@ word evalTeq(ASSEMBLY *as, STATE *state){
 word evalCmp(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    long rn = strtol(as->tokens[1] + 1, NULL, 10);
+    long rn = strtol(as->tokens[0] + 1, NULL, 10);
     setBits(&output, 1, 20);
     setBits(&output, 10, 21);
     setBits(&output, rn, 16);

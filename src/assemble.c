@@ -208,6 +208,7 @@ word evalSTR(ASSEMBLY *as, STATE *state){
 word evalBNE(ASSEMBLY *as, STATE *state){
     word output = 0;
     setBits(&output, 1, 28);
+    setBits(&output, 1, 27);
     setBits(&output, 1, 25);
     setBranchOffset(state, as, &output);
     return output;

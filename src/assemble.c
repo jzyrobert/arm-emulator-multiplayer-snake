@@ -95,11 +95,17 @@ word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
     return address;
 }
 
+void setBranchOffset(STATE *state, ASSEMBLY *as, word *output) {
+    word offset = calculateBOffset(state, as,as->tokens[0]);
+    offset &= 0xFFFFFF;
+    *output |= offset;
+}
+
 word evalBranc(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
     output |= (5 << 25);
-    output |= calculateBOffset(state, as,as->tokens[0]);
+    setBranchOffset(state, as, &output);
     return output;
 }
 
@@ -211,9 +217,7 @@ word evalBNE(ASSEMBLY *as, STATE *state){
     word output = 0;
     output |= (1 << 28);
     output |= (5 << 25);
-    word offset = calculateBOffset(state, as,as->tokens[0]);
-    offset &= 0xFFFFFF;
-    output |= offset;
+    setBranchOffset(state, as, &output);
     return output;
 }
 
@@ -221,7 +225,7 @@ word evalBLT(ASSEMBLY *as, STATE *state){
     word output = 0;
     output |= (11 << 28);
     output |= (5 << 25);
-    output |= calculateBOffset(state, as,as->tokens[0]);
+    setBranchOffset(state, as, &output);
     return output;
 }
 
@@ -229,7 +233,7 @@ word evalBGE(ASSEMBLY *as, STATE *state){
     word output = 0;
     output |= (10 << 28);
     output |= (5 << 25);
-    output |= calculateBOffset(state, as,as->tokens[0]);
+    setBranchOffset(state, as, &output);
     return output;
 }
 
@@ -237,7 +241,7 @@ word evalBGT(ASSEMBLY *as, STATE *state){
     word output = 0;
     output |= (12 << 28);
     output |= (5 << 25);
-    output |= calculateBOffset(state, as,as->tokens[0]);
+    setBranchOffset(state, as, &output);
     return output;
 }
 
@@ -245,7 +249,7 @@ word evalBLE(ASSEMBLY *as, STATE *state){
     word output = 0;
     output |= (13 << 28);
     output |= (5 << 25);
-    output |= calculateBOffset(state, as,as->tokens[0]);
+    setBranchOffset(state, as, &output);
     return output;
 }
 
@@ -267,7 +271,7 @@ word evalANDEQ(ASSEMBLY *as, STATE *state){
 word evalBeq(ASSEMBLY *as, STATE *state){
     word output = 0;
     output |= (5 << 25);
-    output |= calculateBOffset(state, as,as->tokens[0]);
+    setBranchOffset(state, as, &output);
     return output;
 }
 

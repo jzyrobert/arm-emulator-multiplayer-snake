@@ -65,9 +65,8 @@ word evalAdd(ASSEMBLY *as, STATE *state){
     long rn = strtol(as->tokens[1] + 1, NULL, 10);
     long rd = strtol(as->tokens[0] + 1, NULL, 10);
 
-    setBits(&output, 1, 20);
-    output |= (rd << 16);
-    output |= (rn << 12);
+    output |= (rd << 12);
+    output |= (rn << 16);
 
     //printf("Output is %x\n", output);
     return output;

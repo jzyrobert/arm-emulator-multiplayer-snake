@@ -402,6 +402,10 @@ int rangeOfBits(word imm);
 
 int lowestBit(word imm) ;
 
+void evalExp (ASSEMBLY *as, STATE *state, word *output, int op2Point);
+
+void evalShifts (ASSEMBLY *as, STATE *state, word *output, int op2Point) ;
+
 int isEven(word num) {
     return !(num % 2);
 }

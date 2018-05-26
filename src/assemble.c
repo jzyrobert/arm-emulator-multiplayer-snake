@@ -79,7 +79,9 @@ word evalSub(ASSEMBLY *as, STATE *state){
 
 word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
     word address;
-    offset[strlen(offset)-1] = '\0';
+    if (strchr(offset, '\n') != NULL) {
+        offset[strlen(offset)-1] = '\0';
+    }
     for (int i = 0; i < state->noOfLabels; ++i) {
         if (strcmp(offset, state->labels[i].label) == 0) {
             address = state->labels[i].address;
@@ -195,7 +197,7 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
             char *test = malloc(30 * sizeof(char));
             test[0] = '#';
             test[1] = '\0';
-            word offset = (((state->noOfLines - 1 + state->noOfExtraLines) * 4 - as->address) - 8);
+            word offset = (((state->noOfLines + state->noOfExtraLines) * 4 - as->address) - 8);
             char str[10];
             sprintf(str, "%u", offset);
             strcat(test, str);

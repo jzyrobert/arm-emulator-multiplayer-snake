@@ -3,18 +3,15 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "assemble.h"
 
 
-typedef uint16_t address;
-typedef uint32_t word;
-typedef uint8_t byte;
-
-typedef struct {
+struct label {
     char label[20];
     word address;
-} LABEL;
+} ;
 
-typedef struct {
+struct state{
     LABEL labels[10];
     word extras[10];
     int noOfLines;
@@ -22,106 +19,32 @@ typedef struct {
     int noOfExtraLines;
     char* input;
     FILE* outputFile;
-} STATE;
+};
 
-typedef struct {
+struct assembly{
     char* tokens[6];
     word address;
     int noOfTokens;
-} ASSEMBLY;
+};
 
-typedef word (*evalFunc)(ASSEMBLY *assembly, STATE *state);
-
-typedef struct {
+struct NTF{
     char *name;
     evalFunc func;
-} nameToFunc;
+};
 
-void setBits(word *output, word bits, word end);
-
-void setAlwaysCond(word *output){
-    setBits(output, 0xE, 28);
-}
-
-word getRegNum(char *name){
-    name++;
-    if (strchr(name, 'C')) {
-        return 15;
-    }
-    return (word) strtol(name, NULL, 10);
-}
-
-void setBits(word *output, word bits, word end){
-    //the bits are set leading to the end bit
-    //end bit is the lowest bit of the section being set
-    *output |= (bits << end);
-}
-
-void evalOperand2(ASSEMBLY *as, word *output, int op2Point);
-
-word evalAdd(ASSEMBLY *as, STATE *state){
-    word output = 0;
-    setAlwaysCond(&output);
-    setBits(&output, 4, 21);
-    evalOperand2(as, &output, 2);
-    setBits(&output, getRegNum(as->tokens[0]), 12);
-    setBits(&output, getRegNum(as->tokens[1]), 16);
-    return output;
-}
-
-word evalSub(ASSEMBLY *as, STATE *state){
-    word output = 0;
-    setAlwaysCond(&output);
-    setBits(&output, 2, 21);
-    setBits(&output, getRegNum(as->tokens[0]), 12);
-    setBits(&output, getRegNum(as->tokens[1]), 16);
-    evalOperand2(as, &output, 2);
-    return output;
-}
-
-word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
-    word address = 0;
-    if (strchr(offset, '\n') != NULL) {
-        offset[strlen(offset)-1] = '\0';
-    }
-    for (int i = 0; i < state->noOfLabels; ++i) {
-        if (strcmp(offset, state->labels[i].label) == 0) {
-            address = state->labels[i].address;
-            break;
-        }
-    }
-    address = (word) ((int32_t) address - (int32_t) as->address - 8 >> 2 & ((1 << 25) - 1));
-    return address;
-}
-
-void setBranchOffset(STATE *state, ASSEMBLY *as, word *output) {
-    word offset = calculateBOffset(state, as,as->tokens[0]);
-    offset &= 0xFFFFFF;
-    setBits(output, offset, 0);
-}
-
-word evalBranc(ASSEMBLY *as, STATE *state){
-    word output = 0;
-    setAlwaysCond(&output);
-    setBits(&output, 5, 25);
-    setBranchOffset(state, as, &output);
-    return output;
-}
-
-word evalMov(ASSEMBLY *as, STATE *state){
-    word output = 0;
-    setAlwaysCond(&output);
-    setBits(&output, 13, 21);
-    setBits(&output, getRegNum(as->tokens[0]), 12);
-    evalOperand2(as, &output, 1);
-    return output;
-}
-
-void stripBrackets(char* string) {
-    size_t len = strlen(string);
-    memmove(string, string+1, len-2);
-    string[len-2] = 0;
-}
+const nameToFunc funcMap[] = {{"add", evalAdd}, {"sub", evalSub},
+                              {"rsb", evalRsb}, {"and", evalAnd},
+                              {"eor", evalEor}, {"orr", evalOrr},
+                              {"mov", evalMov}, {"tst", evalTst},
+                              {"teq", evalTeq}, {"cmp", evalCmp},
+                              {"mul", evalMul}, {"mla", evalMla},
+                              {"b", evalBranc}, {"beq", evalBeq},
+                              {"add" ,evalAdd}, {"sub" ,evalSub},
+                              {"ldr", evalLDR}, {"str", evalSTR},
+                              {"bne", evalBNE}, {"bge", evalBGE},
+                              {"blt", evalBLT}, {"bgt", evalBGT},
+                              {"ble", evalBLE}, {"lsl", evalLSL},
+                              {"andeq", evalANDEQ}};
 
 bool isHEX(char* string) {
     return strchr(string, 'x') != NULL;
@@ -135,28 +58,27 @@ bool isDirectLDR(char* string) {
     return strchr(string, '=') != NULL;
 }
 
-long decodeEXP(char *str) {
-    int offset = 0;
-    if (strchr(str, '-') != NULL) {
-        //removes -
-        offset++;
-    }
-    if (isDirectLDR(str)) {
-        //removes =
-        offset++;
-    }
-    if (isHEX(str)) {
-        //removes the 0x
-        offset +=3;
-        return strtol(str + offset , NULL, 16);
-    } else {
-        //removes #
-        offset++;
-        return strtol(str + offset, NULL, 10);
-    }
+void setAlwaysCond(word *output){
+    setBits(output, 0xE, 28);
 }
 
-void evalShifts (ASSEMBLY *as, word *output, int op2Point) ;
+void setBits(word *output, word bits, word end){
+    //the bits are set leading to the end bit
+    //end bit is the lowest bit of the section being set
+    *output |= (bits << end);
+}
+
+void setBranchOffset(STATE *state, ASSEMBLY *as, word *output) {
+    word offset = calculateBOffset(state, as,as->tokens[0]);
+    offset &= 0xFFFFFF;
+    setBits(output, offset, 0);
+}
+
+void stripBrackets(char* string) {
+    size_t len = strlen(string);
+    memmove(string, string+1, len-2);
+    string[len-2] = 0;
+}
 
 void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
     printf("Processing index assembly:\n");
@@ -208,111 +130,190 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
     }
 }
 
-word evalLDR(ASSEMBLY *as, STATE *state) {
-    if (isDirectLDR(as->tokens[1])) {
-        word address = (word) decodeEXP(as->tokens[1]);
-        if (address > 0xFF) {
-            state->extras[state->noOfExtraLines] = address;
-            as->noOfTokens = 3;
-            as->tokens[1] = "[PC";
-            char *test = malloc(30 * sizeof(char));
-            test[0] = '#';
-            test[1] = '\0';
-            word offset = (((state->noOfLines + state->noOfExtraLines) * 4 - as->address) - 8);
-            char str[10];
-            sprintf(str, "%u", offset);
-            strcat(test, str);
-            strcat(test, "]");
-            as->tokens[2] = test;
-            printf("Printing new instructions:\n");
-            for (int i = 0; i < as->noOfTokens; ++i) {
-                printf("%s\n", as->tokens[i]);
-            }
-            state->noOfExtraLines ++;
-            return evalLDR(as, state);
-        } else {
-            return evalMov(as, state);
-        }
+void evalOperand2(ASSEMBLY *as, word *output, int op2Point){
+
+    if (isNUM(as->tokens[op2Point]) || isHEX(as->tokens[op2Point])){
+        evalExp(as, output, op2Point);
     } else {
-        //pre/post indexed address
-    word output = 0;
-    setAlwaysCond(&output);
-    setBits(&output, getRegNum(as->tokens[0]), 12);
-    setBits(&output, 1, 26);
-    setBits(&output, 1, 20);
-    processTransfers(as, state, &output);
-    return output;
+        evalShifts(as, output, op2Point);
     }
 }
-word evalSTR(ASSEMBLY *as, STATE *state){
+
+void evalExp (ASSEMBLY *as, word *output, int op2Point){
+    stripBrackets(as->tokens[op2Point]);
+
+    setBits(output, 1, 25);
+    word imm = (word) decodeEXP(as->tokens[op2Point]);
+    if (imm < 256) {
+        //no shift needed
+        setBits(output, imm, 0);
+    } else if (imm > ((255 << 24) + 1)) {
+        printf("Number too big!");
+        exit(EXIT_FAILURE);
+    } else {
+        int n = rangeOfBits(imm);
+        if (n > 7) {
+            printf("Number can't be represented!");
+            exit(EXIT_FAILURE);
+        }
+        if ((n == 7) && !isEven((word) lowestBit(imm))) {
+            printf("Odd shift cannot be represented!");
+        }
+        word rotate = 0;
+        while ((imm > 255) || !isEven((word) rotate)) {
+            //rotate left 1
+            imm = (imm << 1) | (imm >> 31);
+            rotate++;
+        }
+        rotate = rotate / 2;
+        setBits(output, imm, 0);
+        setBits(output, rotate, 8);
+    }
+}
+
+void RemoveSpaces(char* source) {
+    char* i = source;
+    char* j = source;
+    while(*j != 0)
+    {
+        *i = *j++;
+        if(*i != ' ')
+            i++;
+    }
+    *i = 0;
+}
+
+void evalShifts (ASSEMBLY *as, word *output, int op2Point) {
+    if ((as->noOfTokens - op2Point) < 2) {
+        //no shift
+        as->tokens[op2Point][strlen(as->tokens[op2Point]) - 1] = '\0';
+        setBits(output, getRegNum(as->tokens[op2Point]), 0);
+    } else {
+        //shift
+        setBits(output, (word) decodeEXP(as->tokens[op2Point]), 0);
+        if (strchr(as->tokens[op2Point + 1], 'l') != NULL) {
+            //lsl or lsr
+            if (as->tokens[op2Point + 1][2] == 'r') {
+                //lsr
+                setBits(output, 1, 5);
+            }
+        } else if (strchr(as->tokens[op2Point + 1], 'a') != NULL) {
+            //asr
+            setBits(output, 2, 5);
+        } else {
+            //ror
+            setBits(output, 3, 5);
+        }
+        //process Rs or OP
+        if (isNUM(as->tokens[op2Point + 1])) {
+            setBits(output, (word) decodeEXP(as->tokens[op2Point + 1]), 7);
+        } else {
+            setBits(output, 1, 4);
+            setBits(output, getRegNum(as->tokens[op2Point + 1] + 3), 8);
+        }
+    }
+}
+
+word getRegNum(char *name){
+    name++;
+    if (strchr(name, 'C')) {
+        return 15;
+    }
+    return (word) strtol(name, NULL, 10);
+}
+
+word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
+    word address = 0;
+    if (strchr(offset, '\n') != NULL) {
+        offset[strlen(offset)-1] = '\0';
+    }
+    for (int i = 0; i < state->noOfLabels; ++i) {
+        if (strcmp(offset, state->labels[i].label) == 0) {
+            address = state->labels[i].address;
+            break;
+        }
+    }
+    address = (word) ((int32_t) address - (int32_t) as->address - 8 >> 2 & ((1 << 25) - 1));
+    return address;
+}
+
+long decodeEXP(char *str) {
+    int offset = 0;
+    if (strchr(str, '-') != NULL) {
+        //removes -
+        offset++;
+    }
+    if (isDirectLDR(str)) {
+        //removes =
+        offset++;
+    }
+    if (isHEX(str)) {
+        //removes the 0x
+        offset +=3;
+        return strtol(str + offset , NULL, 16);
+    } else {
+        //removes #
+        offset++;
+        return strtol(str + offset, NULL, 10);
+    }
+}
+
+int isEven(word num) {
+    return !(num % 2);
+}
+
+int lowestBit(word imm) {
+    int lowest = 0;
+    for (int i = 0; i < 32; ++i) {
+        if (imm & (1 << i)) {
+            lowest = i;
+            break;
+        }
+    }
+    return lowest;
+}
+
+int highestBit(word imm) {
+    int highest=0;
+    for (int j = 31; j >=0 ; --j) {
+        if (imm & (1 << j)) {
+            highest = j;
+            break;
+        }
+    }
+    return highest;
+}
+
+int rangeOfBits(word imm) {
+    return highestBit(imm) - lowestBit(imm);
+}
+
+word evalAdd(ASSEMBLY *as, STATE *state) {
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, 1, 26);
+    setBits(&output, 4, 21);
+    evalOperand2(as, &output, 2);
     setBits(&output, getRegNum(as->tokens[0]), 12);
-    processTransfers(as, state, &output);
+    setBits(&output, getRegNum(as->tokens[1]), 16);
     return output;
 }
 
-word evalBNE(ASSEMBLY *as, STATE *state){
+word evalSub(ASSEMBLY *as, STATE *state) {
     word output = 0;
-    setBits(&output, 1, 28);
-    setBits(&output, 1, 27);
-    setBits(&output, 1, 25);
-    setBranchOffset(state, as, &output);
+    setAlwaysCond(&output);
+    setBits(&output, 2, 21);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
+    setBits(&output, getRegNum(as->tokens[1]), 16);
+    evalOperand2(as, &output, 2);
     return output;
 }
 
-word evalBLT(ASSEMBLY *as, STATE *state){
+word evalMov(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 11, 28);
-    setBits(&output, 5, 25);
-    setBranchOffset(state, as, &output);
-    return output;
-}
-
-word evalBGE(ASSEMBLY *as, STATE *state){
-    word output = 0;
-    setBits(&output, 10, 28);
-    setBits(&output, 5, 25);
-    setBranchOffset(state, as, &output);
-    return output;
-}
-
-word evalBGT(ASSEMBLY *as, STATE *state){
-    word output = 0;
-    setBits(&output, 12, 28);
-    setBits(&output, 5, 25);
-    setBranchOffset(state, as, &output);
-    return output;
-}
-
-word evalBLE(ASSEMBLY *as, STATE *state){
-    word output = 0;
-    setBits(&output, 13, 28);
-    setBits(&output, 5, 25);
-    setBranchOffset(state, as, &output);
-    return output;
-}
-
-word evalLSL(ASSEMBLY *as, STATE *state){
-    as->tokens[1][strlen(as->tokens[1])-1] = '\0';
-    char *lsl = (char*) malloc(20 * sizeof(char));
-    lsl[0] = '\0';
-    strcat(lsl, "lsl");
-    strcat(lsl, as->tokens[1]);
-    as->tokens[2] = lsl;
-    strcpy(as->tokens[1], as->tokens[0]);
-    as->noOfTokens = 3;
-    return evalMov(as, state);
-}
-
-word evalANDEQ(ASSEMBLY *as, STATE *state){
-    return 0;
-}
-word evalBeq(ASSEMBLY *as, STATE *state){
-    word output = 0;
-    setBits(&output, 5, 25);
-    setBranchOffset(state, as, &output);
+    setAlwaysCond(&output);
+    setBits(&output, 13, 21);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
+    evalOperand2(as, &output, 1);
     return output;
 }
 
@@ -403,130 +404,122 @@ word evalMla(ASSEMBLY *as, STATE *state){
     return output;
 }
 
-int rangeOfBits(word imm);
-
-int lowestBit(word imm) ;
-
-void evalExp (ASSEMBLY *as, word *output, int op2Point);
-
-int isEven(word num) {
-    return !(num % 2);
+word evalBranc(ASSEMBLY *as, STATE *state){
+    word output = 0;
+    setAlwaysCond(&output);
+    setBits(&output, 5, 25);
+    setBranchOffset(state, as, &output);
+    return output;
 }
 
-void evalOperand2(ASSEMBLY *as, word *output, int op2Point){
-
-    if (isNUM(as->tokens[op2Point]) || isHEX(as->tokens[op2Point])){
-        evalExp(as, output, op2Point);
-    } else {
-         evalShifts(as, output, op2Point);
-    }
+word evalBNE(ASSEMBLY *as, STATE *state){
+    word output = 0;
+    setBits(&output, 1, 28);
+    setBits(&output, 1, 27);
+    setBits(&output, 1, 25);
+    setBranchOffset(state, as, &output);
+    return output;
 }
 
-void evalExp (ASSEMBLY *as, word *output, int op2Point){
-    stripBrackets(as->tokens[op2Point]);
-
-    setBits(output, 1, 25);
-    word imm = (word) decodeEXP(as->tokens[op2Point]);
-    if (imm < 256) {
-        //no shift needed
-        setBits(output, imm, 0);
-    } else if (imm > ((255 << 24) + 1)) {
-        printf("Number too big!");
-        exit(EXIT_FAILURE);
-    } else {
-        int n = rangeOfBits(imm);
-        if (n > 7) {
-            printf("Number can't be represented!");
-            exit(EXIT_FAILURE);
-        }
-        if ((n == 7) && !isEven((word) lowestBit(imm))) {
-         printf("Odd shift cannot be represented!");
-        }
-        word rotate = 0;
-        while ((imm > 255) || !isEven((word) rotate)) {
-            //rotate left 1
-            imm = (imm << 1) | (imm >> 31);
-            rotate++;
-        }
-        rotate = rotate / 2;
-        setBits(output, imm, 0);
-        setBits(output, rotate, 8);
-    }
-
+word evalBLT(ASSEMBLY *as, STATE *state){
+    word output = 0;
+    setBits(&output, 11, 28);
+    setBits(&output, 5, 25);
+    setBranchOffset(state, as, &output);
+    return output;
 }
 
-int lowestBit(word imm) {
-    int lowest = 0;
-    for (int i = 0; i < 32; ++i) {
-        if (imm & (1 << i)) {
-            lowest = i;
-            break;
-        }
-    }
-    return lowest;
+word evalBGE(ASSEMBLY *as, STATE *state){
+    word output = 0;
+    setBits(&output, 10, 28);
+    setBits(&output, 5, 25);
+    setBranchOffset(state, as, &output);
+    return output;
 }
 
-int highestBit(word imm) {
-    int highest=0;
-    for (int j = 31; j >=0 ; --j) {
-        if (imm & (1 << j)) {
-            highest = j;
-            break;
-        }
-    }
-    return highest;
+word evalBGT(ASSEMBLY *as, STATE *state){
+    word output = 0;
+    setBits(&output, 12, 28);
+    setBits(&output, 5, 25);
+    setBranchOffset(state, as, &output);
+    return output;
 }
 
-int rangeOfBits(word imm) {
-    return highestBit(imm) - lowestBit(imm);
+word evalBLE(ASSEMBLY *as, STATE *state){
+    word output = 0;
+    setBits(&output, 13, 28);
+    setBits(&output, 5, 25);
+    setBranchOffset(state, as, &output);
+    return output;
 }
 
+word evalBeq(ASSEMBLY *as, STATE *state){
+    word output = 0;
+    setBits(&output, 5, 25);
+    setBranchOffset(state, as, &output);
+    return output;
+}
 
-void evalShifts (ASSEMBLY *as, word *output, int op2Point) {
-    if ((as->noOfTokens - op2Point) < 2) {
-        //no shift
-        as->tokens[op2Point][strlen(as->tokens[op2Point]) - 1] = '\0';
-        setBits(output, getRegNum(as->tokens[op2Point]), 0);
-    } else {
-        //shift
-        setBits(output, (word) decodeEXP(as->tokens[op2Point]), 0);
-        if (strchr(as->tokens[op2Point + 1], 'l') != NULL) {
-            //lsl or lsr
-            if (as->tokens[op2Point+1][2] == 'r') {
-                //lsr
-                setBits(output, 1, 5);
+word evalLDR(ASSEMBLY *as, STATE *state) {
+    if (isDirectLDR(as->tokens[1])) {
+        word address = (word) decodeEXP(as->tokens[1]);
+        if (address > 0xFF) {
+            state->extras[state->noOfExtraLines] = address;
+            as->noOfTokens = 3;
+            as->tokens[1] = "[PC";
+            char *test = malloc(30 * sizeof(char));
+            test[0] = '#';
+            test[1] = '\0';
+            word offset = (((state->noOfLines + state->noOfExtraLines) * 4 - as->address) - 8);
+            char str[10];
+            sprintf(str, "%u", offset);
+            strcat(test, str);
+            strcat(test, "]");
+            as->tokens[2] = test;
+            printf("Printing new instructions:\n");
+            for (int i = 0; i < as->noOfTokens; ++i) {
+                printf("%s\n", as->tokens[i]);
             }
-        } else if (strchr(as->tokens[op2Point + 1], 'a') != NULL) {
-            //asr
-            setBits(output, 2, 5);
+            state->noOfExtraLines ++;
+            return evalLDR(as, state);
         } else {
-            //ror
-            setBits(output, 3, 5);
+            return evalMov(as, state);
         }
-        //process Rs or OP
-        if (isNUM(as->tokens[op2Point + 1])) {
-            setBits(output, (word) decodeEXP(as->tokens[op2Point + 1]), 7);
-        } else {
-            setBits(output,1 ,4);
-            setBits(output, getRegNum(as->tokens[op2Point + 1] + 3),8);
-        }
+    } else {
+        //pre/post indexed address
+        word output = 0;
+        setAlwaysCond(&output);
+        setBits(&output, getRegNum(as->tokens[0]), 12);
+        setBits(&output, 1, 26);
+        setBits(&output, 1, 20);
+        processTransfers(as, state, &output);
+        return output;
     }
 }
+word evalSTR(ASSEMBLY *as, STATE *state){
+    word output = 0;
+    setAlwaysCond(&output);
+    setBits(&output, 1, 26);
+    setBits(&output, getRegNum(as->tokens[0]), 12);
+    processTransfers(as, state, &output);
+    return output;
+}
 
+word evalLSL(ASSEMBLY *as, STATE *state){
+    as->tokens[1][strlen(as->tokens[1])-1] = '\0';
+    char *lsl = (char*) malloc(20 * sizeof(char));
+    lsl[0] = '\0';
+    strcat(lsl, "lsl");
+    strcat(lsl, as->tokens[1]);
+    as->tokens[2] = lsl;
+    strcpy(as->tokens[1], as->tokens[0]);
+    as->noOfTokens = 3;
+    return evalMov(as, state);
+}
 
-const nameToFunc funcMap[] = {{"add", evalAdd}, {"sub", evalSub},
-                              {"rsb", evalRsb}, {"and", evalAnd},
-                              {"eor", evalEor}, {"orr", evalOrr},
-                              {"mov", evalMov}, {"tst", evalTst},
-                              {"teq", evalTeq}, {"cmp", evalCmp},
-                              {"mul", evalMul}, {"mla", evalMla},
-                              {"b", evalBranc}, {"beq", evalBeq},
-                              {"add" ,evalAdd}, {"sub" ,evalSub},
-                              {"ldr", evalLDR}, {"str", evalSTR},
-                              {"bne", evalBNE}, {"bge", evalBGE},
-                              {"blt", evalBLT}, {"bgt", evalBGT},
-                              {"ble", evalBLE}, {"lsl", evalLSL},
-                              {"andeq", evalANDEQ}};
+word evalANDEQ(ASSEMBLY *as, STATE *state){
+    return 0;
+}
 
 evalFunc functionLookup(char *lookUp){
     for(int i = 0; i < (sizeof(funcMap) / sizeof(funcMap[0])); i++ ){
@@ -537,10 +530,6 @@ evalFunc functionLookup(char *lookUp){
     }
     return NULL;
 }
-
-
-
-
 
 void assignLabels(STATE *state){
     FILE* source = fopen(state->input, "r");
@@ -579,18 +568,6 @@ void writeToFile(STATE *state, word binary) {
     fwrite(&second, sizeof(byte),1,state->outputFile);
     fwrite(&third, sizeof(byte),1,state->outputFile);
     fwrite(&last, sizeof(byte),1,state->outputFile);
-}
-
-void RemoveSpaces(char* source) {
-    char* i = source;
-    char* j = source;
-    while(*j != 0)
-    {
-        *i = *j++;
-        if(*i != ' ')
-            i++;
-    }
-    *i = 0;
 }
 
 void pass2(STATE *state) {

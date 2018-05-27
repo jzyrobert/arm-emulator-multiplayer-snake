@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 
 typedef uint16_t address;
@@ -20,7 +21,6 @@ typedef struct {
     int noOfLabels;
     int noOfExtraLines;
     char* input;
-    char* output;
     FILE* outputFile;
 } STATE;
 
@@ -123,15 +123,34 @@ void stripBrackets(char* string) {
     string[len-2] = 0;
 }
 
+bool isHEX(char* string) {
+    return strchr(string, 'x') != NULL;
+}
+
+bool isNUM(char* string) {
+    return strchr(string, '#') != NULL;
+}
+
+bool isDirectLDR(char* string) {
+    return strchr(string, '=') != NULL;
+}
+
 long decodeEXP(char *str) {
     int offset = 0;
     if (strchr(str, '-') != NULL) {
+        //removes -
         offset++;
     }
-    if (strchr(str, 'x') != NULL) {
+    if (isDirectLDR(str)) {
+        //removes =
+        offset++;
+    }
+    if (isHEX(str)) {
+        //removes the 0x
         offset +=3;
         return strtol(str + offset , NULL, 16);
     } else {
+        //removes #
         offset++;
         return strtol(str + offset, NULL, 10);
     }
@@ -190,8 +209,8 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
 }
 
 word evalLDR(ASSEMBLY *as, STATE *state) {
-    if (strchr(as->tokens[1], '=') != NULL) {
-        word address = (word) strtol(as->tokens[1] + 1, NULL,0);
+    if (isDirectLDR(as->tokens[1])) {
+        word address = (word) decodeEXP(as->tokens[1]);
         if (address > 0xFF) {
             state->extras[state->noOfExtraLines] = address;
             as->noOfTokens = 3;
@@ -287,7 +306,7 @@ word evalLSL(ASSEMBLY *as, STATE *state){
     return evalMov(as, state);
 }
 
-word evalANDEQ(){
+word evalANDEQ(ASSEMBLY *as, STATE *state){
     return 0;
 }
 word evalBeq(ASSEMBLY *as, STATE *state){
@@ -396,7 +415,7 @@ int isEven(word num) {
 
 void evalOperand2(ASSEMBLY *as, word *output, int op2Point){
 
-    if ((strchr(as->tokens[op2Point], '#') != NULL) || (strchr(as->tokens[op2Point], 'x') != NULL)){
+    if (isNUM(as->tokens[op2Point]) || isHEX(as->tokens[op2Point])){
         evalExp(as, output, op2Point);
     } else {
          evalShifts(as, output, op2Point);
@@ -407,13 +426,7 @@ void evalExp (ASSEMBLY *as, word *output, int op2Point){
     stripBrackets(as->tokens[op2Point]);
 
     setBits(output, 1, 25);
-    word imm;
-
-    if (strchr(as->tokens[op2Point], 'x')) {
-        imm = (word) strtol(as->tokens[op2Point] + 2, NULL, 16);
-    } else {
-        imm = (word) strtol(as->tokens[op2Point], NULL, 10);
-    }
+    word imm = (word) decodeEXP(as->tokens[op2Point]);
     if (imm < 256) {
         //no shift needed
         setBits(output, imm, 0);
@@ -476,7 +489,7 @@ void evalShifts (ASSEMBLY *as, word *output, int op2Point) {
         setBits(output, getRegNum(as->tokens[op2Point]), 0);
     } else {
         //shift
-        setBits(output, (word) strtol(as->tokens[op2Point] + 1, NULL, 10), 0);
+        setBits(output, (word) decodeEXP(as->tokens[op2Point]), 0);
         if (strchr(as->tokens[op2Point + 1], 'l') != NULL) {
             //lsl or lsr
             if (as->tokens[op2Point+1][2] == 'r') {
@@ -491,12 +504,8 @@ void evalShifts (ASSEMBLY *as, word *output, int op2Point) {
             setBits(output, 3, 5);
         }
         //process Rs or OP
-        if (strchr(as->tokens[op2Point + 1], '#')) {
-            if (strchr(as->tokens[op2Point+1], 'x')) {
-                setBits(output, (word) strtol(as->tokens[op2Point + 1] + 6, NULL, 16), 7);
-            } else {
-                setBits(output, (word) strtol(as->tokens[op2Point + 1] + 4, NULL, 10), 7);
-            }
+        if (isNUM(as->tokens[op2Point + 1])) {
+            setBits(output, (word) decodeEXP(as->tokens[op2Point + 1]), 7);
         } else {
             setBits(output,1 ,4);
             setBits(output, getRegNum(as->tokens[op2Point + 1] + 3),8);
@@ -632,8 +641,7 @@ int main(int argc, char **argv) {
 
   STATE *state = calloc(1, sizeof(STATE));
   state->input = input;
-  state->output = output;
-  state->outputFile = fopen(state->output, "wb");
+  state->outputFile = fopen(output, "wb");
   assignLabels(state);
 
   //2nd pass through

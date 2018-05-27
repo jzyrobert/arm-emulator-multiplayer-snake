@@ -37,8 +37,10 @@ typedef struct {
     evalFunc func;
 } nameToFunc;
 
+void setBits(word *output, word bits, word end);
+
 void setAlwaysCond(word *output){
-    *output |= (0xE << 28);
+    setBits(output, 0xE, 28);
 }
 
 word getRegNum(char *name){
@@ -46,7 +48,7 @@ word getRegNum(char *name){
     if (strchr(name, 'C')) {
         return 15;
     }
-    return (word) atoi(name);
+    return (word) strtol(name, NULL, 10);
 }
 
 void setBits(word *output, word bits, word end){
@@ -95,7 +97,7 @@ word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
 void setBranchOffset(STATE *state, ASSEMBLY *as, word *output) {
     word offset = calculateBOffset(state, as,as->tokens[0]);
     offset &= 0xFFFFFF;
-    *output |= offset;
+    setBits(output, offset, 0);
 }
 
 word evalBranc(ASSEMBLY *as, STATE *state){
@@ -144,35 +146,35 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
         if (as->noOfTokens == 2) {
             //pre-index RN
             stripBrackets(as->tokens[1]);
-            *output |= (getRegNum(as->tokens[1]) << 16);
-            *output |= (1 << 24);
-            *output |= (1 << 23);
+            setBits(output, getRegNum(as->tokens[1]), 16);
+            setBits(output, 1, 24);
+            setBits(output, 1, 23);
         } else {
             //post index [RN], expression
             if (strchr(as->tokens[2], 'r') != NULL) {
-                *output |= (1 << 25);
+                setBits(output, 1, 25);
             }
             stripBrackets(as->tokens[1]);
-            *output |= (1 << 23);
-            *output |= (getRegNum(as->tokens[1]) << 16);
-            *output |= decodeEXP(as->tokens[2]);
+            setBits(output, 1, 23);
+            setBits(output, getRegNum(as->tokens[1]), 16);
+            setBits(output, (word) decodeEXP(as->tokens[2]), 0);
         }
     } else {
         //[Rn - Expression]
-        *output |= (1 << 24);
+        setBits(output, 1, 24);
         //Sets P
         if (strchr(as->tokens[2], '-') == NULL) {
             //its not negative, sets U;
-            *output |= (1 << 23);
+            setBits(output, 1, 23);
         }
         //Setting RN
-        *output |= (getRegNum(as->tokens[1] + 1) << 16);
+        setBits(output,getRegNum(as->tokens[1] + 1) , 16);
         if (as->noOfTokens == 3) {
             if (strchr(as->tokens[2], 'r') != NULL) {
-                *output |= (1 << 25);
+                setBits(output, 1, 25);
             }
             as->tokens[2][strlen(as->tokens[2]) - 1] = '\0';
-            *output |= decodeEXP(as->tokens[2]);
+            setBits(output, (word) decodeEXP(as->tokens[2]), 0);
         } else {
             //optional shift case
             setBits(output, 1, 25);

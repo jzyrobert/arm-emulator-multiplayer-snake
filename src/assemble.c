@@ -57,13 +57,13 @@ void setBits(word *output, word bits, word end){
     *output |= (bits << end);
 }
 
-void evalOperand2(ASSEMBLY *as, STATE *state, word *output, int op2Point);
+void evalOperand2(ASSEMBLY *as, word *output, int op2Point);
 
 word evalAdd(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
     setBits(&output, 4, 21);
-    evalOperand2(as, state, &output, 2);
+    evalOperand2(as, &output, 2);
     setBits(&output, getRegNum(as->tokens[0]), 12);
     setBits(&output, getRegNum(as->tokens[1]), 16);
     return output;
@@ -75,12 +75,12 @@ word evalSub(ASSEMBLY *as, STATE *state){
     setBits(&output, 2, 21);
     setBits(&output, getRegNum(as->tokens[0]), 12);
     setBits(&output, getRegNum(as->tokens[1]), 16);
-    evalOperand2(as, state, &output, 2);
+    evalOperand2(as, &output, 2);
     return output;
 }
 
 word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
-    word address;
+    word address = 0;
     if (strchr(offset, '\n') != NULL) {
         offset[strlen(offset)-1] = '\0';
     }
@@ -90,7 +90,7 @@ word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
             break;
         }
     }
-    address = (word) (((((int32_t) address - (int32_t) as->address) - 8) >> 2) & ((1 << 25)-1));
+    address = (word) ((int32_t) address - (int32_t) as->address - 8 >> 2 & ((1 << 25) - 1));
     return address;
 }
 
@@ -113,7 +113,7 @@ word evalMov(ASSEMBLY *as, STATE *state){
     setAlwaysCond(&output);
     setBits(&output, 13, 21);
     setBits(&output, getRegNum(as->tokens[0]), 12);
-    evalOperand2(as, state, &output, 1);
+    evalOperand2(as, &output, 1);
     return output;
 }
 
@@ -137,7 +137,7 @@ long decodeEXP(char *str) {
     }
 }
 
-void evalShifts (ASSEMBLY *as, STATE *state, word *output, int op2Point) ;
+void evalShifts (ASSEMBLY *as, word *output, int op2Point) ;
 
 void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
     printf("Processing index assembly:\n");
@@ -184,7 +184,7 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
             }
             as->tokens[3][strlen(as->tokens[3])-2] = '\n';
             as->tokens[3][strlen(as->tokens[3])-1] = '\0';
-            evalShifts(as, state, output, 2);
+            evalShifts(as, output, 2);
         }
     }
 }
@@ -287,7 +287,7 @@ word evalLSL(ASSEMBLY *as, STATE *state){
     return evalMov(as, state);
 }
 
-word evalANDEQ(ASSEMBLY *as, STATE *state){
+word evalANDEQ(){
     return 0;
 }
 word evalBeq(ASSEMBLY *as, STATE *state){
@@ -303,7 +303,7 @@ word evalRsb(ASSEMBLY *as, STATE *state){
     setBits(&output, getRegNum(as->tokens[0]), 12);
     setBits(&output, getRegNum(as->tokens[1]), 16);
     setBits(&output, 3, 21);
-    evalOperand2(as, state, &output, 2);
+    evalOperand2(as, &output, 2);
     return output;
 }
 
@@ -312,7 +312,7 @@ word evalAnd(ASSEMBLY *as, STATE *state){
     setAlwaysCond(&output);
     setBits(&output, getRegNum(as->tokens[0]), 12);
     setBits(&output, getRegNum(as->tokens[1]), 16);
-    evalOperand2(as, state, &output, 2);
+    evalOperand2(as, &output, 2);
     return output;
 }
 
@@ -322,7 +322,7 @@ word evalEor(ASSEMBLY *as, STATE *state){
     setBits(&output, getRegNum(as->tokens[0]), 12);
     setBits(&output, getRegNum(as->tokens[1]), 16);
     setBits(&output, 1, 21);
-    evalOperand2(as, state, &output, 2);;
+    evalOperand2(as, &output, 2);;
     return output;
 }
 
@@ -332,7 +332,7 @@ word evalOrr(ASSEMBLY *as, STATE *state){
     setBits(&output, getRegNum(as->tokens[0]), 12);
     setBits(&output, getRegNum(as->tokens[1]), 16);
     setBits(&output, 12, 21);
-    evalOperand2(as, state, &output, 2);
+    evalOperand2(as, &output, 2);
     return output;
 }
 
@@ -342,7 +342,7 @@ word evalTst(ASSEMBLY *as, STATE *state){
     setBits(&output, 1, 20);
     setBits(&output, 8, 21);
     setBits(&output, getRegNum(as->tokens[0]), 16);
-    evalOperand2(as, state, &output, 1);
+    evalOperand2(as, &output, 1);
     return output;
 }
 
@@ -352,7 +352,7 @@ word evalTeq(ASSEMBLY *as, STATE *state){
     setBits(&output, 1, 20);
     setBits(&output, 9, 21);
     setBits(&output, getRegNum(as->tokens[0]), 16);
-    evalOperand2(as, state, &output, 1);
+    evalOperand2(as, &output, 1);
     return output;
 }
 
@@ -362,7 +362,7 @@ word evalCmp(ASSEMBLY *as, STATE *state){
     setBits(&output, 1, 20);
     setBits(&output, 10, 21);
     setBits(&output, getRegNum(as->tokens[0]), 16);
-    evalOperand2(as, state, &output, 1);
+    evalOperand2(as, &output, 1);
     return output;
 }
 
@@ -388,24 +388,22 @@ int rangeOfBits(word imm);
 
 int lowestBit(word imm) ;
 
-void evalExp (ASSEMBLY *as, STATE *state, word *output, int op2Point);
-
-void evalShifts (ASSEMBLY *as, STATE *state, word *output, int op2Point) ;
+void evalExp (ASSEMBLY *as, word *output, int op2Point);
 
 int isEven(word num) {
     return !(num % 2);
 }
 
-void evalOperand2(ASSEMBLY *as, STATE *state, word *output, int op2Point){
+void evalOperand2(ASSEMBLY *as, word *output, int op2Point){
 
     if ((strchr(as->tokens[op2Point], '#') != NULL) || (strchr(as->tokens[op2Point], 'x') != NULL)){
-        evalExp(as, state, output, op2Point);
+        evalExp(as, output, op2Point);
     } else {
-         evalShifts(as, state, output, op2Point);
+         evalShifts(as, output, op2Point);
     }
 }
 
-void evalExp (ASSEMBLY *as, STATE *state, word *output, int op2Point){
+void evalExp (ASSEMBLY *as, word *output, int op2Point){
     stripBrackets(as->tokens[op2Point]);
 
     setBits(output, 1, 25);
@@ -471,7 +469,7 @@ int rangeOfBits(word imm) {
 }
 
 
-void evalShifts (ASSEMBLY *as, STATE *state, word *output, int op2Point) {
+void evalShifts (ASSEMBLY *as, word *output, int op2Point) {
     if ((as->noOfTokens - op2Point) < 2) {
         //no shift
         as->tokens[op2Point][strlen(as->tokens[op2Point]) - 1] = '\0';
@@ -550,7 +548,7 @@ void assignLabels(STATE *state){
         //if starts with character and ends in :
         if (check != NULL) {
             int size = (int) (check-&buffer[0]);
-            strncpy(state->labels[state->noOfLabels].label, buffer, size);
+            strncpy(state->labels[state->noOfLabels].label, buffer, (size_t) size);
             state->labels[state->noOfLabels].address = count;
             state->noOfLabels ++;
         } else {

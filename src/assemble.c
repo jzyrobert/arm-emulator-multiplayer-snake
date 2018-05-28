@@ -131,7 +131,7 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
         setBits(output,getRegNum(as->tokens[1] + 1) , 16);
         if (as->noOfTokens == 3) {
             //removes ]\n;
-            as->tokens[2][strlen(as->tokens[2] - 1)] = '\n';
+            as->tokens[2][strlen(as->tokens[2]) - 2] = '\n';
             as->tokens[2][strlen(as->tokens[2]) - 1] = '\0';
             if (strchr(as->tokens[2], 'r') != NULL) {
                 //reg

@@ -539,9 +539,12 @@ void assignLabels(STATE *state){
     }
     address count = 0;
     char buffer[200];
-    while (!feof(source)) {
+    while (1) {
         memset(buffer, 0, strlen(buffer));
         fgets(buffer, 200, source);
+        if (feof(source)) {
+            break;
+        }
         char *check = strchr(buffer, ':');
         //if starts with character and ends in :
         if (check != NULL) {

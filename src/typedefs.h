@@ -1,4 +1,4 @@
-#include <stdint.h>
+#include <stdint-gcc.h>
 
 #ifndef ARM_TYPE_TYPEDEFS
 #define ARM_TYPE_TYPEDEFS

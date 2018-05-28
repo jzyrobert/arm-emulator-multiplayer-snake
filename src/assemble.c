@@ -239,6 +239,7 @@ word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
 
 long decodeEXP(char *str) {
     int offset = 0;
+    int base = 10;
     if (strchr(str, '-') != NULL) {
         //removes -
         offset++;
@@ -249,13 +250,14 @@ long decodeEXP(char *str) {
     }
     if (isHEX(str)) {
         //removes the 0x
-        offset +=3;
-        return strtol(str + offset , NULL, 16);
-    } else {
-        //removes #
-        offset++;
-        return strtol(str + offset, NULL, 10);
+        offset += 2;
+        base = 16;
     }
+    if (isNUM(str)){
+        offset ++;
+        //removes #
+    }
+    return strtol(str + offset, NULL, base);
 }
 
 int isEven(word num) {

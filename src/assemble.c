@@ -233,7 +233,7 @@ word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
             break;
         }
     }
-    address = (word) ((int32_t) address - (int32_t) as->address - 8 >> 2 & ((1 << 25) - 1));
+    address = (word) (((int32_t) address - (int32_t) as->address - 8) >> 2 & ((1 << 25) - 1));
     return address;
 }
 

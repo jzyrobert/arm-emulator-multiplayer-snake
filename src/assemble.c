@@ -190,7 +190,7 @@ void evalShifts (ASSEMBLY *as, word *output, int op2Point) {
         setBits(output, getRegNum(as->tokens[op2Point]), 0);
     } else {
         //shift
-        setBits(output, (word) decodeEXP(as->tokens[op2Point]), 0);
+        setBits(output, (word) getRegNum(as->tokens[op2Point]), 0);
         if (strchr(as->tokens[op2Point + 1], 'l') != NULL) {
             //lsl or lsr
             if (as->tokens[op2Point + 1][2] == 'r') {
@@ -206,7 +206,7 @@ void evalShifts (ASSEMBLY *as, word *output, int op2Point) {
         }
         //process Rs or OP
         if (isNUM(as->tokens[op2Point + 1])) {
-            setBits(output, (word) decodeEXP(as->tokens[op2Point + 1]), 7);
+            setBits(output, (word) decodeEXP(as->tokens[op2Point + 1]+3), 7);
         } else {
             setBits(output, 1, 4);
             setBits(output, getRegNum(as->tokens[op2Point + 1] + 3), 8);

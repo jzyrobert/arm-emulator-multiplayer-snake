@@ -140,7 +140,7 @@ void evalOperand2(ASSEMBLY *as, word *output, int op2Point){
 }
 
 void evalExp (ASSEMBLY *as, word *output, int op2Point){
-    stripBrackets(as->tokens[op2Point]);
+    //stripBrackets(as->tokens[op2Point]);
 
     setBits(output, 1, 25);
     word imm = (word) decodeEXP(as->tokens[op2Point]);

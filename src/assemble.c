@@ -92,13 +92,32 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
             setBits(output, 1, 23);
         } else {
             //post index [RN], expression
-            if (strchr(as->tokens[2], 'r') != NULL) {
-                setBits(output, 1, 25);
-            }
             stripBrackets(as->tokens[1]);
-            setBits(output, 1, 23);
+            if (strchr(as->tokens[2], '-') == NULL) {
+                //its not negative, sets U;
+                setBits(output, 1, 23);
+            }
+            //set Rn
             setBits(output, getRegNum(as->tokens[1]), 16);
-            setBits(output, (word) decodeEXP(as->tokens[2]), 0);
+            if (as->noOfTokens == 3) {
+                //not shift
+                if (isNUM(as->tokens[2])) {
+                    //sets immediate value
+                    setBits(output, (word) decodeEXP(as->tokens[2]), 0);
+                } else {
+                    //sets register
+                    setBits(output, 1, 25);
+                    setBits(output, (word) getRegNum(as->tokens[2]), 0);
+                }
+            } else {
+                //shift case
+                setBits(output, 1, 25);
+                if (strchr(as->tokens[2], '-') != NULL) {
+                    //if negative remove sign before processing;
+                    as->tokens[2] = as->tokens[2] + 1;
+                }
+                evalShifts(as, output, 2);
+            }
         }
     } else {
         //[Rn - Expression]
@@ -111,11 +130,17 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
         //Setting RN
         setBits(output,getRegNum(as->tokens[1] + 1) , 16);
         if (as->noOfTokens == 3) {
-            if (strchr(as->tokens[2], 'r') != NULL) {
-                setBits(output, 1, 25);
-            }
+            //removes ]\n;
+            as->tokens[2][strlen(as->tokens[2] - 1)] = '\n';
             as->tokens[2][strlen(as->tokens[2]) - 1] = '\0';
-            setBits(output, (word) decodeEXP(as->tokens[2]), 0);
+            if (strchr(as->tokens[2], 'r') != NULL) {
+                //reg
+                setBits(output, 1, 25);
+                setBits(output, (word) getRegNum(as->tokens[2]), 0);
+            } else {
+                //Imm value
+                setBits(output, (word) decodeEXP(as->tokens[2]), 0);
+            }
         } else {
             //optional shift case
             setBits(output, 1, 25);
@@ -123,6 +148,7 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
                 //if negative remove sign before processing;
                 as->tokens[2] = as->tokens[2] + 1;
             }
+            //removes ]
             as->tokens[3][strlen(as->tokens[3])-2] = '\n';
             as->tokens[3][strlen(as->tokens[3])-1] = '\0';
             evalShifts(as, output, 2);

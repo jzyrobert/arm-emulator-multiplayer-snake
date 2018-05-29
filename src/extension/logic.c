@@ -1,5 +1,7 @@
-#include <stdio.h>
 #include "logic.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #ifndef GRID_SIZE
 #define GRID_SIZE 8192
@@ -15,19 +17,19 @@ enum OCCUPIER {
     dead_snake
 };
 
-typedef struct {
+struct coordinate {
     int x;
     int y;
-} Coordinate;
+};
 
-typedef struct {
+struct cell {
     enum OCCUPIER occupier;
     Coordinate coordinate;
-} Cell;
+};
 
-typedef struct {
+struct snake {
     Cell head;
-} Snake;
+};
 
 Cell grid[GRID_SIZE][GRID_SIZE];
 
@@ -41,7 +43,27 @@ void buildGrid(void) {
     }
 }
 
-// TODO: will be entry point for game; not defined yet
+void initialiseRandomSeed(void) {
+    srand(time(NULL));
+}
+
+Snake addSnake(void) {
+    int x = 0;
+    int y = 0;
+    do {
+        x = rand();
+        y = rand();
+    } while (grid[x][y].occupier == snake);
+    Snake newSnake;
+    Cell head;
+    newSnake.head = head;
+    head.occupier = snake;
+    head.coordinate.x = x;
+    head.coordinate.y = y;
+    return newSnake;
+}
+
 int main(void) {
-    return 0;
+    initialiseRandomSeed();
+    buildGrid();
 }

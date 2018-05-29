@@ -12,6 +12,7 @@
 enum OCCUPIER {
     nothing,
     snake,
+    snake_body,
     dead_snake //:'(
 };
 
@@ -27,7 +28,9 @@ struct cell {
 
 struct snake {
     Cell *head;
-    Cell *body[200];
+    Cell **body;
+    int length;
+    int direction;
 };
 
 struct game {
@@ -64,14 +67,22 @@ void addSnake(Game *game) {
     } while (game->grid[y][x].occupier == snake);
     Snake *newSnake = malloc(sizeof(Snake));
     game->snakes[game->noOfSnakes] = newSnake;
+    newSnake->body = malloc(game->width * game->height * sizeof(Cell *));
     newSnake->head = &game->grid[y][x];
     newSnake->head->occupier = snake;
+    newSnake->length = 0;
     game->noOfSnakes++;
 }
 
 void printGame(Game *game) {
+    int x;
+    int y;
+    getmaxyx(stdscr, y, x);
     for (int i = 0; i < game->width + 2; ++i) {
         printw("#");
+    }
+    if (game->width < (x-2)) {
+        printw("\n");
     }
     for (int j = 0; j < game->height; ++j) {
         printw("#");
@@ -85,6 +96,9 @@ void printGame(Game *game) {
                     c = '*';
                     break;
                 case 2:
+                    c = 'o';
+                    break;
+                case 3:
                     c = 'x';
                     break;
                 default:
@@ -93,9 +107,15 @@ void printGame(Game *game) {
             printw("%c", c);
         }
         printw("#");
+        if (game->width < (x-2)) {
+            printw("\n");
+        }
     }
     for (int i = 0; i < game->width + 2; ++i) {
         printw("#");
+    }
+    if (game->width < (x-2)) {
+        printw("\n");
     }
     refresh();
     getch();
@@ -104,12 +124,25 @@ void printGame(Game *game) {
 int main(int argc, char* argv[]) {
     Game *game = malloc(sizeof(Game));
     initialiseRandomSeed();
-    if (argc != 3) {
+    initscr();
+    if (argc != 3 && argc != 1) {
         printf("Call game with height and width arguments.\n Use $LINES and $COLUMNS to find them\n");
+        printf("No arguments will use default max terminal size");
         exit(EXIT_FAILURE);
-    } else {
+    } else if (argc == 3){
         game->width = strtol(argv[2], NULL, 10) - 2;
         game->height = strtol(argv[1], NULL ,10) - 2;
+        if (game->width < 1) {
+            printf("You can't have a game that small!");
+            exit(EXIT_FAILURE);
+        }
+        if (game->height < 1) {
+            printf("You can't have a game that small!");
+        }
+    } else {
+        getmaxyx(stdscr, game->height, game->width);
+        game->height -= 2;
+        game->width -= 2;
     }
     game->grid = calloc(game->height, sizeof(Cell *));
     for (int i = 0; i < game->height; ++i) {
@@ -121,7 +154,6 @@ int main(int argc, char* argv[]) {
     }
     buildGrid(game);
     addSnake(game);
-    initscr();
     printGame(game);
     endwin();
     return 0;

@@ -26,13 +26,14 @@ struct cell {
 };
 
 struct snake {
-    Cell head;
-    Cell body[200];
+    Cell *head;
+    Cell *body[200];
 };
 
 struct game {
     Cell **grid;
-    Snake snakes[4];
+    Snake *snakes[4];
+    int noOfSnakes;
     int width;
     int height;
 };
@@ -47,13 +48,14 @@ void buildGrid(Game *game) {
             game->grid[i][j].coordinate.y = i;
         }
     }
+    game->noOfSnakes = 0;
 }
 
 void initialiseRandomSeed(void) {
     srand(time(NULL));
 }
 
-Snake addSnake(Game *game) {
+void addSnake(Game *game) {
     int x = 0;
     int y = 0;
     do {
@@ -61,10 +63,10 @@ Snake addSnake(Game *game) {
         y = rand() % (game->height + 1);
     } while (game->grid[y][x].occupier == snake);
     Snake *newSnake = malloc(sizeof(Snake));
-    newSnake->head.occupier = snake;
-    newSnake->head.coordinate.x = x;
-    newSnake->head.coordinate.y = y;
-    return *newSnake;
+    game->snakes[game->noOfSnakes] = newSnake;
+    newSnake->head = &game->grid[y][x];
+    newSnake->head->occupier = snake;
+    game->noOfSnakes++;
 }
 
 void printGame(Game *game) {

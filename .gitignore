@@ -4,6 +4,7 @@
 *.o
 
 src/arm11_1718_testsuite/*
+src/extension/logic
 
 .idea/*
 CMakeLists.txt
@@ -42,4 +43,3 @@ assemble
 *.vrb
 *.nav
 *.toc
-

@@ -125,24 +125,35 @@ int main(int argc, char* argv[]) {
     Game *game = malloc(sizeof(Game));
     initialiseRandomSeed();
     initscr();
+    int x;
+    int y;
+    getmaxyx(stdscr, y, x);
     if (argc != 3 && argc != 1) {
         printf("Call game with height and width arguments.\n Use $LINES and $COLUMNS to find them\n");
-        printf("No arguments will use default max terminal size");
+        printf("No arguments will use default max terminal size\n");
         exit(EXIT_FAILURE);
     } else if (argc == 3){
         game->width = strtol(argv[2], NULL, 10) - 2;
         game->height = strtol(argv[1], NULL ,10) - 2;
         if (game->width < 1) {
-            printf("You can't have a game that small!");
+            printf("You can't have a game that small!\n");
             exit(EXIT_FAILURE);
         }
         if (game->height < 1) {
-            printf("You can't have a game that small!");
+            printf("You can't have a game that small!\n");
+            exit(EXIT_FAILURE);
+        }
+        if (game->width > (x-2)) {
+            printf("You can't have a game that big!\n");
+            exit(EXIT_FAILURE);
+        }
+        if (game->height > (y-2)) {
+            printf("You can't have a game that big!\n");
+            exit(EXIT_FAILURE);
         }
     } else {
-        getmaxyx(stdscr, game->height, game->width);
-        game->height -= 2;
-        game->width -= 2;
+        game->height = y -2;
+        game->width = x - 2;
     }
     game->grid = calloc(game->height, sizeof(Cell *));
     for (int i = 0; i < game->height; ++i) {

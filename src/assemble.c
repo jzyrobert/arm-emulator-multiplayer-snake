@@ -625,7 +625,7 @@ void pass2(STATE *state) {
             }
             as->noOfTokens = n;
             as->address = address;
-            word result = (functionLookup(instruction))(as, state);
+            word result = functionLookup(instruction)(as, state);
             printf("Output is %x\n", result);
             writeToFile(state, result);
             address += 4;

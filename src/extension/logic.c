@@ -4,6 +4,7 @@
 #include <time.h>
 #include <stdbool.h>
 #include <ncurses.h>
+#include <unistd.h>
 
 #ifndef GRID_SIZE
 #define GRID_SIZE 10
@@ -80,11 +81,11 @@ void addSnake(Game *game) {
 }
 
 void printGame(Game *game) {
+    clear();
     int x;
     int y;
     getmaxyx(stdscr, y, x);
-    mvprintw(0, 0, "#");
-    for (int i = 1; i < game->width + 2; ++i) {
+    for (int i = 0; i < game->width + 2; ++i) {
         printw("#");
     }
     if (game->width < (x-2)) {
@@ -133,7 +134,7 @@ int main(int argc, char* argv[]) {
     initscr();
     raw();
     noecho();
-    halfdelay(2);
+    nodelay(stdscr, TRUE);
     keypad(stdscr, TRUE);
     int x;
     int y;
@@ -172,9 +173,11 @@ int main(int argc, char* argv[]) {
     buildGrid(game);
     addSnake(game);
     int ch;
-    while(!finished(game)) {
+    while(!game->finished) {
         printGame(game);
+        usleep(150000);
         ch = getch();
+        flushinp();
         if (ch == 'x') {
             game->finished = true;
         }
@@ -213,17 +216,21 @@ int main(int argc, char* argv[]) {
             default:
                 xOffset = 0;
                 yOffset = 0;
-            }
-        Cell *next = &game->grid[(first->head->coordinate.y + yOffset) % game->height][(first->head->coordinate.x + xOffset) % game->width];
+        }
+        int nextX = (first->head->coordinate.x + xOffset) % game->width;
+        int nextY = (first->head->coordinate.y + yOffset) % game->height;
+        if (nextX < 0) {
+            nextX = game->width - 1;
+        }
+        if (nextY < 0) {
+            nextY = game->height - 1;
+        }
+        Cell *next = &game->grid[nextY][nextX];
         first->head->occupier = nothing;
         first->head = next;
         first->head->occupier = snake;
     }
     endwin();
     return 0;
-}
-
-bool finished(Game *game) {
-    return game->finished;
 }
 

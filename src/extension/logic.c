@@ -129,8 +129,10 @@ int main(int argc, char* argv[]) {
     int y;
     getmaxyx(stdscr, y, x);
     if (argc != 3 && argc != 1) {
-        printf("Call game with height and width arguments.\n Use $LINES and $COLUMNS to find them\n");
+        printf("Call game with height and width arguments (Includes borders).\n");
+        printf("Use $LINES and $COLUMNS to find them\n");
         printf("No arguments will use default max terminal size\n");
+        endwin();
         exit(EXIT_FAILURE);
     } else if (argc == 3){
         game->width = (int) (strtol(argv[2], NULL, 10) - 2);

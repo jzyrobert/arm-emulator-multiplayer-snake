@@ -3,6 +3,7 @@
 typedef struct coordinate Coordinate;
 typedef struct cell Cell;
 typedef struct snake Snake;
+typedef struct game Game;
 #endif
 
 // Initialises the random seed used to add snakes to random positions on the grid

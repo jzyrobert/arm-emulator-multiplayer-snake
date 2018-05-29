@@ -114,7 +114,7 @@ void printGame(Game *game) {
     for (int i = 0; i < game->width + 2; ++i) {
         printw("#");
     }
-    if (game->width < (x-2)) {
+    if (game->height < (y-2)) {
         printw("\n");
     }
     refresh();

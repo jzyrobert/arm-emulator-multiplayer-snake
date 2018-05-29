@@ -39,9 +39,12 @@ struct game {
     int noOfSnakes;
     int width;
     int height;
+    bool finished;
 };
 
 void printGame(Game *pGame);
+
+bool finished(Game *pGame);
 
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
@@ -52,6 +55,7 @@ void buildGrid(Game *game) {
         }
     }
     game->noOfSnakes = 0;
+    game->finished = false;
 }
 
 void initialiseRandomSeed(void) {
@@ -71,6 +75,7 @@ void addSnake(Game *game) {
     newSnake->head = &game->grid[y][x];
     newSnake->head->occupier = snake;
     newSnake->length = 0;
+    newSnake->direction = 0;
     game->noOfSnakes++;
 }
 
@@ -78,7 +83,8 @@ void printGame(Game *game) {
     int x;
     int y;
     getmaxyx(stdscr, y, x);
-    for (int i = 0; i < game->width + 2; ++i) {
+    mvprintw(0, 0, "#");
+    for (int i = 1; i < game->width + 2; ++i) {
         printw("#");
     }
     if (game->width < (x-2)) {
@@ -118,13 +124,17 @@ void printGame(Game *game) {
         printw("\n");
     }
     refresh();
-    getch();
 }
 
 int main(int argc, char* argv[]) {
     Game *game = malloc(sizeof(Game));
     initialiseRandomSeed();
+    //Ncurses initialisation
     initscr();
+    raw();
+    noecho();
+    halfdelay(2);
+    keypad(stdscr, TRUE);
     int x;
     int y;
     getmaxyx(stdscr, y, x);
@@ -161,8 +171,59 @@ int main(int argc, char* argv[]) {
     }
     buildGrid(game);
     addSnake(game);
-    printGame(game);
+    int ch;
+    while(!finished(game)) {
+        printGame(game);
+        ch = getch();
+        if (ch == 'x') {
+            game->finished = true;
+        }
+        Snake *first = game->snakes[0];
+        if (ch == KEY_UP) {
+            first->direction = 0;
+        }
+        if (ch == KEY_RIGHT) {
+           first->direction = 1;
+        }
+        if (ch == KEY_DOWN) {
+            first->direction = 2;
+        }
+        if (ch == KEY_LEFT) {
+            first->direction = 3;
+        }
+        int xOffset;
+        int yOffset;
+        switch (first->direction) {
+            case 0:
+                xOffset = 0;
+                yOffset = -1;
+                break;
+            case 1:
+                xOffset = 1;
+                yOffset = 0;
+                break;
+            case 2:
+                xOffset = 0;
+                yOffset = 1;
+                break;
+            case 3:
+                xOffset = -1;
+                yOffset = 0;
+                break;
+            default:
+                xOffset = 0;
+                yOffset = 0;
+            }
+        Cell *next = &game->grid[(first->head->coordinate.y + yOffset) % game->height][(first->head->coordinate.x + xOffset) % game->width];
+        first->head->occupier = nothing;
+        first->head = next;
+        first->head->occupier = snake;
+    }
     endwin();
     return 0;
+}
+
+bool finished(Game *game) {
+    return game->finished;
 }
 

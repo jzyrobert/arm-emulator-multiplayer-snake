@@ -133,22 +133,16 @@ int main(int argc, char* argv[]) {
         printf("No arguments will use default max terminal size\n");
         exit(EXIT_FAILURE);
     } else if (argc == 3){
-        game->width = strtol(argv[2], NULL, 10) - 2;
-        game->height = strtol(argv[1], NULL ,10) - 2;
-        if (game->width < 1) {
+        game->width = (int) (strtol(argv[2], NULL, 10) - 2);
+        game->height = (int) (strtol(argv[1], NULL , 10) - 2);
+        if (game->width < 1 || game->height < 1) {
             printf("You can't have a game that small!\n");
+            endwin();
             exit(EXIT_FAILURE);
         }
-        if (game->height < 1) {
-            printf("You can't have a game that small!\n");
-            exit(EXIT_FAILURE);
-        }
-        if (game->width > (x-2)) {
+        if (game->width > (x-2) || game->height > (y-2)) {
             printf("You can't have a game that big!\n");
-            exit(EXIT_FAILURE);
-        }
-        if (game->height > (y-2)) {
-            printf("You can't have a game that big!\n");
+            endwin();
             exit(EXIT_FAILURE);
         }
     } else {
@@ -156,12 +150,12 @@ int main(int argc, char* argv[]) {
         game->width = x - 2;
     }
     game->grid = calloc(game->height, sizeof(Cell *));
-    for (int i = 0; i < game->height; ++i) {
-        game->grid[i] = calloc(game->width, sizeof(Cell));
-    }
     if (game->grid == NULL) {
         printf("Allocation failure!\n");
         exit(EXIT_FAILURE);
+    }
+    for (int i = 0; i < game->height; ++i) {
+        game->grid[i] = calloc(game->width, sizeof(Cell));
     }
     buildGrid(game);
     addSnake(game);

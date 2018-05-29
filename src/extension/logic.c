@@ -32,6 +32,10 @@ struct snake {
     Cell **body;
     int length;
     int direction;
+    int up;
+    int down;
+    int left;
+    int right;
 };
 
 struct game {
@@ -53,6 +57,8 @@ void updateGame(Game *game) ;
 
 void updateDir(int ch, Game *pGame);
 
+void addLength(Game *game, Snake *theSnake) ;
+
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
         for (int j = 0; j < game->width; j++) {
@@ -69,7 +75,7 @@ void initialiseRandomSeed(void) {
     srand(time(NULL));
 }
 
-void addSnake(Game *game) {
+void addSnake(Game *game,int up, int down, int left, int right) {
     int x = 0;
     int y = 0;
     do {
@@ -84,6 +90,10 @@ void addSnake(Game *game) {
     newSnake->length = 0;
     newSnake->direction = 0;
     game->noOfSnakes++;
+    newSnake->up = up;
+    newSnake->down = down;
+    newSnake->left = left;
+    newSnake->right = right;
 }
 
 void printGame(Game *game) {
@@ -172,8 +182,15 @@ int main(int argc, char* argv[]) {
         game->grid[i] = calloc(game->width, sizeof(Cell));
     }
     buildGrid(game);
-    addSnake(game);
-    addSnake(game);
+    addSnake(game, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT);
+    addSnake(game, 'w', 's', 'a', 'd');
+    addSnake(game, 't', 'g', 'f', 'h');
+    addSnake(game, 'i', 'k', 'j', 'l');
+    for (int j = 0; j < game->noOfSnakes; ++j) {
+        for (int i = 0; i < 5; ++i) {
+            addLength(game, game->snakes[j]);
+        }
+    }
     int ch;
     while(!game->finished) {
         printGame(game);
@@ -193,31 +210,19 @@ int main(int argc, char* argv[]) {
 }
 
 void updateDir(int ch, Game *pGame) {
-    Snake *first = pGame->snakes[0];
-    Snake *second = pGame->snakes[1];
-    if (ch == KEY_UP) {
-        first->direction = 0;
-    }
-    if (ch == KEY_RIGHT) {
-        first->direction = 1;
-    }
-    if (ch == KEY_DOWN) {
-        first->direction = 2;
-    }
-    if (ch == KEY_LEFT) {
-        first->direction = 3;
-    }
-    if (ch == 'w') {
-        second->direction = 0;
-    }
-    if (ch == 'd') {
-        second->direction = 1;
-    }
-    if (ch == 's') {
-        second->direction = 2;
-    }
-    if (ch == 'a') {
-        second->direction = 3;
+    for (int i = 0; i < pGame->noOfSnakes; ++i) {
+        if (ch == pGame->snakes[i]->up) {
+            pGame->snakes[i]->direction = 0;
+        }
+        if (ch == pGame->snakes[i]->right) {
+            pGame->snakes[i]->direction = 1;
+        }
+        if (ch == pGame->snakes[i]->down) {
+            pGame->snakes[i]->direction = 2;
+        }
+        if (ch == pGame->snakes[i]->left) {
+            pGame->snakes[i]->direction = 3;
+        }
     }
 }
 
@@ -263,9 +268,41 @@ void updateSnake(Game *game, Snake *theSnake) {
         nextY = game->height - 1;
     }
     Cell *next = &game->grid[nextY][nextX];
-    theSnake->head->occupier = nothing;
+    Cell *previous = theSnake->head;
     theSnake->head = next;
     theSnake->head->occupier = snake;
+    for (int i = 0; i < theSnake->length; ++i) {
+        next = previous;
+        previous = theSnake->body[i];
+        theSnake->body[i] = next;
+        theSnake->body[i]->occupier = snake_body;
+    }
+    previous->occupier = nothing;
+}
+
+void addLength(Game *game, Snake *theSnake) {
+    int xOffset = getXOffset(theSnake);
+    int yOffset = getYOffset(theSnake);
+    int nextX = (theSnake->head->coordinate.x + xOffset) % game->width;
+    int nextY = (theSnake->head->coordinate.y + yOffset) % game->height;
+    if (nextX < 0) {
+        nextX = game->width - 1;
+    }
+    if (nextY < 0) {
+        nextY = game->height - 1;
+    }
+    Cell *next = &game->grid[nextY][nextX];
+    Cell *previous = theSnake->head;
+    theSnake->head = next;
+    theSnake->head->occupier = snake;
+    for (int i = 0; i < theSnake->length; ++i) {
+        next = previous;
+        previous = theSnake->body[i];
+        theSnake->body[i] = next;
+        theSnake->body[i]->occupier = snake_body;
+    }
+    theSnake->body[theSnake->length] = previous;
+    theSnake->length++;
 }
 
 void updateGame(Game *game) {

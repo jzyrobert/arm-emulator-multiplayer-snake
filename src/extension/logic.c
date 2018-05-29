@@ -49,7 +49,9 @@ void printGame(Game *pGame);
 
 bool finished(Game *pGame);
 
-void updateGame(int ch, Game *game) ;
+void updateGame(Game *game) ;
+
+void updateDir(int ch, Game *pGame);
 
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
@@ -171,23 +173,28 @@ int main(int argc, char* argv[]) {
     }
     buildGrid(game);
     addSnake(game);
+    addSnake(game);
     int ch;
     while(!game->finished) {
         printGame(game);
         usleep(150000);
         ch = getch();
-        flushinp();
         if (ch == 'x') {
             game->finished = true;
         }
-        updateGame(ch, game);
+        while (ch != ERR) {
+            updateDir(ch, game);
+            ch = getch();
+        }
+        updateGame(game);
     }
     endwin();
     return 0;
 }
 
-void updateGame(int ch, Game *game) {
-    Snake *first = game->snakes[0];
+void updateDir(int ch, Game *pGame) {
+    Snake *first = pGame->snakes[0];
+    Snake *second = pGame->snakes[1];
     if (ch == KEY_UP) {
         first->direction = 0;
     }
@@ -200,31 +207,55 @@ void updateGame(int ch, Game *game) {
     if (ch == KEY_LEFT) {
         first->direction = 3;
     }
-    int xOffset;
-    int yOffset;
-    switch (first->direction) {
-        case 0:
-            xOffset = 0;
-            yOffset = -1;
-            break;
-        case 1:
-            xOffset = 1;
-            yOffset = 0;
-            break;
-        case 2:
-            xOffset = 0;
-            yOffset = 1;
-            break;
-        case 3:
-            xOffset = -1;
-            yOffset = 0;
-            break;
-        default:
-            xOffset = 0;
-            yOffset = 0;
+    if (ch == 'w') {
+        second->direction = 0;
     }
-    int nextX = (first->head->coordinate.x + xOffset) % game->width;
-    int nextY = (first->head->coordinate.y + yOffset) % game->height;
+    if (ch == 'd') {
+        second->direction = 1;
+    }
+    if (ch == 's') {
+        second->direction = 2;
+    }
+    if (ch == 'a') {
+        second->direction = 3;
+    }
+}
+
+int getXOffset(Snake *snake) {
+    switch (snake->direction) {
+        case 0:
+            return  0;
+        case 1:
+            return 1;
+        case 2:
+            return 0;
+        case 3:
+            return -1;
+        default:
+            return 0;
+    }
+}
+
+int getYOffset(Snake *snake) {
+    switch (snake->direction) {
+        case 0:
+            return -1;
+        case 1:
+            return 0;
+        case 2:
+            return 1;
+        case 3:
+            return 0;
+        default:
+            return 0;
+    }
+}
+
+void updateSnake(Game *game, Snake *theSnake) {
+    int xOffset = getXOffset(theSnake);
+    int yOffset = getYOffset(theSnake);
+    int nextX = (theSnake->head->coordinate.x + xOffset) % game->width;
+    int nextY = (theSnake->head->coordinate.y + yOffset) % game->height;
     if (nextX < 0) {
         nextX = game->width - 1;
     }
@@ -232,8 +263,14 @@ void updateGame(int ch, Game *game) {
         nextY = game->height - 1;
     }
     Cell *next = &game->grid[nextY][nextX];
-    first->head->occupier = nothing;
-    first->head = next;
-    first->head->occupier = snake;
+    theSnake->head->occupier = nothing;
+    theSnake->head = next;
+    theSnake->head->occupier = snake;
+}
+
+void updateGame(Game *game) {
+    for (int i = 0; i < game->noOfSnakes; ++i) {
+        updateSnake(game, game->snakes[i]);
+    }
 }
 

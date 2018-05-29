@@ -12,7 +12,7 @@
 enum OCCUPIER {
     nothing,
     snake,
-    dead_snake
+    dead_snake //:'(
 };
 
 struct coordinate {

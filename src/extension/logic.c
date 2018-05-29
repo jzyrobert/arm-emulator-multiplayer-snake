@@ -2,14 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdbool.h>
 
 #ifndef GRID_SIZE
 #define GRID_SIZE 8192
 #endif
-
-typedef enum {
-    false, true
-} bool;
 
 enum OCCUPIER {
     nothing,
@@ -29,6 +26,7 @@ struct cell {
 
 struct snake {
     Cell head;
+    Cell body[200];
 };
 
 Cell grid[GRID_SIZE][GRID_SIZE];
@@ -54,13 +52,11 @@ Snake addSnake(void) {
         x = rand();
         y = rand();
     } while (grid[x][y].occupier == snake);
-    Snake newSnake;
-    Cell head;
-    newSnake.head = head;
-    head.occupier = snake;
-    head.coordinate.x = x;
-    head.coordinate.y = y;
-    return newSnake;
+    Snake *newSnake = malloc(sizeof(Snake));
+    newSnake->head.occupier = snake;
+    newSnake->head.coordinate.x = x;
+    newSnake->head.coordinate.y = y;
+    return *newSnake;
 }
 
 int main(void) {

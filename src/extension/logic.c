@@ -71,11 +71,11 @@ void addLength(Game *game, Snake *theSnake) ;
 
 bool oppositeDir(Snake *pSnake, int ch);
 
-void endgame();
-
 void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) ;
 
 void addFood(Game *pGame) ;
+
+void endgame(Game *game) ;
 
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
@@ -283,21 +283,26 @@ int main(int argc, char* argv[]) {
             updateDir(ch, game);
         }
     }
-    endgame();
+    endgame(game);
     endwin();
     freeEverything(game);
     return 0;
 }
 
-void endgame() {
+void endgame(Game *game) {
     int x;
     int y;
     getmaxyx(stdscr, y, x);
     clear();
     char msg1[] = "The game has ended!";
+    char msg3[] = "Scores:";
     char msg2[] = "Press any button to exit";
     mvprintw(y/2, x/2 - strlen(msg1) / 2, "%s",msg1);
-    mvprintw(y/2 + 1, x/2 - strlen(msg2) / 2, "%s",msg2);
+    mvprintw(y/2 + 1, x/2 - strlen(msg3) / 2, "%s",msg3);
+    for (int i = 0; i < game->noOfSnakes; ++i) {
+        mvprintw(y/2 + 2 + i, x/2 - strlen(msg3) / 2, "Snake %d: %d", i+1, game->snakes[i]->length + -5);
+    }
+    mvprintw(y/2 + 2 + game->noOfSnakes, x/2 - strlen(msg2) / 2, "%s",msg2);
     refresh();
     nodelay(stdscr, false);
     getch();
@@ -315,15 +320,20 @@ bool hasSpace(Game *pGame) {
 }
 
 void addFood(Game *pGame) {
-    if (hasSpace(pGame)) {
+    Cell *empty[pGame->width * pGame->height];
+    int n = 0;
+    for (int i = 0; i < pGame->height; ++i) {
+        for (int j = 0; j < pGame->width; ++j) {
+            if (pGame->grid[i][j].occupier == nothing) {
+                empty[n] = &pGame->grid[i][j];
+                n++;
+            }
+        }
+    }
+    if (n > 0) {
         pGame->food++;
-        int x = 0;
-        int y = 0;
-        do {
-            x = rand() % pGame->width;
-            y = rand() % pGame->height;
-        } while (pGame->grid[y][x].occupier != nothing);
-        pGame->grid[y][x].occupier = food;
+        int x = rand() % n;
+        empty[x]->occupier = food;
     }
 }
 

@@ -216,8 +216,8 @@ void selectFromMenu(int* players) {
     player_num = calloc(Num_choices + 1, sizeof(ITEM *));
     for (int k = 0; k < Num_choices; ++k) {
         player_num[k] = new_item(choices[k], "");
-        player_num[Num_choices] = (ITEM *)NULL;
     }
+    player_num[Num_choices] = (ITEM *)NULL;
 
     player_menu = new_menu(player_num);
     //mvprintw(LINES - 2, 0, "X to Exit");
@@ -329,6 +329,7 @@ int main(int argc, char* argv[]) {
             freeEverything(game);
             exit(EXIT_FAILURE);
     }
+    free(players);
     for (int j = 0; j < game->noOfSnakes; ++j) {
         for (int i = 0; i < 5; ++i) {
             addLength(game, game->snakes[j]);

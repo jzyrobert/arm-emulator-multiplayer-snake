@@ -35,6 +35,7 @@ struct snake {
     Cell *head;
     Cell **body;
     int length;
+    int nextDir;
     int direction;
     int up;
     int down;
@@ -100,6 +101,7 @@ void addSnake(Game *game,int up, int down, int left, int right) {
     newSnake->head->occupier = head_up;
     newSnake->length = 0;
     newSnake->direction = 0;
+    newSnake->nextDir = 0;
     game->noOfSnakes++;
     newSnake->up = up;
     newSnake->down = down;
@@ -228,6 +230,7 @@ int main(int argc, char* argv[]) {
     }
     endgame();
     endwin();
+    free(game);
     return 0;
 }
 
@@ -261,7 +264,7 @@ void updateDir(int ch, Game *pGame) {
             direction = 3;
         }
         if (!oppositeDir(pGame->snakes[i], direction)) {
-            pGame->snakes[i]->direction = direction;
+            pGame->snakes[i]->nextDir = direction;
         }
     }
 }
@@ -271,7 +274,7 @@ bool oppositeDir(Snake *pSnake, int ch) {
 }
 
 int getXOffset(Snake *snake) {
-    switch (snake->direction) {
+    switch (snake->nextDir) {
         case 0:
             return  0;
         case 1:
@@ -286,7 +289,7 @@ int getXOffset(Snake *snake) {
 }
 
 int getYOffset(Snake *snake) {
-    switch (snake->direction) {
+    switch (snake->nextDir) {
         case 0:
             return -1;
         case 1:
@@ -301,7 +304,7 @@ int getYOffset(Snake *snake) {
 }
 
 enum OCCUPIER getHeadChar(Snake *theSnake){
-    switch (theSnake->direction) {
+    switch (theSnake->nextDir) {
         case 0:
             return head_up;
         case 1:
@@ -350,6 +353,7 @@ void moveSnake(Game *game, Snake *theSnake, Cell *next) {
         theSnake->body[i]->occupier = snake_body;
     }
     previous->occupier = nothing;
+    theSnake->direction = theSnake->nextDir;
 }
 
 void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) {
@@ -364,6 +368,7 @@ void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) {
     }
     theSnake->body[theSnake->length] = previous;
     theSnake->length++;
+    theSnake->direction = theSnake->nextDir;
 }
 
 void addLength(Game *game, Snake *theSnake) {

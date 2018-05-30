@@ -140,6 +140,27 @@ void addSnake(Game *game,int up, int down, int left, int right) {
     newSnake->alive = true;
 }
 
+
+void findHead(Game *pGame, int j, int i) {
+    for (int k = 0; k < pGame->noOfSnakes; ++k) {
+        if (pGame->snakes[k]->head == &pGame->grid[j][i]) {
+            attron(COLOR_PAIR(3 + k));
+            break;
+        }
+    }
+}
+
+void findBody(Game *pGame, int j, int i) {
+    for (int k = 0; k < pGame->noOfSnakes; ++k) {
+        for (int l = 0; l < pGame->snakes[k]->length; ++l) {
+            if (pGame->snakes[k]->body[l] == &pGame->grid[j][i]) {
+                attron(COLOR_PAIR(3 + k));
+                break;
+            }
+        }
+    }
+}
+
 void printGame(Game *game) {
     clear();
     attron(COLOR_PAIR(1));
@@ -152,32 +173,36 @@ void printGame(Game *game) {
     for (int j = 0; j < game->height; ++j) {
         printw("#");
         for (int i = 0; i < game->width; ++i) {
-            attron(COLOR_PAIR(2));
             char c;
             switch ((int) game->grid[j][i].occupier) {
                 case 0:
                     c = ' ';
                     break;
                 case 1:
+                    findHead(game, j, i);
                     c = '^';
                     break;
                 case 2:
+                    findHead(game, j, i);
                     c = 'v';
                     break;
                 case 3:
+                    findHead(game, j, i);
                     c = '<';
                     break;
                 case 4:
+                    findHead(game, j, i);
                     c = '>';
                     break;
                 case 5:
+                    findBody(game, j, i);
                     c = 'o';
                     break;
                 case 6:
                     c = 'x';
                     break;
                 case 7:
-                    attron(COLOR_PAIR(3));
+                    attron(COLOR_PAIR(2));
                     c = '*';
                     break;
                 default:
@@ -308,8 +333,12 @@ int main(int argc, char* argv[]) {
     start_color();
     int background = COLOR_BLACK;
     init_pair(1, COLOR_WHITE, background); //Main pair is white and black
-    init_pair(2, COLOR_GREEN, background); //Second pair is green and black
-    init_pair(3, COLOR_RED, background); //Second pair is red and black
+    init_pair(2, COLOR_RED, background); //Second pair is red and black
+    init_pair(3, COLOR_GREEN, background); //Third pair is green and black
+    init_pair(4, COLOR_BLUE, background);
+    init_pair(5, COLOR_CYAN, background);
+    init_pair(6, COLOR_MAGENTA, background);
+    init_pair(7, COLOR_YELLOW, background);
 
     getmaxyx(stdscr, game->tHeight, game->tWidth);
 

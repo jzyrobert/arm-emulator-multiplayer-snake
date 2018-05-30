@@ -18,7 +18,8 @@ enum OCCUPIER {
     head_left,
     head_right,
     snake_body,
-    dead_snake //:'(
+    dead_snake,
+    food
 };
 
 struct coordinate {
@@ -52,6 +53,7 @@ struct game {
     int height;
     int tWidth;
     int tHeight;
+    int food;
     bool finished;
 };
 
@@ -70,6 +72,10 @@ void addLength(Game *game, Snake *theSnake) ;
 bool oppositeDir(Snake *pSnake, int ch);
 
 void endgame();
+
+void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) ;
+
+void addFood(Game *pGame) ;
 
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
@@ -144,6 +150,9 @@ void printGame(Game *game) {
                 case 6:
                     c = 'x';
                     break;
+                case 7:
+                    c = '*';
+                    break;
                 default:
                     c = ' ';
             }
@@ -161,6 +170,12 @@ void printGame(Game *game) {
         printw("\n");
     }
     refresh();
+}
+
+void addFoods(Game *game, int num) {
+    for (int i = 0; i < num; ++i) {
+        addFood(game);
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -182,7 +197,7 @@ int main(int argc, char* argv[]) {
     } else if (argc == 3){
         game->width = (int) (strtol(argv[2], NULL, 10) - 2);
         game->height = (int) (strtol(argv[1], NULL , 10) - 2);
-        if (game->width < 1 || game->height < 1) {
+        if (game->width < 2 || game->height < 2) {
             printf("You can't have a game that small!\n");
             endwin();
             exit(EXIT_FAILURE);
@@ -209,6 +224,7 @@ int main(int argc, char* argv[]) {
     addSnake(game, 'w', 's', 'a', 'd');
     addSnake(game, 't', 'g', 'f', 'h');
     addSnake(game, 'i', 'k', 'j', 'l');
+    addFoods(game, 4);
     for (int j = 0; j < game->noOfSnakes; ++j) {
         for (int i = 0; i < 5; ++i) {
             addLength(game, game->snakes[j]);
@@ -248,9 +264,20 @@ void endgame() {
     getch();
 }
 
+void addFood(Game *pGame) {
+    pGame->food++;
+    int x = 0;
+    int y = 0;
+    do {
+        x = rand() % (pGame->width + 1);
+        y = rand() % (pGame->height + 1);
+    } while (pGame->grid[y][x].occupier != nothing);
+    pGame->grid[y][x].occupier = food;
+}
+
 void updateDir(int ch, Game *pGame) {
     for (int i = 0; i < pGame->noOfSnakes; ++i) {
-        int direction = 0;
+        int direction = pGame->snakes[i]->direction;
         if (ch == pGame->snakes[i]->up) {
             direction = 0;
         }
@@ -330,13 +357,16 @@ void updateSnake(Game *game, Snake *snake) {
             nextY = game->height - 1;
         }
         Cell *next = &game->grid[nextY][nextX];
-        if (next->occupier != nothing) {
+        if (next->occupier != nothing && next->occupier != food) {
             //rip snake
             snake->alive = false;
             snake->head->occupier = dead_snake;
             for (int i = 0; i < snake->length; ++i) {
                 snake->body[i]->occupier = dead_snake;
             }
+        } else if (next->occupier == food){
+            game->food--;
+            moveSizeIncrease(game, snake, next);
         } else {
             moveSnake(game, snake, next);
         }
@@ -397,6 +427,9 @@ void updateGame(Game *game) {
     }
     if (dead == game->noOfSnakes) {
         game->finished = true;
+    }
+    if (game->food < 4) {
+        addFoods(game, 4 - (game->food));
     }
 }
 

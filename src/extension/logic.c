@@ -6,12 +6,11 @@
 #include <ncurses.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/time.h>
 
 #ifndef GRID_SIZE
 #define GRID_SIZE 10
 #endif
-
-
 
 enum OCCUPIER {
     nothing,
@@ -56,6 +55,7 @@ struct game {
     int tWidth;
     int tHeight;
     int food;
+    time_t lastTime;
     bool finished;
 };
 
@@ -185,23 +185,46 @@ void addFoods(Game *game, int num) {
     }
 }
 
+float timedifference_msec(struct timeval t0, struct timeval t1)
+{
+    return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
+}
+
+void freeEverything(Game *pGame) {
+    for (int i = 0; i < pGame->height; ++i) {
+        free(pGame->grid[i]);
+    }
+    free(pGame->grid);
+    for (int j = 0; j < pGame->noOfSnakes; ++j) {
+        free(pGame->snakes[j]->body);
+        free(pGame->snakes[j]);
+    }
+    free(pGame);
+}
+
 int main(int argc, char* argv[]) {
     Game *game = malloc(sizeof(Game));
+    game->food = 0;
     initialiseRandomSeed();
     //Ncurses initialisation
-    initscr();
-    raw();
+    if (initscr() == NULL) {
+        printf("Window failure!");
+        free(game);
+        exit(EXIT_FAILURE);
+    }
+    keypad(stdscr, TRUE);
     noecho();
+    cbreak();
+    timeout(100);
+
     start_color();
     int backgroud = COLOR_BLACK;
     init_pair(1, COLOR_WHITE, backgroud); //Main pair is white and black
     init_pair(2, COLOR_GREEN, backgroud); //Second pair is green and black
     init_pair(3, COLOR_RED, backgroud); //Second pair is red and black
 
-    nodelay(stdscr, TRUE);
-    keypad(stdscr, TRUE);
     getmaxyx(stdscr, game->tHeight, game->tWidth);
-    
+
     if (argc != 3 && argc != 1) {
         printf("Call game with height and width arguments (Includes borders).\n");
         printf("Use $LINES and $COLUMNS to find them\n");
@@ -245,23 +268,25 @@ int main(int argc, char* argv[]) {
         }
     }
     int ch;
+    printGame(game);
+    struct timeval start, next;
+    gettimeofday(&start, 0);
+    float elapsed = 0;
     while(!game->finished) {
-        printGame(game);
-        usleep(150000);
-        ch = getch();
-
-        if (ch == 'x') {
-            game->finished = true;
+        gettimeofday(&next, 0);
+        elapsed = timedifference_msec(start, next);
+        if (elapsed > 100) {
+            gettimeofday(&start, 0);
+            updateGame(game);
+            printGame(game);
         }
-        while (ch != ERR) {
+        if ((ch = getch()) != ERR) {
             updateDir(ch, game);
-            ch = getch();
         }
-        updateGame(game);
     }
     endgame();
     endwin();
-    free(game);
+    freeEverything(game);
     return 0;
 }
 
@@ -291,22 +316,28 @@ void addFood(Game *pGame) {
 }
 
 void updateDir(int ch, Game *pGame) {
-    for (int i = 0; i < pGame->noOfSnakes; ++i) {
-        int direction = pGame->snakes[i]->direction;
-        if (ch == pGame->snakes[i]->up) {
-            direction = 0;
-        }
-        if (ch == pGame->snakes[i]->right) {
-            direction = 1;
-        }
-        if (ch == pGame->snakes[i]->down) {
-            direction = 2;
-        }
-        if (ch == pGame->snakes[i]->left) {
-            direction = 3;
-        }
-        if (!oppositeDir(pGame->snakes[i], direction)) {
-            pGame->snakes[i]->nextDir = direction;
+    if (ch == 'x') {
+        pGame->finished = true;
+    } else {
+        for (int i = 0; i < pGame->noOfSnakes; ++i) {
+            int direction = -1;
+            if (ch == pGame->snakes[i]->up) {
+                direction = 0;
+            }
+            if (ch == pGame->snakes[i]->right) {
+                direction = 1;
+            }
+            if (ch == pGame->snakes[i]->down) {
+                direction = 2;
+            }
+            if (ch == pGame->snakes[i]->left) {
+                direction = 3;
+            }
+            if (direction != -1) {
+                if (!oppositeDir(pGame->snakes[i], direction)) {
+                    pGame->snakes[i]->nextDir = direction;
+                }
+            }
         }
     }
 }
@@ -375,17 +406,16 @@ void updateSnake(Game *game, Snake *snake) {
         if (next->occupier != nothing && next->occupier != food) {
             //rip snake
             snake->alive = false;
-            snake->head->occupier = dead_snake;
+            snake->head->occupier = food;
+            game->food++;
             for (int i = 0; i < snake->length; ++i) {
-                snake->body[i]->occupier = dead_snake;
+                snake->body[i]->occupier = food;
+                game->food++;
             }
         } else if (next->occupier == food){
             game->food--;
             moveSizeIncrease(game, snake, next);
         } else {
-            if(next->occupier == food){
-                addLength(game, snake);
-            }
             moveSnake(game, snake, next);
         }
 }

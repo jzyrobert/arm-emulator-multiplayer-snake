@@ -14,7 +14,7 @@
 #endif
 
 #define MAX_PLAYERS 5
-#define STARTING_LENGTH 5;
+#define STARTING_LENGTH 4;
 
 enum OCCUPIER {
     nothing,
@@ -100,14 +100,34 @@ void initialiseRandomSeed(void) {
 void addSnake(Game *game,int up, int down, int left, int right) {
     int x = 0;
     int y = 0;
-    do {
-        x = rand() % game->width;
-        y = rand() % game->height;
-    } while (game->grid[y][x].occupier != nothing);
+    getmaxyx(stdscr, y, x);
     Snake *newSnake = malloc(sizeof(Snake));
     game->snakes[game->noOfSnakes] = newSnake;
     newSnake->body = malloc(game->width * game->height * sizeof(Cell *));
-    newSnake->head = &game->grid[y][x];
+    switch(game->noOfSnakes) {
+        case 0:
+            newSnake->head = &game->grid[y - 5][x/6 *5];
+            break;
+        case 1:
+            newSnake->head= &game->grid[y - 5][x/6 *4];
+            break;
+        case 2:
+            newSnake->head= &game->grid[y - 5][x/6 *3];
+            break;
+        case 3:
+            newSnake->head= &game->grid[y - 5][x/6 * 2];
+            break;
+        case 4:
+            newSnake->head= &game->grid[y - 5][x/6];
+            break;
+        default:
+            do {
+                x = rand() % game->width;
+                y = rand() % game->height;
+            } while (game->grid[y][x].occupier != nothing);
+            newSnake->head= &game->grid[y][x];
+
+    }
     newSnake->head->occupier = head_up;
     newSnake->length = 0;
     newSnake->direction = 0;
@@ -286,10 +306,10 @@ int main(int argc, char* argv[]) {
     timeout(100);
 
     start_color();
-    int backgroud = COLOR_BLACK;
-    init_pair(1, COLOR_WHITE, backgroud); //Main pair is white and black
-    init_pair(2, COLOR_GREEN, backgroud); //Second pair is green and black
-    init_pair(3, COLOR_RED, backgroud); //Second pair is red and black
+    int background = COLOR_BLACK;
+    init_pair(1, COLOR_WHITE, background); //Main pair is white and black
+    init_pair(2, COLOR_GREEN, background); //Second pair is green and black
+    init_pair(3, COLOR_RED, background); //Second pair is red and black
 
     getmaxyx(stdscr, game->tHeight, game->tWidth);
 

@@ -55,13 +55,11 @@ struct game {
     int tWidth;
     int tHeight;
     int food;
-    time_t lastTime;
+    int foodAmount;
     bool finished;
 };
 
 void printGame(Game *pGame);
-
-bool finished(Game *pGame);
 
 void updateGame(Game *game) ;
 
@@ -99,8 +97,8 @@ void addSnake(Game *game,int up, int down, int left, int right) {
     int x = 0;
     int y = 0;
     do {
-        x = rand() % (game->width + 1);
-        y = rand() % (game->height + 1);
+        x = rand() % game->width;
+        y = rand() % game->height;
     } while (game->grid[y][x].occupier != nothing);
     Snake *newSnake = malloc(sizeof(Snake));
     game->snakes[game->noOfSnakes] = newSnake;
@@ -248,6 +246,7 @@ int main(int argc, char* argv[]) {
         game->height = game->tHeight -2;
         game->width = game->tWidth - 2;
     }
+    game->foodAmount = (game->height * game->width) / 10;
     game->grid = calloc(game->height, sizeof(Cell *));
     if (game->grid == NULL) {
         printf("Allocation failure!\n");
@@ -304,15 +303,28 @@ void endgame() {
     getch();
 }
 
+bool hasSpace(Game *pGame) {
+    for (int i = 0; i < pGame->height; ++i) {
+        for (int j = 0; j < pGame->width; ++j) {
+            if (pGame->grid[i][j].occupier == nothing) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void addFood(Game *pGame) {
-    pGame->food++;
-    int x = 0;
-    int y = 0;
-    do {
-        x = rand() % (pGame->width + 1);
-        y = rand() % (pGame->height + 1);
-    } while (pGame->grid[y][x].occupier != nothing);
-    pGame->grid[y][x].occupier = food;
+    if (hasSpace(pGame)) {
+        pGame->food++;
+        int x = 0;
+        int y = 0;
+        do {
+            x = rand() % pGame->width;
+            y = rand() % pGame->height;
+        } while (pGame->grid[y][x].occupier != nothing);
+        pGame->grid[y][x].occupier = food;
+    }
 }
 
 void updateDir(int ch, Game *pGame) {
@@ -476,8 +488,8 @@ void updateGame(Game *game) {
     if (dead == game->noOfSnakes) {
         game->finished = true;
     }
-    if (game->food < 4) {
-        addFoods(game, 4 - (game->food));
+    if (game->food < game->foodAmount) {
+        addFoods(game, game->foodAmount - (game->food));
     }
 }
 

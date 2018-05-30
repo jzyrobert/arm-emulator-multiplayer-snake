@@ -324,6 +324,10 @@ int main(int argc, char* argv[]) {
             break;
         default:
             printf("Failed to select players!\n");
+            endgame(game);
+            endwin();
+            freeEverything(game);
+            exit(EXIT_FAILURE);
     }
     for (int j = 0; j < game->noOfSnakes; ++j) {
         for (int i = 0; i < 5; ++i) {

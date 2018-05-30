@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/time.h>
+#include <menu.h>
 
 #ifndef GRID_SIZE
 #define GRID_SIZE 10
@@ -200,6 +201,57 @@ void freeEverything(Game *pGame) {
     free(pGame);
 }
 
+void selectFromMenu(int* players) {
+    char *choices[] = {
+            "1 Player (Arrow keys)",
+            "2 Players (WASD)",
+            "3 Players (TFGH)",
+            "4 Players (IJKL)",
+    };
+    ITEM **player_num;
+    MENU *player_menu;
+    ITEM *cur_item = NULL;
+    int c;
+    int Num_choices = 4;
+    player_num = calloc(Num_choices + 1, sizeof(ITEM *));
+    for (int k = 0; k < Num_choices; ++k) {
+        player_num[k] = new_item(choices[k], "");
+        player_num[Num_choices] = (ITEM *)NULL;
+    }
+
+    player_menu = new_menu(player_num);
+    //mvprintw(LINES - 2, 0, "X to Exit");
+    post_menu(player_menu);
+    refresh();
+    while ((c = getch()) != 'x') {
+        switch(c) {
+            case KEY_DOWN:
+                menu_driver(player_menu, REQ_DOWN_ITEM);
+                break;
+            case KEY_UP:
+                menu_driver(player_menu, REQ_UP_ITEM);
+                break;
+            case 10:
+                cur_item = current_item(player_menu);
+                break;
+        }
+        if (c == KEY_ENTER || c == 10) {
+            break;
+        }
+    }
+    for (int i = 0; i < Num_choices; ++i) {
+        if (cur_item == player_num[i]) {
+            *players = i + 1;
+        }
+    }
+    unpost_menu(player_menu);
+    for (int l = 0; l < Num_choices + 1; ++l) {
+        free_item(player_num[l]);
+    }
+    free_menu(player_menu);
+    free(player_num);
+}
+
 int main(int argc, char* argv[]) {
     Game *game = malloc(sizeof(Game));
     game->food = 0;
@@ -232,7 +284,7 @@ int main(int argc, char* argv[]) {
     } else if (argc == 3){
         game->width = (int) (strtol(argv[2], NULL, 10) - 2);
         game->height = (int) (strtol(argv[1], NULL , 10) - 2);
-        if (game->width < 2 || game->height < 2) {
+        if (game->width < 10 || game->height < 10) {
             printf("You can't have a game that small!\n");
             endwin();
             exit(EXIT_FAILURE);
@@ -256,11 +308,23 @@ int main(int argc, char* argv[]) {
         game->grid[i] = calloc(game->width, sizeof(Cell));
     }
     buildGrid(game);
-    addSnake(game, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT);
-    addSnake(game, 'w', 's', 'a', 'd');
-    addSnake(game, 't', 'g', 'f', 'h');
-    addSnake(game, 'i', 'k', 'j', 'l');
-    addFoods(game, 4);
+
+    int *players = calloc(1, sizeof(int));
+    selectFromMenu(players);
+
+    switch (*players) {
+        case 4:
+            addSnake(game, 'i', 'k', 'j', 'l');
+        case 3:
+            addSnake(game, 't', 'g', 'f', 'h');
+        case 2:
+            addSnake(game, 'w', 's', 'a', 'd');
+        case 1:
+            addSnake(game, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT);
+            break;
+        default:
+            printf("Failed to select players!\n");
+    }
     for (int j = 0; j < game->noOfSnakes; ++j) {
         for (int i = 0; i < 5; ++i) {
             addLength(game, game->snakes[j]);

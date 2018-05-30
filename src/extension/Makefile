@@ -7,7 +7,7 @@ CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
 
 all: logic
 
-logic: logic.o -lncurses
+logic: logic.o -lncurses -lmenu
 
 clean:
 	rm -f $(wildcard *.o)

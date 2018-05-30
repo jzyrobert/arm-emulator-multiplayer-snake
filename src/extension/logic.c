@@ -13,6 +13,9 @@
 #define GRID_SIZE 10
 #endif
 
+#define MAX_PLAYERS 5
+#define STARTING_LENGTH 5;
+
 enum OCCUPIER {
     nothing,
     head_up,
@@ -49,7 +52,7 @@ struct snake {
 
 struct game {
     Cell **grid;
-    Snake *snakes[4];
+    Snake *snakes[MAX_PLAYERS];
     int noOfSnakes;
     int width;
     int height;
@@ -207,12 +210,13 @@ void selectFromMenu(int* players) {
             "2 Players (WASD)",
             "3 Players (TFGH)",
             "4 Players (IJKL)",
+            "5 Players ([;'#)"
     };
     ITEM **player_num;
     MENU *player_menu;
     ITEM *cur_item = NULL;
     int c;
-    int Num_choices = 4;
+    int Num_choices = MAX_PLAYERS;
     player_num = calloc(Num_choices + 1, sizeof(ITEM *));
     for (int k = 0; k < Num_choices; ++k) {
         player_num[k] = new_item(choices[k], "");
@@ -250,6 +254,20 @@ void selectFromMenu(int* players) {
     }
     free_menu(player_menu);
     free(player_num);
+}
+
+void printNoPlayers() {
+    int x;
+    int y;
+    getmaxyx(stdscr, y, x);
+    clear();
+    char msg1[] = "No players selected";
+    char msg2[] = "Press any button to exit";
+    mvprintw(y/2, x/2 - strlen(msg1) / 2, "%s",msg1);
+    mvprintw(y/2 + 1, x/2 - strlen(msg2) / 2, "%s",msg2);
+    refresh();
+    nodelay(stdscr, false);
+    getch();
 }
 
 int main(int argc, char* argv[]) {
@@ -313,6 +331,8 @@ int main(int argc, char* argv[]) {
     selectFromMenu(players);
 
     switch (*players) {
+        case 5:
+            addSnake(game, '[', '\'', ';', '#');
         case 4:
             addSnake(game, 'i', 'k', 'j', 'l');
         case 3:
@@ -323,15 +343,15 @@ int main(int argc, char* argv[]) {
             addSnake(game, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT);
             break;
         default:
-            printf("Failed to select players!\n");
-            endgame(game);
+            printNoPlayers();
             endwin();
             freeEverything(game);
             exit(EXIT_FAILURE);
     }
     free(players);
+    int x = STARTING_LENGTH;
     for (int j = 0; j < game->noOfSnakes; ++j) {
-        for (int i = 0; i < 5; ++i) {
+        for (int i = 0; i < x; ++i) {
             addLength(game, game->snakes[j]);
         }
     }
@@ -361,31 +381,21 @@ int main(int argc, char* argv[]) {
 void endgame(Game *game) {
     int x;
     int y;
+    int l = STARTING_LENGTH;
     getmaxyx(stdscr, y, x);
     clear();
     char msg1[] = "The game has ended!";
     char msg3[] = "Scores:";
     char msg2[] = "Press any button to exit";
-    mvprintw(y/2, x/2 - strlen(msg1) / 2, "%s",msg1);
-    mvprintw(y/2 + 1, x/2 - strlen(msg3) / 2, "%s",msg3);
+    mvprintw(y/2 - 3, x/2 - strlen(msg1) / 2, "%s",msg1);
+    mvprintw(y/2 - 2, x/2 - strlen(msg3) / 2, "%s",msg3);
     for (int i = 0; i < game->noOfSnakes; ++i) {
-        mvprintw(y/2 + 2 + i, x/2 - strlen(msg3) / 2, "Snake %d: %d", i+1, game->snakes[i]->length + -5);
+        mvprintw(y/2 - 1 + i, x/2 - strlen(msg3) / 2, "Snake %d: %d", i+1, game->snakes[i]->length - l);
     }
-    mvprintw(y/2 + 2 + game->noOfSnakes, x/2 - strlen(msg2) / 2, "%s",msg2);
+    mvprintw(y/2 - 1 + game->noOfSnakes, x/2 - strlen(msg2) / 2, "%s",msg2);
     refresh();
     nodelay(stdscr, false);
     getch();
-}
-
-bool hasSpace(Game *pGame) {
-    for (int i = 0; i < pGame->height; ++i) {
-        for (int j = 0; j < pGame->width; ++j) {
-            if (pGame->grid[i][j].occupier == nothing) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 void addFood(Game *pGame) {

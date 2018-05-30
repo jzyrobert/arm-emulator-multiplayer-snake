@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <ncurses.h>
 #include <unistd.h>
+#include <string.h>
 
 #ifndef GRID_SIZE
 #define GRID_SIZE 10
@@ -12,7 +13,10 @@
 
 enum OCCUPIER {
     nothing,
-    snake,
+    head_up,
+    head_down,
+    head_left,
+    head_right,
     snake_body,
     dead_snake //:'(
 };
@@ -36,6 +40,7 @@ struct snake {
     int down;
     int left;
     int right;
+    bool alive;
 };
 
 struct game {
@@ -57,7 +62,13 @@ void updateGame(Game *game) ;
 
 void updateDir(int ch, Game *pGame);
 
+void moveSnake(Game *game, Snake *theSnake, Cell *next) ;
+
 void addLength(Game *game, Snake *theSnake) ;
+
+bool oppositeDir(Snake *pSnake, int ch);
+
+void endgame();
 
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
@@ -81,12 +92,12 @@ void addSnake(Game *game,int up, int down, int left, int right) {
     do {
         x = rand() % (game->width + 1);
         y = rand() % (game->height + 1);
-    } while (game->grid[y][x].occupier == snake);
+    } while (game->grid[y][x].occupier != nothing);
     Snake *newSnake = malloc(sizeof(Snake));
     game->snakes[game->noOfSnakes] = newSnake;
     newSnake->body = malloc(game->width * game->height * sizeof(Cell *));
     newSnake->head = &game->grid[y][x];
-    newSnake->head->occupier = snake;
+    newSnake->head->occupier = head_up;
     newSnake->length = 0;
     newSnake->direction = 0;
     game->noOfSnakes++;
@@ -94,6 +105,7 @@ void addSnake(Game *game,int up, int down, int left, int right) {
     newSnake->down = down;
     newSnake->left = left;
     newSnake->right = right;
+    newSnake->alive = true;
 }
 
 void printGame(Game *game) {
@@ -113,12 +125,21 @@ void printGame(Game *game) {
                     c = ' ';
                     break;
                 case 1:
-                    c = '*';
+                    c = '^';
                     break;
                 case 2:
-                    c = 'o';
+                    c = 'v';
                     break;
                 case 3:
+                    c = '<';
+                    break;
+                case 4:
+                    c = '>';
+                    break;
+                case 5:
+                    c = 'o';
+                    break;
+                case 6:
                     c = 'x';
                     break;
                 default:
@@ -205,25 +226,48 @@ int main(int argc, char* argv[]) {
         }
         updateGame(game);
     }
+    endgame();
     endwin();
     return 0;
 }
 
+void endgame() {
+    int x;
+    int y;
+    getmaxyx(stdscr, y, x);
+    clear();
+    char msg1[] = "The game has ended!";
+    char msg2[] = "Press any button to exit";
+    mvprintw(y/2, x/2 - strlen(msg1) / 2, "%s",msg1);
+    mvprintw(y/2 + 1, x/2 - strlen(msg2) / 2, "%s",msg2);
+    refresh();
+    nodelay(stdscr, false);
+    getch();
+}
+
 void updateDir(int ch, Game *pGame) {
     for (int i = 0; i < pGame->noOfSnakes; ++i) {
+        int direction = 0;
         if (ch == pGame->snakes[i]->up) {
-            pGame->snakes[i]->direction = 0;
+            direction = 0;
         }
         if (ch == pGame->snakes[i]->right) {
-            pGame->snakes[i]->direction = 1;
+            direction = 1;
         }
         if (ch == pGame->snakes[i]->down) {
-            pGame->snakes[i]->direction = 2;
+            direction = 2;
         }
         if (ch == pGame->snakes[i]->left) {
-            pGame->snakes[i]->direction = 3;
+            direction = 3;
+        }
+        if (!oppositeDir(pGame->snakes[i], direction)) {
+            pGame->snakes[i]->direction = direction;
         }
     }
+}
+
+bool oppositeDir(Snake *pSnake, int ch) {
+    return abs(ch - pSnake->direction) == 2;
 }
 
 int getXOffset(Snake *snake) {
@@ -256,21 +300,49 @@ int getYOffset(Snake *snake) {
     }
 }
 
-void updateSnake(Game *game, Snake *theSnake) {
-    int xOffset = getXOffset(theSnake);
-    int yOffset = getYOffset(theSnake);
-    int nextX = (theSnake->head->coordinate.x + xOffset) % game->width;
-    int nextY = (theSnake->head->coordinate.y + yOffset) % game->height;
-    if (nextX < 0) {
-        nextX = game->width - 1;
+enum OCCUPIER getHeadChar(Snake *theSnake){
+    switch (theSnake->direction) {
+        case 0:
+            return head_up;
+        case 1:
+            return head_right;
+        case 2:
+            return head_down;
+        case 3:
+            return head_left;
+        default:
+            return head_up;
     }
-    if (nextY < 0) {
-        nextY = game->height - 1;
-    }
-    Cell *next = &game->grid[nextY][nextX];
+}
+
+void updateSnake(Game *game, Snake *snake) {
+        int xOffset = getXOffset(snake);
+        int yOffset = getYOffset(snake);
+        int nextX = (snake->head->coordinate.x + xOffset) % game->width;
+        int nextY = (snake->head->coordinate.y + yOffset) % game->height;
+        if (nextX < 0) {
+            nextX = game->width - 1;
+        }
+        if (nextY < 0) {
+            nextY = game->height - 1;
+        }
+        Cell *next = &game->grid[nextY][nextX];
+        if (next->occupier != nothing) {
+            //rip snake
+            snake->alive = false;
+            snake->head->occupier = dead_snake;
+            for (int i = 0; i < snake->length; ++i) {
+                snake->body[i]->occupier = dead_snake;
+            }
+        } else {
+            moveSnake(game, snake, next);
+        }
+}
+
+void moveSnake(Game *game, Snake *theSnake, Cell *next) {
     Cell *previous = theSnake->head;
     theSnake->head = next;
-    theSnake->head->occupier = snake;
+    theSnake->head->occupier = getHeadChar(theSnake);
     for (int i = 0; i < theSnake->length; ++i) {
         next = previous;
         previous = theSnake->body[i];
@@ -278,6 +350,20 @@ void updateSnake(Game *game, Snake *theSnake) {
         theSnake->body[i]->occupier = snake_body;
     }
     previous->occupier = nothing;
+}
+
+void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) {
+    Cell *previous = theSnake->head;
+    theSnake->head = next;
+    theSnake->head->occupier = getHeadChar(theSnake);
+    for (int i = 0; i < theSnake->length; ++i) {
+        next = previous;
+        previous = theSnake->body[i];
+        theSnake->body[i] = next;
+        theSnake->body[i]->occupier = snake_body;
+    }
+    theSnake->body[theSnake->length] = previous;
+    theSnake->length++;
 }
 
 void addLength(Game *game, Snake *theSnake) {
@@ -292,22 +378,20 @@ void addLength(Game *game, Snake *theSnake) {
         nextY = game->height - 1;
     }
     Cell *next = &game->grid[nextY][nextX];
-    Cell *previous = theSnake->head;
-    theSnake->head = next;
-    theSnake->head->occupier = snake;
-    for (int i = 0; i < theSnake->length; ++i) {
-        next = previous;
-        previous = theSnake->body[i];
-        theSnake->body[i] = next;
-        theSnake->body[i]->occupier = snake_body;
-    }
-    theSnake->body[theSnake->length] = previous;
-    theSnake->length++;
+    moveSizeIncrease(game, theSnake, next);
 }
 
 void updateGame(Game *game) {
+    int dead = 0;
     for (int i = 0; i < game->noOfSnakes; ++i) {
-        updateSnake(game, game->snakes[i]);
+        if (game->snakes[i]->alive) {
+            updateSnake(game, game->snakes[i]);
+        } else {
+            dead++;
+        }
+    }
+    if (dead == game->noOfSnakes) {
+        game->finished = true;
     }
 }
 

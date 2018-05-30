@@ -143,7 +143,7 @@ void addSnake(Game *game,int up, int down, int left, int right) {
 
 void findHead(Game *pGame, int j, int i) {
     for (int k = 0; k < pGame->noOfSnakes; ++k) {
-        if (pGame->snakes[k]->head == &pGame->grid[j][i]) {
+        if (pGame->snakes[k]->head == &pGame->grid[j][i] && pGame->snakes[k]->alive) {
             attron(COLOR_PAIR(3 + k));
             break;
         }
@@ -153,7 +153,7 @@ void findHead(Game *pGame, int j, int i) {
 void findBody(Game *pGame, int j, int i) {
     for (int k = 0; k < pGame->noOfSnakes; ++k) {
         for (int l = 0; l < pGame->snakes[k]->length; ++l) {
-            if (pGame->snakes[k]->body[l] == &pGame->grid[j][i]) {
+            if (pGame->snakes[k]->body[l] == &pGame->grid[j][i] && pGame->snakes[k]->alive) {
                 attron(COLOR_PAIR(3 + k));
                 break;
             }

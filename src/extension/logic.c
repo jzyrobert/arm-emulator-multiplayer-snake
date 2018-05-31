@@ -444,8 +444,11 @@ void endgame(Game *game) {
     mvprintw(y/2 - 3, x/2 - strlen(msg1) / 2, "%s",msg1);
     mvprintw(y/2 - 2, x/2 - strlen(msg3) / 2, "%s",msg3);
     for (int i = 0; i < game->noOfSnakes; ++i) {
+        // Print out the snake's scores in the middle of the screen
+        attron(COLOR_PAIR(i+3));
         mvprintw(y/2 - 1 + i, x/2 - strlen(msg3) / 2, "Snake %d: %d", i+1, game->snakes[i]->length - l);
     }
+    attron(COLOR_PAIR(1));
     mvprintw(y/2 - 1 + game->noOfSnakes, x/2 - strlen(msg2) / 2, "%s",msg2);
     refresh();
     nodelay(stdscr, false);

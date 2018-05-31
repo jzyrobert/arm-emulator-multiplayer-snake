@@ -13,8 +13,8 @@
 #define GRID_SIZE 10
 #endif
 
-#define MAX_PLAYERS 5
-#define STARTING_LENGTH 4;
+#define MAX_PLAYERS 7
+#define STARTING_LENGTH 4
 #define COLOR_ORANGE 8
 #define SCALE(a) a * 51 / 200
 
@@ -65,6 +65,7 @@ struct game {
     int tHeight;
     int food;
     int foodAmount;
+    int players;
     bool finished;
 };
 
@@ -109,30 +110,7 @@ void addSnake(Game *game,int up, int down, int left, int right) {
     Snake *newSnake = malloc(sizeof(Snake));
     game->snakes[game->noOfSnakes] = newSnake;
     newSnake->body = malloc(game->width * game->height * sizeof(Cell *));
-    switch(game->noOfSnakes) {
-        case 0:
-            newSnake->head = &game->grid[y - 5][x/6 *5];
-            break;
-        case 1:
-            newSnake->head= &game->grid[y - 5][x/6 *4];
-            break;
-        case 2:
-            newSnake->head= &game->grid[y - 5][x/6 *3];
-            break;
-        case 3:
-            newSnake->head= &game->grid[y - 5][x/6 * 2];
-            break;
-        case 4:
-            newSnake->head= &game->grid[y - 5][x/6];
-            break;
-        default:
-            do {
-                x = rand() % game->width;
-                y = rand() % game->height;
-            } while (game->grid[y][x].occupier != nothing);
-            newSnake->head= &game->grid[y][x];
-
-    }
+    newSnake->head = &game->grid[y - 5][x/(game->players + 1) * (game->players - game->noOfSnakes)];
     newSnake->head->occupier = head_up;
     newSnake->length = 0;
     newSnake->direction = 0;
@@ -261,7 +239,9 @@ void selectFromMenu(int* players) {
             "2 Players (WASD)",
             "3 Players (TFGH)",
             "4 Players (IJKL)",
-            "5 Players ([;'#)"
+            "5 Players ([;'#)",
+            "6 Players (5123)",
+            "7 Players (Home/Del/End/PgDown)",
     };
     ITEM **player_num;
     MENU *player_menu;
@@ -284,9 +264,9 @@ void selectFromMenu(int* players) {
             "    |_______/    |__| \\__| /__/     \\__\\ |__|\\__\\ |_______|       \\__/  \\__/ /__/     \\__\\ | _| `._____|_______/"
     };
     for (int j = 0; j < 6; ++j) {
-        mvprintw(LINES - (15-j),0,title[j]);
+        mvprintw(LINES/2 + j,0,title[j]);
     }
-    mvprintw(LINES - 2, 0, "X to Exit");
+    mvprintw(LINES - 2, 2, "X to Exit");
     post_menu(player_menu);
     refresh();
     while ((c = getch()) != 'x') {
@@ -356,7 +336,9 @@ int main(int argc, char* argv[]) {
     init_pair(4, COLOR_BLUE, background);
     init_pair(5, COLOR_CYAN, background);
     init_pair(6, COLOR_MAGENTA, background);
-    init_pair(7, COLOR_ORANGE, background);
+    init_pair(7, COLOR_RED, background);
+    init_pair(8, COLOR_ORANGE, background);
+    init_pair(9, COLOR_YELLOW, background);
 
     getmaxyx(stdscr, game->tHeight, game->tWidth);
 
@@ -403,8 +385,13 @@ int main(int argc, char* argv[]) {
 
     int *players = calloc(1, sizeof(int));
     selectFromMenu(players);
+    game->players = *players;
 
     switch (*players) {
+        case 7:
+            addSnake(game, KEY_HOME, KEY_END, KEY_DC, KEY_NPAGE);
+        case 6:
+            addSnake(game, '5', '2', '1', '3');
         case 5:
             addSnake(game, '[', '\'', ';', '#');
         case 4:
@@ -472,7 +459,7 @@ void endgame(Game *game) {
     }
     attron(COLOR_PAIR(1));
     mvprintw(y/2 - 1 + game->noOfSnakes, x/2 - strlen(msg2) / 2, "%s",msg2);
-    mvprintw(LINES - 2, 0, "X to Exit");
+    mvprintw(LINES - 2, 2, "X to Exit");
     refresh();
     nodelay(stdscr, false);
     while ((ch = getch()) != 'x') {

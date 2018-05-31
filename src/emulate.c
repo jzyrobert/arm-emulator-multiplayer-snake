@@ -502,7 +502,6 @@ enum I_Type getInstruction(word inst) {
 
 
 int main(int argc, char **argv) {
-    STATE *state = calloc(1, sizeof(STATE));
     //initialise(&state);
     //read file
     //1 argument only (so 2 in total)
@@ -513,6 +512,7 @@ int main(int argc, char **argv) {
     }
 
     char *file_name = argv[1];
+    STATE *state = calloc(1, sizeof(STATE));
     readFile(file_name, state->mem);
 
     while (!state->finished) {
@@ -530,7 +530,7 @@ int main(int argc, char **argv) {
     //print out stuff
     print(state);
 
-
+    free(state);
     return EXIT_SUCCESS;
 }
 

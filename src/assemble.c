@@ -657,6 +657,6 @@ int main(int argc, char **argv) {
     }
 
     fclose(state->outputFile);
-
+    free(state);
   return EXIT_SUCCESS;
 }

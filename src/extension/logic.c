@@ -15,6 +15,7 @@
 
 #define MAX_PLAYERS 5
 #define STARTING_LENGTH 4;
+#define COLOR_ORANGE 8
 
 enum OCCUPIER {
     nothing,
@@ -336,13 +337,14 @@ int main(int argc, char* argv[]) {
 
     start_color();
     int background = COLOR_BLACK;
+    init_color(8, 255,153, 0);
     init_pair(1, COLOR_WHITE, background); //Main pair is white and black
-    init_pair(2, COLOR_RED, background); //Second pair is red and black
+    init_pair(2, COLOR_WHITE, background); //Second pair is red and black
     init_pair(3, COLOR_GREEN, background); //Third pair is green and black
     init_pair(4, COLOR_BLUE, background);
     init_pair(5, COLOR_CYAN, background);
     init_pair(6, COLOR_MAGENTA, background);
-    init_pair(7, COLOR_YELLOW, background);
+    init_pair(7, COLOR_ORANGE, background);
 
     getmaxyx(stdscr, game->tHeight, game->tWidth);
 

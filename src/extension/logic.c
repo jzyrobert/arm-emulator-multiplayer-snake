@@ -16,6 +16,7 @@
 #define MAX_PLAYERS 5
 #define STARTING_LENGTH 4;
 #define COLOR_ORANGE 8
+#define SCALE(a) a * 51 / 200
 
 enum OCCUPIER {
     nothing,
@@ -274,7 +275,18 @@ void selectFromMenu(int* players) {
     player_num[Num_choices] = (ITEM *)NULL;
 
     player_menu = new_menu(player_num);
-    //mvprintw(LINES - 2, 0, "X to Exit");
+    char *title[] = {
+            "         _______..__   __.      ___       __  ___  _______    ____    __    ____  ___      .______          _______.",
+            "        /       ||  \\ |  |     /   \\     |  |/  / |   ____|   \\   \\  /  \\  /   / /   \\     |   _  \\        /       |",
+            "       |   (----`|   \\|  |    /  ^  \\    |  '  /  |  |__       \\   \\/    \\/   / /  ^  \\    |  |_)  |      |   (----`",
+            "        \\   \\    |  . `  |   /  /_\\  \\   |    <   |   __|       \\            / /  /_\\  \\   |      /        \\   \\    ",
+            "    .----)   |   |  |\\   |  /  _____  \\  |  .  \\  |  |____       \\    /\\    / /  _____  \\  |  |\\  \\----.----)   |",
+            "    |_______/    |__| \\__| /__/     \\__\\ |__|\\__\\ |_______|       \\__/  \\__/ /__/     \\__\\ | _| `._____|_______/"
+    };
+    for (int j = 0; j < 6; ++j) {
+        mvprintw(LINES - (15-j),0,title[j]);
+    }
+    mvprintw(LINES - 2, 0, "X to Exit");
     post_menu(player_menu);
     refresh();
     while ((c = getch()) != 'x') {
@@ -337,7 +349,7 @@ int main(int argc, char* argv[]) {
 
     start_color();
     int background = COLOR_BLACK;
-    init_color(8, 255,153, 0);
+    init_color(8, SCALE(204),SCALE(120), SCALE(50));
     init_pair(1, COLOR_WHITE, background); //Main pair is white and black
     init_pair(2, COLOR_WHITE, background); //Second pair is red and black
     init_pair(3, COLOR_GREEN, background); //Third pair is green and black
@@ -349,28 +361,35 @@ int main(int argc, char* argv[]) {
     getmaxyx(stdscr, game->tHeight, game->tWidth);
 
     if (argc != 3 && argc != 1) {
+        endwin();
         printf("Call game with height and width arguments (Includes borders).\n");
         printf("Use $LINES and $COLUMNS to find them\n");
         printf("No arguments will use default max terminal size\n");
-        endwin();
         exit(EXIT_FAILURE);
     } else if (argc == 3){
         game->width = (int) (strtol(argv[2], NULL, 10) - 2);
         game->height = (int) (strtol(argv[1], NULL , 10) - 2);
-        if (game->width < 10 || game->height < 10) {
-            printf("You can't have a game that small!\n");
+        if (game->width < 98 || game->height < 30) {
             endwin();
+            printf("You can't have a game that small!\n");
             exit(EXIT_FAILURE);
         }
         if (game->width > (game->tWidth-2) || game->height > (game->tHeight-2)) {
-            printf("You can't have a game that big!\n");
             endwin();
+            printf("You can't have a game that big!\n");
             exit(EXIT_FAILURE);
         }
-    } else {
-        game->height = game->tHeight -2;
-        game->width = game->tWidth - 2;
+    } else if (argc == 1) {
+        if (game->tWidth < 100 || game->tHeight < 30) {
+            endwin();
+            printf("You can't have a game that small!\n");
+            exit(EXIT_FAILURE);
+        } else {
+            game->height = game->tHeight - 2;
+            game->width = game->tWidth - 2;
+        }
     }
+
     game->foodAmount = (game->height * game->width) / 10;
     game->grid = calloc(game->height, sizeof(Cell *));
     if (game->grid == NULL) {
@@ -437,6 +456,7 @@ int main(int argc, char* argv[]) {
 void endgame(Game *game) {
     int x;
     int y;
+    int ch;
     int l = STARTING_LENGTH;
     getmaxyx(stdscr, y, x);
     clear();
@@ -452,9 +472,12 @@ void endgame(Game *game) {
     }
     attron(COLOR_PAIR(1));
     mvprintw(y/2 - 1 + game->noOfSnakes, x/2 - strlen(msg2) / 2, "%s",msg2);
+    mvprintw(LINES - 2, 0, "X to Exit");
     refresh();
     nodelay(stdscr, false);
-    getch();
+    while ((ch = getch()) != 'x') {
+
+    }
 }
 
 void addFood(Game *pGame) {

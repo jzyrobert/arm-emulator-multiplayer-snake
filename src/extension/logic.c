@@ -235,13 +235,13 @@ void freeEverything(Game *pGame) {
 
 void selectFromMenu(int* players) {
     char *choices[] = {
-            "1 Player (Arrow keys)",
-            "2 Players (WASD)",
-            "3 Players (TFGH)",
-            "4 Players (IJKL)",
-            "5 Players ([;'#)",
-            "6 Players (5123)",
-            "7 Players (Home/Del/End/PgDown)",
+            "1 Player (Arrow keys) - Green",
+            "2 Players (WASD) - Blue",
+            "3 Players (TFGH) - Cyan",
+            "4 Players (IJKL) - Magenta",
+            "5 Players ([;'#) - Red",
+            "6 Players (5123) - Orangey Brown",
+            "7 Players (Home/Del/End/PgDown) - Yellow",
     };
     ITEM **player_num;
     MENU *player_menu;
@@ -329,7 +329,7 @@ int main(int argc, char* argv[]) {
 
     start_color();
     int background = COLOR_BLACK;
-    init_color(8, SCALE(204),SCALE(120), SCALE(50));
+    init_color(8, 204,120, 50);
     init_pair(1, COLOR_WHITE, background); //Main pair is white and black
     init_pair(2, COLOR_WHITE, background); //Second pair is red and black
     init_pair(3, COLOR_GREEN, background); //Third pair is green and black
@@ -418,6 +418,7 @@ int main(int argc, char* argv[]) {
     }
     int ch;
     printGame(game);
+    usleep(3000000);
     struct timeval start, next;
     gettimeofday(&start, 0);
     float elapsed = 0;
@@ -449,7 +450,7 @@ void endgame(Game *game) {
     clear();
     char msg1[] = "The game has ended!";
     char msg3[] = "Scores:";
-    char msg2[] = "Press any button to exit";
+    char msg2[] = "Press X to exit";
     mvprintw(y/2 - 3, x/2 - strlen(msg1) / 2, "%s",msg1);
     mvprintw(y/2 - 2, x/2 - strlen(msg3) / 2, "%s",msg3);
     for (int i = 0; i < game->noOfSnakes; ++i) {
@@ -459,7 +460,6 @@ void endgame(Game *game) {
     }
     attron(COLOR_PAIR(1));
     mvprintw(y/2 - 1 + game->noOfSnakes, x/2 - strlen(msg2) / 2, "%s",msg2);
-    mvprintw(LINES - 2, 2, "X to Exit");
     refresh();
     nodelay(stdscr, false);
     while ((ch = getch()) != 'x') {

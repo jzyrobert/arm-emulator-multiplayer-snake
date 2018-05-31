@@ -39,6 +39,8 @@ struct cell {
 
 struct snake {
     Cell *head;
+    Cell *nextCell;
+    Cell *tailCell;
     Cell **body;
     int length;
     int nextDir;
@@ -48,6 +50,7 @@ struct snake {
     int left;
     int right;
     bool alive;
+    bool toDie;
 };
 
 struct game {
@@ -541,27 +544,35 @@ enum OCCUPIER getHeadChar(Snake *theSnake){
     }
 }
 
+Cell* getNextCell(Game *game, Snake *snake){
+    int xOffset = getXOffset(snake);
+    int yOffset = getYOffset(snake);
+    int nextX = (snake->head->coordinate.x + xOffset) % game->width;
+    int nextY = (snake->head->coordinate.y + yOffset) % game->height;
+    if (nextX < 0) {
+        nextX = game->width - 1;
+    }
+    if (nextY < 0) {
+        nextY = game->height - 1;
+    }
+    return &game->grid[nextY][nextX];
+}
+
+void killSnake(Game *game, Snake *snake) {
+    snake->alive = false;
+    snake->head->occupier = food;
+    game->food++;
+    for (int i = 0; i < snake->length; ++i) {
+        snake->body[i]->occupier = food;
+        game->food++;
+    }
+}
+
 void updateSnake(Game *game, Snake *snake) {
-        int xOffset = getXOffset(snake);
-        int yOffset = getYOffset(snake);
-        int nextX = (snake->head->coordinate.x + xOffset) % game->width;
-        int nextY = (snake->head->coordinate.y + yOffset) % game->height;
-        if (nextX < 0) {
-            nextX = game->width - 1;
-        }
-        if (nextY < 0) {
-            nextY = game->height - 1;
-        }
-        Cell *next = &game->grid[nextY][nextX];
+        Cell *next = snake->nextCell;
         if (next->occupier != nothing && next->occupier != food) {
             //rip snake
-            snake->alive = false;
-            snake->head->occupier = food;
-            game->food++;
-            for (int i = 0; i < snake->length; ++i) {
-                snake->body[i]->occupier = food;
-                game->food++;
-            }
+            killSnake(game, snake);
         } else if (next->occupier == food){
             game->food--;
             moveSizeIncrease(game, snake, next);
@@ -580,7 +591,6 @@ void moveSnake(Game *game, Snake *theSnake, Cell *next) {
         theSnake->body[i] = next;
         theSnake->body[i]->occupier = snake_body;
     }
-    previous->occupier = nothing;
     theSnake->direction = theSnake->nextDir;
 }
 
@@ -616,6 +626,34 @@ void addLength(Game *game, Snake *theSnake) {
 
 void updateGame(Game *game) {
     int dead = 0;
+    //check all tails and heads
+    for (int j = 0; j < game->noOfSnakes; ++j) {
+        if (game->snakes[j]->alive) {
+            game->snakes[j]->nextCell = getNextCell(game, game->snakes[j]);
+            for (int i = j - 1; i >= 0 ; --i) {
+                if (game->snakes[i]->alive) {
+                    if (game->snakes[j]->nextCell == game->snakes[i]->nextCell) {
+                        game->snakes[j]->toDie = true;
+                        game->snakes[i]->toDie = true;
+                    }
+                }
+            }
+        }
+    }
+    for (int k = 0; k < game->noOfSnakes; ++k) {
+        if (game->snakes[k]->toDie) {
+            killSnake(game, game->snakes[k]);
+            game->snakes[k]->toDie = false;
+        }
+    }
+    //check tails of remaining snakes
+    for (int l = 0; l < game->noOfSnakes; ++l) {
+        if (game->snakes[l]->alive) {
+            if (game->snakes[l]->nextCell->occupier != food) {
+                game->snakes[l]->body[game->snakes[l]->length - 1]->occupier = nothing;
+            }
+        }
+    }
     for (int i = 0; i < game->noOfSnakes; ++i) {
         if (game->snakes[i]->alive) {
             updateSnake(game, game->snakes[i]);

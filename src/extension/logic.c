@@ -141,6 +141,7 @@ void addSnake(Game *game,int up, int down, int left, int right) {
     newSnake->left = left;
     newSnake->right = right;
     newSnake->alive = true;
+    newSnake->toDie = false;
 }
 
 
@@ -331,7 +332,7 @@ int main(int argc, char* argv[]) {
     keypad(stdscr, TRUE);
     noecho();
     cbreak();
-    timeout(100);
+    timeout(1);
 
     start_color();
     int background = COLOR_BLACK;
@@ -412,10 +413,11 @@ int main(int argc, char* argv[]) {
     struct timeval start, next;
     gettimeofday(&start, 0);
     float elapsed = 0;
+    int speed = 100;
     while(!game->finished) {
         gettimeofday(&next, 0);
         elapsed = timedifference_msec(start, next);
-        if (elapsed > 100) {
+        if (elapsed > speed) {
             gettimeofday(&start, 0);
             updateGame(game);
             printGame(game);

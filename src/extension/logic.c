@@ -488,7 +488,7 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
     for (int i = 0; i < game->height; ++i) {
-        game->grid[i] = calloc(game->width, sizeof(Cell));
+        game->grid[i] = calloc(game->width, sizeof(*game->grid));
     }
     buildGrid(game);
 

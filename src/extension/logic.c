@@ -18,7 +18,7 @@
 #define COLOR_ORANGE 8
 #define SCALE(a) a * 51 / 200
 
-enum OCCUPIER {
+enum Occupier {
     nothing,
     head_up,
     head_down,
@@ -29,12 +29,18 @@ enum OCCUPIER {
     food
 };
 
-enum snake_direction {
-    up,
-    right,
-    down,
-    left
+struct direction {
+    int xOffset;
+    int yOffset;
+    enum Occupier headOccupier;
 };
+
+Direction upDir = {0,1,head_up};
+Direction rightDir = {1,0,head_right};
+Direction downDir = {0,-1,head_down};
+Direction leftDir = {-1,0,head_left};
+// we use head_up as the default direction Ocuupier
+Direction noDir = {0,0,head_up};
 
 struct coordinate {
     int x;
@@ -42,7 +48,7 @@ struct coordinate {
 };
 
 struct cell {
-    enum OCCUPIER occupier;
+    enum Occupier occupier;
     Coordinate coordinate;
 };
 
@@ -52,8 +58,8 @@ struct snake {
     Cell *tailCell;
     Cell **body;
     int length;
-    enum snake_direction nextDir;
-    int direction;
+    Direction nextDir;
+    Direction direction;
     int up;
     int down;
     int left;
@@ -102,8 +108,8 @@ void addSnake(Game *game,int up, int down, int left, int right) {
     newSnake->head = &game->grid[y - 5][x/(game->players + 1) * (game->players - game->noOfSnakes)];
     newSnake->head->occupier = head_up;
     newSnake->length = 0;
-    newSnake->direction = 0;
-    newSnake->nextDir = up;
+    newSnake->direction = upDir;
+    newSnake->nextDir = upDir;
     game->noOfSnakes++;
     newSnake->up = up;
     newSnake->down = down;
@@ -479,20 +485,20 @@ void updateDir(int ch, Game *pGame) {
         pGame->finished = true;
     } else {
         for (int i = 0; i < pGame->noOfSnakes; ++i) {
-            int direction = -1;
+            Direction direction = noDir;
             if (ch == pGame->snakes[i]->up) {
-                direction = up;
+                direction = upDir;
             }
             if (ch == pGame->snakes[i]->right) {
-                direction = right;
+                direction = rightDir;
             }
             if (ch == pGame->snakes[i]->down) {
-                direction = down;
+                direction = downDir;
             }
             if (ch == pGame->snakes[i]->left) {
-                direction = left;
+                direction = leftDir;
             }
-            if (direction != -1) {
+            if ((direction.xOffset != 0) | (direction.yOffset != 0)) {
                 if (!oppositeDir(pGame->snakes[i], direction)) {
                     pGame->snakes[i]->nextDir = direction;
                 }
@@ -501,53 +507,21 @@ void updateDir(int ch, Game *pGame) {
     }
 }
 
-bool oppositeDir(Snake *pSnake, int ch) {
-    return abs(ch - pSnake->direction) == 2;
+bool oppositeDir(Snake *pSnake, Direction newDirection) {
+    Direction oldDirection = pSnake->direction;
+    return (oldDirection.xOffset != newDirection.xOffset) && (oldDirection.yOffset != newDirection.yOffset);
 }
 
 int getXOffset(Snake *snake) {
-    switch (snake->nextDir) {
-        case up:
-            return  0;
-        case right:
-            return 1;
-        case down:
-            return 0;
-        case left:
-            return -1;
-        default:
-            return 0;
-    }
+    return snake->nextDir.xOffset;
 }
 
 int getYOffset(Snake *snake) {
-    switch (snake->nextDir) {
-        case up:
-            return -1;
-        case right:
-            return 0;
-        case down:
-            return 1;
-        case left:
-            return 0;
-        default:
-            return 0;
-    }
+    return snake->nextDir.yOffset;
 }
 
-enum OCCUPIER getHeadChar(Snake *theSnake){
-    switch (theSnake->nextDir) {
-        case up:
-            return head_up;
-        case right:
-            return head_right;
-        case down:
-            return head_down;
-        case left:
-            return head_left;
-        default:
-            return head_up;
-    }
+enum Occupier getHeadChar(Snake *theSnake) {
+    return theSnake->nextDir.headOccupier;
 }
 
 Cell* getNextCell(Game *game, Snake *snake){

@@ -6,6 +6,7 @@ typedef struct coordinate Coordinate;
 typedef struct cell Cell;
 typedef struct snake Snake;
 typedef struct game Game;
+typedef struct direction Direction;
 
 void printGame(Game *pGame);
                                                                                 
@@ -17,7 +18,7 @@ void moveSnake(Game *game, Snake *theSnake, Cell *next);
                                                                                 
 void addLength(Game *game, Snake *theSnake);
                                                                                 
-bool oppositeDir(Snake *pSnake, int ch);
+bool oppositeDir(Snake *pSnake, Direction newDirection);
                                                                                 
 void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next);
                                                                                 

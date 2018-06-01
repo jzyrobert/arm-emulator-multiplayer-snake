@@ -163,8 +163,6 @@ void evalOperand2(ASSEMBLY *as, word *output, int op2Point){
 }
 
 void evalExp (ASSEMBLY *as, word *output, int op2Point){
-    //stripBrackets(as->tokens[op2Point]);
-
     setBits(output, 1, 25);
     word imm = (word) decodeEXP(as->tokens[op2Point]);
     if (imm < 256) {
@@ -625,7 +623,7 @@ void pass2(STATE *state) {
             }
             as->noOfTokens = n;
             as->address = address;
-            word result = (functionLookup(instruction))(as, state);
+            word result = functionLookup(instruction)(as, state);
             printf("Output is %x\n", result);
             writeToFile(state, result);
             address += 4;
@@ -659,6 +657,6 @@ int main(int argc, char **argv) {
     }
 
     fclose(state->outputFile);
-
+    free(state);
   return EXIT_SUCCESS;
 }

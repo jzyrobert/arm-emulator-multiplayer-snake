@@ -765,7 +765,7 @@ void updateGame(Game *game) {
                 int roll, n = 0;
                 do {
                     roll = rand() % 4;
-                    game->snakes[m]->nextDir = roll;
+                    game->snakes[m]->nextDir = (enum snake_direction) roll;
                     n++;
                 } while ((n < 1000) && (abs(roll - game->snakes[m]->direction) == 2) && (getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food));
             }

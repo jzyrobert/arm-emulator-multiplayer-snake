@@ -9,16 +9,15 @@
 #include <sys/time.h>
 #include <menu.h>
 
-#ifndef LOGIC_C
-#define LOGIC_C
-
+#ifndef GRID_SIZE
 #define GRID_SIZE 10
+#endif
+
 #define MAX_PLAYERS 7
 #define STARTING_LENGTH 4
 #define COLOR_ORANGE 8
 #define SCALE(a) a * 51 / 200
-
-#endif
+#define CHECK_LENGTH 5
 
 enum Occupier {
     nothing,
@@ -62,10 +61,10 @@ struct snake {
     int length;
     Direction nextDir;
     Direction direction;
-    unicode_char up;
-    unicode_char down;
-    unicode_char left;
-    unicode_char right;
+    int up;
+    int down;
+    int left;
+    int right;
     bool alive;
     bool toDie;
 };
@@ -101,7 +100,7 @@ void initialiseRandomSeed(void) {
     srand(time(NULL));
 }
 
-void addSnake(Game *game,unicode_char up, unicode_char down, unicode_char left, unicode_char right) {
+void addSnake(Game *game,int up, int down, int left, int right) {
     int x = 0;
     int y = 0;
     getmaxyx(stdscr, y, x);
@@ -535,7 +534,7 @@ int main(int argc, char* argv[]) {
             addLength(game, game->snakes[j]);
         }
     }
-    unicode_char ch;
+    int ch;
     printGame(game);
     usleep(300000);
     struct timeval start, next;
@@ -564,7 +563,7 @@ int main(int argc, char* argv[]) {
 void endgame(Game *game) {
     int x;
     int y;
-    unicode_char ch;
+    int ch;
     int l = STARTING_LENGTH;
     getmaxyx(stdscr, y, x);
     clear();
@@ -638,13 +637,21 @@ bool oppositeDir(Snake *pSnake, Direction newDirection) {
            oldDirection.xOffset + newDirection.xOffset == 0;
 }
 
+int getXOffset(Snake *snake) {
+    return snake->nextDir.xOffset;
+}
+
+int getYOffset(Snake *snake) {
+    return snake->nextDir.yOffset;
+}
+
 enum Occupier getHeadChar(Snake *theSnake) {
     return theSnake->nextDir.headOccupier;
 }
 
 Cell* getNextCell(Game *game, Snake *snake){
-    int xOffset = snake->nextDir.xOffset;
-    int yOffset = snake->nextDir.yOffset;
+    int xOffset = getXOffset(snake);
+    int yOffset = getYOffset(snake);
     int nextX = (snake->head->coordinate.x + xOffset) % game->width;
     int nextY = (snake->head->coordinate.y + yOffset) % game->height;
     if (nextX < 0) {
@@ -710,8 +717,8 @@ void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) {
 }
 
 void addLength(Game *game, Snake *theSnake) {
-    int xOffset = theSnake->nextDir.xOffset;
-    int yOffset = theSnake->nextDir.yOffset;
+    int xOffset = getXOffset(theSnake);
+    int yOffset = getYOffset(theSnake);
     int nextX = (theSnake->head->coordinate.x + xOffset) % game->width;
     int nextY = (theSnake->head->coordinate.y + yOffset) % game->height;
     if (nextX < 0) {
@@ -724,37 +731,82 @@ void addLength(Game *game, Snake *theSnake) {
     moveSizeIncrease(game, theSnake, next);
 }
 
+Direction getDirection(int choice) {
+    switch (choice) {
+        case 0:
+            return upDir;
+        case 1:
+            return rightDir;
+        case 2:
+            return downDir;
+        case 3:
+            return leftDir;
+    }
+    return noDir;
+}
+
+Cell getCellAhead(Game *game, Snake *snake, int n) {
+    int x = snake->head->coordinate.x;
+    int y = snake->head->coordinate.y;
+    x = (x + snake->nextDir.xOffset * n) % game->width;
+    y = (y + snake->nextDir.yOffset * n) % game->height;
+    while (x < 0) {
+        x += game->width;
+    }
+    while (y < 0) {
+        y += game->height;
+    }
+    return game->grid[y][x];
+}
+
+
+void calculateNextMove(Game *game, Snake *pSnake, int check) {
+    while (check > 0) {
+        int availableMoves = 0;
+        int movesID[3];
+        for (int i = 0; i < 4; ++i) {
+            if (!oppositeDir(pSnake, getDirection(i))) {
+                bool available = true;
+                pSnake->nextDir = getDirection(i);
+                for (int j = 1; j <= check; ++j) {
+                    Cell toCheck = getCellAhead(game, pSnake, j);
+                    if ((toCheck.occupier != food) && (toCheck.occupier != nothing)) {
+                        available = false;
+                    }
+                }
+                if (available) {
+                    movesID[availableMoves] = i;
+                    availableMoves++;
+                }
+            }
+        }
+        if (availableMoves > 0) {
+            pSnake->nextDir = getDirection(movesID[rand() % availableMoves]);
+            break;
+        } else {
+            check--;
+        }
+    }
+}
+
 void updateGame(Game *game) {
     int dead = 0;
     static int moves = 0;
     //assign a random direction to all bots randomly
             //bots will try not to hit things
         for (int m = 0; m < game->noOfBots; ++m) {
+            calculateNextMove(game, game->snakes[m], CHECK_LENGTH);
+            /*
             //move if about to hit or every 3rd square?
             if ((getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food) || !(moves % 3)) {
                 int roll, n = 0;
                 do {
                     roll = rand() % 4;
-                    Direction dir;
-                    switch (roll) {
-                        case 0:
-                            dir = upDir;
-                            break;
-                        case 1:
-                            dir = rightDir;
-                            break;
-                        case 2:
-                            dir = downDir;
-                            break;
-                        case 3:
-                            dir = leftDir;
-                            break;
-
-                    }
-                    game->snakes[m]->nextDir = dir;
+                    game->snakes[m]->nextDir = getDirection(roll);
                     n++;
                 } while ((n < 1000) && oppositeDir(game->snakes[m], game->snakes[m]->nextDir) && (getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food));
             }
+            */
         }
         moves++;
     //check all tails and heads

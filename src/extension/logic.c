@@ -9,14 +9,14 @@
 #include <sys/time.h>
 #include <menu.h>
 
-#ifndef GRID_SIZE
+#ifndef GAME_DEFS
+#define GAME_DEFS
 #define GRID_SIZE 10
-#endif
-
 #define MAX_PLAYERS 7
 #define STARTING_LENGTH 4
 #define COLOR_ORANGE 8
-#define SCALE(a) a * 51 / 200
+#define SCALE(a) (a * 51 / 200)
+#endif
 
 enum OCCUPIER {
     nothing,

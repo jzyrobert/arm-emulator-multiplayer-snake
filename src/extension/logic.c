@@ -658,12 +658,12 @@ Cell* getNextCell(Game *game, Snake *snake){
 
 void killSnake(Game *game, Snake *snake) {
     snake->alive = false;
-    //snake->head->occupier = food;
-            snake->head->occupier = getHeadChar(snake);
+    snake->head->occupier = food;
+            //snake->head->occupier = getHeadChar(snake);
     game->food++;
     for (int i = 0; i < snake->length; ++i) {
-        //snake->body[i]->occupier = food;
-        snake->body[i]->occupier = dead_snake;
+        snake->body[i]->occupier = food;
+        //snake->body[i]->occupier = dead_snake;
         game->food++;
     }
 }

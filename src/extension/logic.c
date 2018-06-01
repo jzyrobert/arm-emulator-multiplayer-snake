@@ -636,21 +636,13 @@ bool oppositeDir(Snake *pSnake, Direction newDirection) {
            oldDirection.xOffset + newDirection.xOffset == 0;
 }
 
-int getXOffset(Snake *snake) {
-    return snake->nextDir.xOffset;
-}
-
-int getYOffset(Snake *snake) {
-    return snake->nextDir.yOffset;
-}
-
 enum Occupier getHeadChar(Snake *theSnake) {
     return theSnake->nextDir.headOccupier;
 }
 
 Cell* getNextCell(Game *game, Snake *snake){
-    int xOffset = getXOffset(snake);
-    int yOffset = getYOffset(snake);
+    int xOffset = snake->nextDir.xOffset;
+    int yOffset = snake->nextDir.yOffset;
     int nextX = (snake->head->coordinate.x + xOffset) % game->width;
     int nextY = (snake->head->coordinate.y + yOffset) % game->height;
     if (nextX < 0) {
@@ -716,8 +708,8 @@ void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) {
 }
 
 void addLength(Game *game, Snake *theSnake) {
-    int xOffset = getXOffset(theSnake);
-    int yOffset = getYOffset(theSnake);
+    int xOffset = theSnake->nextDir.xOffset;
+    int yOffset = theSnake->nextDir.yOffset;
     int nextX = (theSnake->head->coordinate.x + xOffset) % game->width;
     int nextY = (theSnake->head->coordinate.y + yOffset) % game->height;
     if (nextX < 0) {

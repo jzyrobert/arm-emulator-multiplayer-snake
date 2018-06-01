@@ -55,7 +55,6 @@ struct cell {
 struct snake {
     Cell *head;
     Cell *nextCell;
-    Cell *tailCell;
     Cell **body;
     int length;
     Direction nextDir;
@@ -498,7 +497,7 @@ void updateDir(int ch, Game *pGame) {
             if (ch == pGame->snakes[i]->left) {
                 direction = leftDir;
             }
-            if ((direction.xOffset != 0) | (direction.yOffset != 0)) {
+            if ((direction.xOffset != 0) || (direction.yOffset != 0)) {
                 if (!oppositeDir(pGame->snakes[i], direction)) {
                     pGame->snakes[i]->nextDir = direction;
                 }
@@ -509,7 +508,8 @@ void updateDir(int ch, Game *pGame) {
 
 bool oppositeDir(Snake *pSnake, Direction newDirection) {
     Direction oldDirection = pSnake->direction;
-    return (oldDirection.xOffset != newDirection.xOffset) && (oldDirection.yOffset != newDirection.yOffset);
+    return oldDirection.xOffset != 0 ? oldDirection.yOffset + newDirection.yOffset == 0 :
+           oldDirection.xOffset + newDirection.xOffset == 0;
 }
 
 int getXOffset(Snake *snake) {

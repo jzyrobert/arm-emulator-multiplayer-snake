@@ -29,6 +29,13 @@ enum OCCUPIER {
     food
 };
 
+enum snake_direction {
+    up,
+    right,
+    down,
+    left
+};
+
 struct coordinate {
     int x;
     int y;
@@ -44,7 +51,7 @@ struct snake {
     Cell *nextCell;
     Cell **body;
     int length;
-    int nextDir;
+    enum snake_direction nextDir;
     int direction;
     int up;
     int down;
@@ -68,24 +75,6 @@ struct game {
     int players;
     bool finished;
 };
-
-void printGame(Game *pGame);
-
-void updateGame(Game *game) ;
-
-void updateDir(int ch, Game *pGame);
-
-void moveSnake(Game *game, Snake *theSnake, Cell *next) ;
-
-void addLength(Game *game, Snake *theSnake) ;
-
-bool oppositeDir(Snake *pSnake, int ch);
-
-void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) ;
-
-void addFood(Game *pGame) ;
-
-void endgame(Game *game) ;
 
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
@@ -114,7 +103,7 @@ void addSnake(Game *game,int up, int down, int left, int right) {
     newSnake->head->occupier = head_up;
     newSnake->length = 0;
     newSnake->direction = 0;
-    newSnake->nextDir = 0;
+    newSnake->nextDir = up;
     game->noOfSnakes++;
     newSnake->up = up;
     newSnake->down = down;
@@ -441,9 +430,9 @@ int main(int argc, char* argv[]) {
     start_color();
     int background = COLOR_BLACK;
     init_color(8, 204,120, 50);
-    init_pair(1, COLOR_WHITE, background); //Main pair is white and black
-    init_pair(2, COLOR_WHITE, background); //Second pair is red and black
-    init_pair(3, COLOR_GREEN, background); //Third pair is green and black
+    init_pair(1, COLOR_WHITE, background);
+    init_pair(2, COLOR_WHITE, background);
+    init_pair(3, COLOR_GREEN, background);
     init_pair(4, COLOR_BLUE, background);
     init_pair(5, COLOR_CYAN, background);
     init_pair(6, COLOR_MAGENTA, background);
@@ -614,16 +603,16 @@ void updateDir(int ch, Game *pGame) {
         for (int i = 0; i < pGame->noOfSnakes; ++i) {
             int direction = -1;
             if (ch == pGame->snakes[i]->up) {
-                direction = 0;
+                direction = up;
             }
             if (ch == pGame->snakes[i]->right) {
-                direction = 1;
+                direction = right;
             }
             if (ch == pGame->snakes[i]->down) {
-                direction = 2;
+                direction = down;
             }
             if (ch == pGame->snakes[i]->left) {
-                direction = 3;
+                direction = left;
             }
             if (direction != -1) {
                 if (!oppositeDir(pGame->snakes[i], direction)) {
@@ -640,13 +629,13 @@ bool oppositeDir(Snake *pSnake, int ch) {
 
 int getXOffset(Snake *snake) {
     switch (snake->nextDir) {
-        case 0:
+        case up:
             return  0;
-        case 1:
+        case right:
             return 1;
-        case 2:
+        case down:
             return 0;
-        case 3:
+        case left:
             return -1;
         default:
             return 0;
@@ -655,13 +644,13 @@ int getXOffset(Snake *snake) {
 
 int getYOffset(Snake *snake) {
     switch (snake->nextDir) {
-        case 0:
+        case up:
             return -1;
-        case 1:
+        case right:
             return 0;
-        case 2:
+        case down:
             return 1;
-        case 3:
+        case left:
             return 0;
         default:
             return 0;
@@ -670,13 +659,13 @@ int getYOffset(Snake *snake) {
 
 enum OCCUPIER getHeadChar(Snake *theSnake){
     switch (theSnake->nextDir) {
-        case 0:
+        case up:
             return head_up;
-        case 1:
+        case right:
             return head_right;
-        case 2:
+        case down:
             return head_down;
-        case 3:
+        case left:
             return head_left;
         default:
             return head_up;

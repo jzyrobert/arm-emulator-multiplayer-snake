@@ -17,7 +17,7 @@
 #define STARTING_LENGTH 4
 #define COLOR_ORANGE 8
 #define SCALE(a) a * 51 / 200
-#define CHECK_LENGTH 5
+#define CHECK_LENGTH 200
 
 enum Occupier {
     nothing,
@@ -104,9 +104,9 @@ void addSnake(Game *game,int up, int down, int left, int right) {
     int x = 0;
     int y = 0;
     getmaxyx(stdscr, y, x);
-    Snake *newSnake = malloc(sizeof(*newSnake));
+    Snake *newSnake = malloc(sizeof(Snake));
     game->snakes[game->noOfSnakes] = newSnake;
-    newSnake->body = malloc(game->width * game->height * sizeof(*newSnake->body));
+    newSnake->body = malloc(game->width * game->height * sizeof(Cell *));
     newSnake->head = &game->grid[y - 5][x/(game->players + game->noOfBots + 1) * (game->players + game->noOfBots - game->noOfSnakes)];
     newSnake->head->occupier = head_up;
     newSnake->length = 0;
@@ -244,7 +244,7 @@ int botnumMenu(Game *game) {
     ITEM *cur_item = NULL;
     int c;
     int Num_choices = MAX_PLAYERS - game->players;
-    bot_num = calloc(Num_choices + 1, sizeof(*bot_num));
+    bot_num = calloc(Num_choices + 1, sizeof(ITEM *));
     for (int k = 0; k < Num_choices; ++k) {
         bot_num[k] = new_item(choices[k], "");
     }
@@ -294,7 +294,7 @@ bool botMenu() {
     ITEM *cur_item = NULL;
     int c;
     int Num_choices = 2;
-    bot_num = calloc(Num_choices + 1, sizeof(*bot_num));
+    bot_num = calloc(Num_choices + 1, sizeof(ITEM *));
     for (int k = 0; k < Num_choices; ++k) {
         bot_num[k] = new_item(choices[k], "");
     }
@@ -349,7 +349,7 @@ int selectFromMenu() {
     ITEM *cur_item = NULL;
     int c;
     int Num_choices = MAX_PLAYERS;
-    player_num = calloc(Num_choices + 1, sizeof(*player_num));
+    player_num = calloc(Num_choices + 1, sizeof(ITEM *));
     for (int k = 0; k < Num_choices; ++k) {
         player_num[k] = new_item(choices[k], "");
     }
@@ -421,7 +421,7 @@ void printNoPlayers() {
 }
 
 int main(int argc, char* argv[]) {
-    Game *game = malloc(sizeof(*game));
+    Game *game = malloc(sizeof(Game));
     game->food = 0;
     initialiseRandomSeed();
     //Ncurses initialisation
@@ -481,13 +481,13 @@ int main(int argc, char* argv[]) {
     }
 
     game->foodAmount = (game->height * game->width) / 10;
-    game->grid = calloc(game->height, sizeof(*game->grid));
+    game->grid = calloc(game->height, sizeof(Cell *));
     if (game->grid == NULL) {
         printf("Allocation failure!\n");
         exit(EXIT_FAILURE);
     }
     for (int i = 0; i < game->height; ++i) {
-        game->grid[i] = calloc(game->width, sizeof(*game->grid));
+        game->grid[i] = calloc(game->width, sizeof(Cell));
     }
     buildGrid(game);
 
@@ -665,12 +665,12 @@ Cell* getNextCell(Game *game, Snake *snake){
 
 void killSnake(Game *game, Snake *snake) {
     snake->alive = false;
-    snake->head->occupier = food;
-            //snake->head->occupier = getHeadChar(snake);
+    //snake->head->occupier = food;
+            snake->head->occupier = getHeadChar(snake);
     game->food++;
     for (int i = 0; i < snake->length; ++i) {
-        snake->body[i]->occupier = food;
-        //snake->body[i]->occupier = dead_snake;
+        //snake->body[i]->occupier = food;
+        snake->body[i]->occupier = dead_snake;
         game->food++;
     }
 }

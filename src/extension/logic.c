@@ -29,6 +29,7 @@ enum Occupier {
     food
 };
 
+// positive y values go down the screen
 struct direction {
     int xOffset;
     int yOffset;

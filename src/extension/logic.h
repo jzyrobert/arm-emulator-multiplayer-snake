@@ -7,6 +7,8 @@ typedef struct cell Cell;
 typedef struct snake Snake;
 typedef struct game Game;
 typedef struct direction Direction;
+// used to handle printing of keys not part of the ASCII standard
+typedef int unicode_char;
 
 void printGame(Game *pGame);
                                                                                 
@@ -26,6 +28,6 @@ void addFood(Game *pGame);
                                                                                 
 void endgame(Game *game);
 
-// Initialises the random seed used to add snakes to random positions on the grid
+// Initialises the random seed used to add food to random positions on the grid
 void initialiseRandomSeed(void);
 #endif

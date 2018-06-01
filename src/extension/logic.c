@@ -69,24 +69,6 @@ struct game {
     bool finished;
 };
 
-void printGame(Game *pGame);
-
-void updateGame(Game *game) ;
-
-void updateDir(int ch, Game *pGame);
-
-void moveSnake(Game *game, Snake *theSnake, Cell *next) ;
-
-void addLength(Game *game, Snake *theSnake) ;
-
-bool oppositeDir(Snake *pSnake, int ch);
-
-void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) ;
-
-void addFood(Game *pGame) ;
-
-void endgame(Game *game) ;
-
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
         for (int j = 0; j < game->width; j++) {

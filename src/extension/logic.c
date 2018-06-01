@@ -9,14 +9,16 @@
 #include <sys/time.h>
 #include <menu.h>
 
-#ifndef GRID_SIZE
-#define GRID_SIZE 10
-#endif
+#ifndef LOGIC_C
+#define LOGIC_C
 
+#define GRID_SIZE 10
 #define MAX_PLAYERS 7
 #define STARTING_LENGTH 4
 #define COLOR_ORANGE 8
 #define SCALE(a) a * 51 / 200
+
+#endif
 
 enum Occupier {
     nothing,
@@ -60,10 +62,10 @@ struct snake {
     int length;
     Direction nextDir;
     Direction direction;
-    int up;
-    int down;
-    int left;
-    int right;
+    unicode_char up;
+    unicode_char down;
+    unicode_char left;
+    unicode_char right;
     bool alive;
     bool toDie;
 };
@@ -99,7 +101,7 @@ void initialiseRandomSeed(void) {
     srand(time(NULL));
 }
 
-void addSnake(Game *game,int up, int down, int left, int right) {
+void addSnake(Game *game,unicode_char up, unicode_char down, unicode_char left, unicode_char right) {
     int x = 0;
     int y = 0;
     getmaxyx(stdscr, y, x);
@@ -533,7 +535,7 @@ int main(int argc, char* argv[]) {
             addLength(game, game->snakes[j]);
         }
     }
-    int ch;
+    unicode_char ch;
     printGame(game);
     usleep(300000);
     struct timeval start, next;
@@ -562,7 +564,7 @@ int main(int argc, char* argv[]) {
 void endgame(Game *game) {
     int x;
     int y;
-    int ch;
+    unicode_char ch;
     int l = STARTING_LENGTH;
     getmaxyx(stdscr, y, x);
     clear();
@@ -636,21 +638,13 @@ bool oppositeDir(Snake *pSnake, Direction newDirection) {
            oldDirection.xOffset + newDirection.xOffset == 0;
 }
 
-int getXOffset(Snake *snake) {
-    return snake->nextDir.xOffset;
-}
-
-int getYOffset(Snake *snake) {
-    return snake->nextDir.yOffset;
-}
-
 enum Occupier getHeadChar(Snake *theSnake) {
     return theSnake->nextDir.headOccupier;
 }
 
 Cell* getNextCell(Game *game, Snake *snake){
-    int xOffset = getXOffset(snake);
-    int yOffset = getYOffset(snake);
+    int xOffset = snake->nextDir.xOffset;
+    int yOffset = snake->nextDir.yOffset;
     int nextX = (snake->head->coordinate.x + xOffset) % game->width;
     int nextY = (snake->head->coordinate.y + yOffset) % game->height;
     if (nextX < 0) {
@@ -716,8 +710,8 @@ void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) {
 }
 
 void addLength(Game *game, Snake *theSnake) {
-    int xOffset = getXOffset(theSnake);
-    int yOffset = getYOffset(theSnake);
+    int xOffset = theSnake->nextDir.xOffset;
+    int yOffset = theSnake->nextDir.yOffset;
     int nextX = (theSnake->head->coordinate.x + xOffset) % game->width;
     int nextY = (theSnake->head->coordinate.y + yOffset) % game->height;
     if (nextX < 0) {

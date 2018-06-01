@@ -7,7 +7,6 @@ typedef struct cell Cell;
 typedef struct snake Snake;
 typedef struct game Game;
 
-
 void printGame(Game *pGame);
                                                                                 
 void updateGame(Game *game);

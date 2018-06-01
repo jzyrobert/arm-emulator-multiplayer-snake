@@ -741,9 +741,25 @@ void updateGame(Game *game) {
                 int roll, n = 0;
                 do {
                     roll = rand() % 4;
-                    game->snakes[m]->nextDir = (enum snake_direction) roll;
+                    Direction dir;
+                    switch (roll) {
+                        case 0:
+                            dir = upDir;
+                            break;
+                        case 1:
+                            dir = rightDir;
+                            break;
+                        case 2:
+                            dir = downDir;
+                            break;
+                        case 3:
+                            dir = leftDir;
+                            break;
+
+                    }
+                    game->snakes[m]->nextDir = dir;
                     n++;
-                } while ((n < 1000) && (abs(roll - game->snakes[m]->direction) == 2) && (getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food));
+                } while ((n < 1000) && oppositeDir(game->snakes[m], game->snakes[m]->nextDir) && (getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food));
             }
         }
         moves++;

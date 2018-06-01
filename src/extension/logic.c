@@ -35,9 +35,9 @@ struct direction {
     enum Occupier headOccupier;
 };
 
-Direction upDir = {0,1,head_up};
+Direction upDir = {0,-1,head_up};
 Direction rightDir = {1,0,head_right};
-Direction downDir = {0,-1,head_down};
+Direction downDir = {0,1,head_down};
 Direction leftDir = {-1,0,head_left};
 // we use head_up as the default direction Ocuupier
 Direction noDir = {0,0,head_up};

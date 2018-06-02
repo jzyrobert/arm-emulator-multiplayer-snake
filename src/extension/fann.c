@@ -1,4 +1,4 @@
-#include <fann.h>
+#include "fannF/src/include/fann.h"
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {

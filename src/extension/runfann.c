@@ -8,7 +8,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <menu.h>
-#include <fann.h>
+#include "fannF/src/include/fann.h"
 
 #ifndef GRID_SIZE
 #define GRID_SIZE 10

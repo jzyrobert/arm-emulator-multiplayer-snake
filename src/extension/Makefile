@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
+CFLAGS  = -LfannF -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
 
 .SUFFIXES: .c .o
 
@@ -15,7 +15,7 @@ training: training.o -lncurses
 
 fann: fann.o -lfann
 
-runfann: runfann.o -lfann -lncurses
+runfann: runfann.o -lncurses -lfann
 
 clean:
 	rm -f $(wildcard *.o)

@@ -34,15 +34,16 @@ enum Occupier {
 struct direction {
     int xOffset;
     int yOffset;
+    int dir;
     enum Occupier headOccupier;
 };
 
-Direction upDir = {0,-1,head_up};
-Direction rightDir = {1,0,head_right};
-Direction downDir = {0,1,head_down};
-Direction leftDir = {-1,0,head_left};
-// we use head_up as the default direction Ocuupier
-Direction noDir = {0,0,head_up};
+Direction upDir = {0,-1,0,head_up};
+Direction rightDir = {1,0,1,head_right};
+Direction downDir = {0,1,2,head_down};
+Direction leftDir = {-1,0,3,head_left};
+// we use head_up as the default direction Occupier
+Direction noDir = {0,0,0,head_up};
 
 struct coordinate {
     int x;
@@ -67,6 +68,7 @@ struct snake {
     int right;
     bool alive;
     bool toDie;
+    bool isAI;
 };
 
 struct game {
@@ -81,8 +83,15 @@ struct game {
     int food;
     int foodAmount;
     int players;
+    int dead;
     bool finished;
+    bool justDied;
+    FILE *output;
 };
+
+Direction getDirection(int choice) ;
+
+Cell getCellAhead(Game *game, Snake *snake, int n) ;
 
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
@@ -94,6 +103,8 @@ void buildGrid(Game *game) {
     }
     game->noOfSnakes = 0;
     game->finished = false;
+    game->justDied = false;
+    game->dead = 0;
 }
 
 void initialiseRandomSeed(void) {
@@ -119,6 +130,7 @@ void addSnake(Game *game,int up, int down, int left, int right) {
     newSnake->right = right;
     newSnake->alive = true;
     newSnake->toDie = false;
+    newSnake->isAI = false;
 }
 
 
@@ -227,197 +239,8 @@ void freeEverything(Game *pGame) {
         free(pGame->snakes[j]->body);
         free(pGame->snakes[j]);
     }
+    fclose(pGame->output);
     free(pGame);
-}
-
-int botnumMenu(Game *game) {
-    char *choices[] = {
-            "1 bot",
-            "2 bots",
-            "3 bots",
-            "4 bots",
-            "5 bots",
-            "6 bots",
-    };
-    ITEM **bot_num;
-    MENU *bot_menu;
-    ITEM *cur_item = NULL;
-    int c;
-    int Num_choices = MAX_PLAYERS - game->players;
-    bot_num = calloc(Num_choices + 1, sizeof(ITEM *));
-    for (int k = 0; k < Num_choices; ++k) {
-        bot_num[k] = new_item(choices[k], "");
-    }
-    bot_num[Num_choices] = (ITEM *) NULL;
-
-    bot_menu = new_menu(bot_num);
-    mvprintw(LINES - 2, 2, "X to Exit");
-    post_menu(bot_menu);
-    refresh();
-    while ((c = getch()) != 'x') {
-        switch (c) {
-            case KEY_DOWN:
-                menu_driver(bot_menu, REQ_DOWN_ITEM);
-                break;
-            case KEY_UP:
-                menu_driver(bot_menu, REQ_UP_ITEM);
-                break;
-            case 10:
-                cur_item = current_item(bot_menu);
-                break;
-        }
-        if (c == KEY_ENTER || c == 10) {
-            break;
-        }
-    }
-    for (int i = 0; i < Num_choices; ++i) {
-        if (cur_item == bot_num[i]) {
-            unpost_menu(bot_menu);
-            for (int l = 0; l < Num_choices + 1; ++l) {
-                free_item(bot_num[l]);
-            }
-            free_menu(bot_menu);
-            free(bot_num);
-            return i + 1;
-        }
-    }
-    return 0;
-}
-
-bool botMenu() {
-    char *choices[] = {
-            "Don't include bots",
-            "Include bots (random moves)"
-    };
-    ITEM **bot_num;
-    MENU *bot_menu;
-    ITEM *cur_item = NULL;
-    int c;
-    int Num_choices = 2;
-    bot_num = calloc(Num_choices + 1, sizeof(ITEM *));
-    for (int k = 0; k < Num_choices; ++k) {
-        bot_num[k] = new_item(choices[k], "");
-    }
-    bot_num[Num_choices] = (ITEM *) NULL;
-
-    bot_menu = new_menu(bot_num);
-    mvprintw(LINES - 2, 2, "X to Exit");
-    post_menu(bot_menu);
-    refresh();
-    while ((c = getch()) != 'x') {
-        switch (c) {
-            case KEY_DOWN:
-                menu_driver(bot_menu, REQ_DOWN_ITEM);
-                break;
-            case KEY_UP:
-                menu_driver(bot_menu, REQ_UP_ITEM);
-                break;
-            case 10:
-                cur_item = current_item(bot_menu);
-                break;
-        }
-        if (c == KEY_ENTER || c == 10) {
-            break;
-        }
-    }
-    for (int i = 0; i < Num_choices; ++i) {
-        if (cur_item == bot_num[i]) {
-            unpost_menu(bot_menu);
-            for (int l = 0; l < Num_choices + 1; ++l) {
-                free_item(bot_num[l]);
-            }
-            free_menu(bot_menu);
-            free(bot_num);
-            return (bool) i;
-        }
-    }
-    return 0;
-}
-
-int selectFromMenu() {
-    char *choices[] = {
-            "1 Player (Arrow keys) - Green",
-            "2 Players (WASD) - Blue",
-            "3 Players (TFGH) - Cyan",
-            "4 Players (IJKL) - Magenta",
-            "5 Players ([;'#) - Red",
-            "6 Players (5123) - Orangey Brown",
-            "7 Players (Home/Del/End/PgDown) - Yellow",
-    };
-    ITEM **player_num;
-    MENU *player_menu;
-    ITEM *cur_item = NULL;
-    int c;
-    int Num_choices = MAX_PLAYERS;
-    player_num = calloc(Num_choices + 1, sizeof(ITEM *));
-    for (int k = 0; k < Num_choices; ++k) {
-        player_num[k] = new_item(choices[k], "");
-    }
-    player_num[Num_choices] = (ITEM *)NULL;
-
-    player_menu = new_menu(player_num);
-    char *title[] = {
-            "         _______..__   __.      ___       __  ___  _______    ____    __    ____  ___      .______          _______.",
-            "        /       ||  \\ |  |     /   \\     |  |/  / |   ____|   \\   \\  /  \\  /   / /   \\     |   _  \\        /       |",
-            "       |   (----`|   \\|  |    /  ^  \\    |  '  /  |  |__       \\   \\/    \\/   / /  ^  \\    |  |_)  |      |   (----`",
-            "        \\   \\    |  . `  |   /  /_\\  \\   |    <   |   __|       \\            / /  /_\\  \\   |      /        \\   \\    ",
-            "    .----)   |   |  |\\   |  /  _____  \\  |  .  \\  |  |____       \\    /\\    / /  _____  \\  |  |\\  \\----.----)   |",
-            "    |_______/    |__| \\__| /__/     \\__\\ |__|\\__\\ |_______|       \\__/  \\__/ /__/     \\__\\ | _| `._____|_______/"
-    };
-    for (int j = 0; j < 6; ++j) {
-        mvprintw(LINES/2 + j,0,title[j]);
-    }
-    mvprintw(LINES - 2, 2, "X to Exit");
-    post_menu(player_menu);
-    refresh();
-    while ((c = getch()) != 'x') {
-        switch(c) {
-            case KEY_DOWN:
-                menu_driver(player_menu, REQ_DOWN_ITEM);
-                break;
-            case KEY_UP:
-                menu_driver(player_menu, REQ_UP_ITEM);
-                break;
-            case 10:
-                cur_item = current_item(player_menu);
-                break;
-        }
-        if (c == KEY_ENTER || c == 10) {
-            break;
-        }
-    }
-    for (int i = 0; i < Num_choices; ++i) {
-        if (cur_item == player_num[i]) {
-            unpost_menu(player_menu);
-            for (int l = 0; l < Num_choices + 1; ++l) {
-                free_item(player_num[l]);
-            }
-            free_menu(player_menu);
-            free(player_num);
-            return i + 1;
-        }
-    }
-    unpost_menu(player_menu);
-    for (int l = 0; l < Num_choices + 1; ++l) {
-        free_item(player_num[l]);
-    }
-    free_menu(player_menu);
-    free(player_num);
-    return 0;
-}
-
-void printNoPlayers() {
-    int x;
-    int y;
-    getmaxyx(stdscr, y, x);
-    clear();
-    char msg1[] = "No players selected";
-    char msg2[] = "Press any button to exit";
-    mvprintw(y/2, x/2 - strlen(msg1) / 2, "%s",msg1);
-    mvprintw(y/2 + 1, x/2 - strlen(msg2) / 2, "%s",msg2);
-    refresh();
-    nodelay(stdscr, false);
-    getch();
 }
 
 int main(int argc, char* argv[]) {
@@ -434,6 +257,9 @@ int main(int argc, char* argv[]) {
     noecho();
     cbreak();
     timeout(1);
+
+    game->output = fopen("training.data", "a");
+
 
     start_color();
     int background = COLOR_BLACK;
@@ -491,20 +317,8 @@ int main(int argc, char* argv[]) {
     }
     buildGrid(game);
 
-    game->players = selectFromMenu();
-
-    if (game->players > 0) {
-        if (botMenu()) {
-            game->noOfBots = botnumMenu(game);
-            if (game->noOfBots == 0) {
-                endwin();
-                freeEverything(game);
-                exit(EXIT_FAILURE);
-            }
-        } else {
-            game->noOfBots = 0;
-        }
-    }
+    game->players = 0;
+    game->noOfBots = 7;
 
     switch (game->players + game->noOfBots) {
         case 7:
@@ -523,11 +337,15 @@ int main(int argc, char* argv[]) {
             addSnake(game, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT);
             break;
         default:
-            printNoPlayers();
             endwin();
             freeEverything(game);
             exit(EXIT_FAILURE);
     }
+
+    for (int k = 0; k < game->noOfBots; ++k) {
+        game->snakes[k]->isAI = true;
+    }
+
     int x = STARTING_LENGTH;
     for (int j = 0; j < game->noOfSnakes; ++j) {
         for (int i = 0; i < x; ++i) {
@@ -536,11 +354,10 @@ int main(int argc, char* argv[]) {
     }
     int ch;
     printGame(game);
-    usleep(300000);
     struct timeval start, next;
     gettimeofday(&start, 0);
     float elapsed = 0;
-    int speed = 100;
+    int speed = 1;
     clear();
     while(!game->finished) {
         gettimeofday(&next, 0);
@@ -554,7 +371,7 @@ int main(int argc, char* argv[]) {
             updateDir(ch, game);
         }
     }
-    endgame(game);
+    //endgame(game);
     endwin();
     freeEverything(game);
     return 0;
@@ -673,19 +490,46 @@ void killSnake(Game *game, Snake *snake) {
         //snake->body[i]->occupier = dead_snake;
         game->food++;
     }
+    game->justDied = true;
+    game->dead++;
+}
+
+void writeMove(Game *pGame, Snake *pSnake) {
+    Direction saveDir = pSnake->nextDir;
+    for (int i = -1; i < 2; ++i) {
+        pSnake->nextDir = getDirection((pSnake->direction.dir + i + 4) % 4);
+        fprintf(pGame->output, "%d ", getNextCell(pGame, pSnake)->occupier != nothing && getNextCell(pGame, pSnake)->occupier != food );
+    }
+    for (int i = -1; i < 1; ++i) {
+        pSnake->nextDir = getDirection((pSnake->direction.dir + i + 4) % 4);
+        fprintf(pGame->output, "%d ", getNextCell(pGame, pSnake)->occupier == food);
+    }
+    pSnake->nextDir = getDirection((pSnake->direction.dir + 1) % 4);
+    fprintf(pGame->output, "%d\n", getNextCell(pGame, pSnake)->occupier == food);
+    for (int j = -1; j < 1; ++j) {
+        Direction outputDir = getDirection((pSnake->direction.dir + j + 4) % 4);
+        fprintf(pGame->output, "%d ", saveDir.dir == outputDir.dir);
+    }
+    Direction outputDir = getDirection((pSnake->direction.dir + 1) % 4);
+    fprintf(pGame->output, "%d\n", saveDir.dir == outputDir.dir);
+    pSnake->nextDir = saveDir;
 }
 
 void updateSnake(Game *game, Snake *snake) {
-        Cell *next = snake->nextCell;
-        if (next->occupier != nothing && next->occupier != food) {
-            //rip snake
-            killSnake(game, snake);
-        } else if (next->occupier == food){
-            game->food--;
-            moveSizeIncrease(game, snake, next);
-        } else {
-            moveSnake(game, snake, next);
-        }
+    if (snake->isAI) {
+        //add data to file
+        writeMove(game, snake);
+    }
+    Cell *next = snake->nextCell;
+    if (next->occupier != nothing && next->occupier != food) {
+        //rip snake
+        killSnake(game, snake);
+    } else if (next->occupier == food){
+        game->food--;
+        moveSizeIncrease(game, snake, next);
+    } else {
+        moveSnake(game, snake, next);
+    }
 }
 
 void moveSnake(Game *game, Snake *theSnake, Cell *next) {
@@ -763,7 +607,7 @@ Cell getCellAhead(Game *game, Snake *snake, int n) {
 void calculateNextMove(Game *game, Snake *pSnake, int check) {
     while (check > 0) {
         int availableMoves = 0;
-        int movesID[3];
+        int movesID[3] = {0,0,0};
         for (int i = 0; i < 4; ++i) {
             if (!oppositeDir(pSnake, getDirection(i))) {
                 bool available = true;
@@ -793,22 +637,22 @@ void updateGame(Game *game) {
     int dead = 0;
     static int moves = 0;
     //assign a random direction to all bots randomly
-            //bots will try not to hit things
-        for (int m = 0; m < game->noOfBots; ++m) {
-            calculateNextMove(game, game->snakes[m], CHECK_LENGTH);
-            /*
-            //move if about to hit or every 3rd square?
-            if ((getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food) || !(moves % 3)) {
-                int roll, n = 0;
-                do {
-                    roll = rand() % 4;
-                    game->snakes[m]->nextDir = getDirection(roll);
-                    n++;
-                } while ((n < 1000) && oppositeDir(game->snakes[m], game->snakes[m]->nextDir) && (getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food));
-            }
-            */
+    //bots will try not to hit things
+    for (int m = 0; m < game->noOfBots; ++m) {
+        calculateNextMove(game, game->snakes[m], CHECK_LENGTH);
+        /*
+        //move if about to hit or every 3rd square?
+        if ((getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food) || !(moves % 3)) {
+            int roll, n = 0;
+            do {
+                roll = rand() % 4;
+                game->snakes[m]->nextDir = getDirection(roll);
+                n++;
+            } while ((n < 1000) && oppositeDir(game->snakes[m], game->snakes[m]->nextDir) && (getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food));
         }
-        moves++;
+        */
+    }
+    moves++;
     //check all tails and heads
     for (int j = 0; j < game->noOfSnakes; ++j) {
         if (game->snakes[j]->alive) {
@@ -844,6 +688,9 @@ void updateGame(Game *game) {
             dead++;
         }
     }
+    if (dead == game->dead) {
+        game->justDied = false;
+    }
     if (dead == (game->noOfSnakes - 1)) {
         game->finished = true;
     }
@@ -851,4 +698,3 @@ void updateGame(Game *game) {
         addFoods(game, game->foodAmount - (game->food));
     }
 }
-

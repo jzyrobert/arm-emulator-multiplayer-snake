@@ -1,0 +1,29 @@
+#include <fann.h>
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        printf("Enter number of max epochs!");
+        exit(EXIT_FAILURE);
+    }
+    const unsigned int num_input = 6;
+    const unsigned int num_output = 3;
+    const unsigned int num_layers = 3;
+    const unsigned int num_neurons_hidden = 6;
+    const float desired_error = (const float) 0.001;
+    const unsigned int epochs_between_reports = 1000;
+
+    struct fann *ann = fann_create_standard(num_layers, num_input,
+                                            num_neurons_hidden, num_output);
+
+    fann_set_activation_function_hidden(ann, FANN_SIGMOID);
+    fann_set_activation_function_output(ann, FANN_SIGMOID);
+
+    fann_train_on_file(ann, "training.data", (unsigned int) strtol(argv[1], NULL, 10),
+                       epochs_between_reports, desired_error);
+
+    fann_save(ann, "training.net");
+
+    fann_destroy(ann);
+
+    return 0;
+}

@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -LfannF -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
+CFLAGS  = -L./fannF/src -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
 
 .SUFFIXES: .c .o
 

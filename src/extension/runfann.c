@@ -9,6 +9,7 @@
 #include <sys/time.h>
 #include <menu.h>
 #include "fannF/src/include/fann.h"
+#include <math.h>
 
 #ifndef GRID_SIZE
 #define GRID_SIZE 10
@@ -88,6 +89,7 @@ struct game {
     int dead;
     bool finished;
     bool justDied;
+    FILE *debug;
 };
 
 Direction getDirection(int choice) ;
@@ -315,8 +317,10 @@ int main(int argc, char* argv[]) {
     }
     buildGrid(game);
 
-    game->players = 1;
-    game->noOfBots = 6;
+    game->players = 7;
+    game->noOfBots = 0;
+
+    game->debug = fopen("fannDB.txt", "a");
 
     switch (game->players + game->noOfBots) {
         case 7:
@@ -353,6 +357,8 @@ int main(int argc, char* argv[]) {
         }
     }
     int ch;
+
+    addFoods(game, game->foodAmount);
     printGame(game);
     struct timeval start, next;
     gettimeofday(&start, 0);
@@ -371,6 +377,7 @@ int main(int argc, char* argv[]) {
             updateDir(ch, game);
         }
     }
+    fclose(game->debug);
     endgame(game);
     endwin();
     freeEverything(game);
@@ -587,17 +594,126 @@ void calculateNextMove(Game *game, Snake *pSnake, int check) {
     }
 }
 
-void calcFann(Game *pGame, Snake *pSnake) {
-    fann_type *calc_out;
-    fann_type input[6];
-    int n = 0;
-    int choice = 0;
-    int choices[3] = {0, 0, 0};
-    for (int i = -1; i < 2; ++i) {
-        pSnake->nextDir = getDirection((pSnake->direction.dir + i + 4) % 4);
-        input[n] = getNextCell(pGame, pSnake)->occupier != nothing && getNextCell(pGame, pSnake)->occupier != food;
-        n++;
+Cell * nextDirectionCell(Game *pGame, Cell *pCell, int i) {
+    Direction dir = getDirection(i);
+    int nextX = (pCell->coordinate.x + dir.xOffset + pGame->width) % pGame->width;
+    int nextY = (pCell->coordinate.y + dir.yOffset + pGame->height) % pGame->height;
+    return &pGame->grid[nextY][nextX];
+}
+
+bool notIn(Cell *pCell[100], Cell *next, int n) {
+    for (int i = 0; i < n; ++i) {
+        if (pCell[i] == next) {
+            return false;
+        }
     }
+    return true;
+}
+
+Cell * nearestFoodCell(Game *game, Cell *start) {
+    //start a breadth first search
+    Cell *seen[1000];
+    Cell *queue[2000];
+    int n = 0;
+    int q = 0;
+    int qc = 0;
+    Cell *current = start;
+    while (current->occupier != food) {
+        seen[n] = current;
+        n++;
+        for (int i = 0; i < 4; ++i) {
+            Cell *next = nextDirectionCell(game, current, i);
+            if (notIn(seen, next, n) && notIn(queue, next, q) && (next->occupier == nothing || next->occupier == food)) {
+                queue[q] = next;
+                q++;
+            }
+        }
+        current = queue[qc];
+        qc++;
+    }
+    return current;
+}
+
+int getMoveID(Direction old, Direction new) {
+    switch(old.dir) {
+        case 0:
+            switch (new.dir) {
+                case 1:
+                    return 1;
+                case 3:
+                    return -1;
+                default:
+                    return 0;
+            }
+        case 1:
+            switch (new.dir) {
+                case 0:
+                    return -1;
+                case 2:
+                    return 1;
+                default:
+                    return 0;
+            }
+        case 2:
+            switch (new.dir) {
+                case 1:
+                    return -1;
+                case 3:
+                    return 1;
+                default:
+                    return 0;
+            }
+        case 3:
+            switch (new.dir) {
+                case 0:
+                    return 1;
+                case 2:
+                    return -1;
+                default:
+                    return 0;
+            }
+    }
+    return 0;
+}
+
+void calcFann(Game *pGame, Snake *pSnake) {
+    float max = 0;
+    int c = 0;
+    for (int i = -1; i < 2; ++i) {
+        fann_type *calc_out;
+        fann_type input[8];
+        int n = 0;
+        for (int j = -1; j < 2; ++j) {
+            pSnake->nextDir = getDirection((pSnake->direction.dir + j + 4) % 4);
+            input[n] = getNextCell(pGame, pSnake)->occupier != nothing && getNextCell(pGame, pSnake)->occupier != food;
+            n++;
+        }
+        for (int k = -1; k < 2; ++k) {
+            pSnake->nextDir = getDirection((pSnake->direction.dir + k + 4) % 4);
+            input[n] = getNextCell(pGame, pSnake)->occupier == food;
+            n++;
+        }
+        pSnake->nextDir = getDirection((pSnake->direction.dir + i + 4) % 4);
+        Cell *food = nearestFoodCell(pGame, pSnake->head);
+        int xD = food->coordinate.x - pSnake->head->coordinate.x;
+        int yD = pSnake->head->coordinate.y - food->coordinate.y;
+        double angle = atan2( xD, yD);
+        input[6] = (fann_type) (angle * (180.0 / M_PI));
+        input[7] = i;
+        calc_out = fann_run(pGame->ANN, input);
+        fprintf(pGame->debug , "For inputs %d %d %d %d %d %d %.5f direction %d weight is %.5f\n", (int) input[0],
+                (int) input[1], (int) input[2],(int) input[3], (int) input[4], (int) input[5],input[6], i, calc_out[0]);
+        if (calc_out[0] > max) {
+            max = calc_out[0];
+            c = i;
+        } else if (calc_out[0] == max) {
+            if (rand() % 2) {
+                c = i;
+            }
+        }
+    }
+    pSnake->nextDir = getDirection((pSnake->direction.dir + c + 4) % 4);
+    /*
     for (int i = -1; i < 2; ++i) {
         pSnake->nextDir = getDirection((pSnake->direction.dir + i + 4) % 4);
         input[n] = getNextCell(pGame, pSnake)->occupier == food;
@@ -605,12 +721,14 @@ void calcFann(Game *pGame, Snake *pSnake) {
     }
     calc_out = fann_run(pGame->ANN, input);
     for (int j = 0; j < 3; ++j) {
-        if (calc_out[j] > 0.5) {
-            choices[choice] = j -1;
-            choice++;
+        if (calc_out[j] > max) {
+            c = j -1;
+            max = calc_out[j];
         }
     }
-    pSnake->nextDir = getDirection((pSnake->direction.dir + (choices[rand() % choice]) + 4) % 4);
+    //printf("%d\n", c);
+    pSnake->nextDir = getDirection((pSnake->direction.dir + c + 4) % 4);
+     */
 
 }
 
@@ -666,7 +784,7 @@ void updateGame(Game *game) {
     if (dead == game->dead) {
         game->justDied = false;
     }
-    if (dead == (game->noOfSnakes - 1)) {
+    if (dead >= (game->noOfSnakes - 1)) {
         game->finished = true;
     }
     if (game->food < game->foodAmount) {

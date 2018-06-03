@@ -12,7 +12,7 @@ logic: logic.o -lncurses -lmenu
 
 botsonly: botsonly.o -lncurses
 
-training: training.o -lncurses
+training: training.o -lncurses -lm
 
 fann: fann.o
 	$(C) $(CFLAGS) fann.o $(LIBS_PATH) -lfann

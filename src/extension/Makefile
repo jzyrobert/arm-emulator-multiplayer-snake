@@ -19,7 +19,7 @@ fann: fann.o
 
 runfann: runfann.o
 	$(C) $(CFLAGS) runfann.o $(LIBS_PATH) -lfann -lncurses
-
+	
 clean:
 	rm -f $(wildcard *.o)
 	rm -f logic

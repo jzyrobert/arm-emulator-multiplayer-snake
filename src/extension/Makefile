@@ -18,7 +18,7 @@ fann: fann.o
 	$(C) $(CFLAGS) fann.o $(LIBS_PATH) -lfann
 
 runfann: runfann.o
-	$(C) $(CFLAGS) runfann.o $(LIBS_PATH) -lfann -lncurses
+	$(C) $(CFLAGS) runfann.o $(LIBS_PATH) -lfann -lncurses -lm
 	
 clean:
 	rm -f $(wildcard *.o)

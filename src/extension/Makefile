@@ -1,5 +1,6 @@
-CC      = gcc
-CFLAGS  = -I./fannF/src -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
+C      = gcc
+CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
+LIBS_PATH = -L./fannF/src
 
 .SUFFIXES: .c .o
 
@@ -13,9 +14,11 @@ botsonly: botsonly.o -lncurses
 
 training: training.o -lncurses
 
-fann: fann.o -lfann
+fann: fann.o
+	$(C) $(CFLAGS) fann.o $(LIBS_PATH) -lfann
 
-runfann: runfann.o -lncurses -lfann
+runfann: runfann.o
+	$(C) $(CFLAGS) runfann.o $(LIBS_PATH) -lfann -lncurses
 
 clean:
 	rm -f $(wildcard *.o)

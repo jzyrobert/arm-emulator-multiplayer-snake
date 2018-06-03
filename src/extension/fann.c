@@ -15,10 +15,10 @@ int main(int argc, char* argv[]) {
     struct fann *ann = fann_create_standard(num_layers, num_input,
                                             num_neurons_hidden, num_output);
 
-    fann_train_on_file(ann, "training.data", (unsigned int) strtol(argv[1], NULL, 10),
+    fann_train_on_file(ann, "updatetraining.data", (unsigned int) strtol(argv[1], NULL, 10),
                        epochs_between_reports, desired_error);
 
-    fann_save(ann, "training.net");
+    fann_save(ann, "updatetraining.net");
 
     fann_destroy(ann);
 

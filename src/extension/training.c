@@ -589,33 +589,66 @@ int distanceBetweenCells(Game *game, Cell *start, Cell *end) {
     int xDistance;
     int yDistance;
     if (start->coordinate.x < end->coordinate.x ) {
-        xDistance = (game->width + start->coordinate.x - end->coordinate.x) % game->width;
+        int xd1 = ((game->width + start->coordinate.x - end->coordinate.x) % game->width);
+        int xd2 = end->coordinate.x - start->coordinate.x;
+        xDistance = xd1 < xd2 ? xd1 : xd2;
     } else{
-        xDistance = (game->width + end->coordinate.x - start->coordinate.x) % game->width;
+        int xd1 = ((game->width + end->coordinate.x - start->coordinate.x) % game->width);
+        int xd2 = start->coordinate.x - end->coordinate.x;
+        xDistance = xd1 < xd2 ? xd1 : xd2;
     }
     if (start->coordinate.y < end->coordinate.y ) {
-        yDistance = (game->width + start->coordinate.y - end->coordinate.y) % game->width;
+        int yd1 = (game->height + start->coordinate.y - end->coordinate.y) % game->height;
+        int yd2 = end->coordinate.y - start->coordinate.y;
+        yDistance = yd1 < yd2 ? yd1 : yd2;
     } else{
-        yDistance = (game->width + end->coordinate.y - start->coordinate.y) % game->width;
+        int yd1 = (game->height + end->coordinate.y - start->coordinate.y) % game->height;
+        int yd2 = start->coordinate.y - end->coordinate.y;
+        yDistance = yd1 < yd2 ? yd1 : yd2;
     }
     return xDistance + yDistance;
 }
 
 int distanceToNearestFood(Game *game, Cell *start) {
     Cell *current = nearestFoodCell(game, start);
-    int xDistance;
-    int yDistance;
-    if (start->coordinate.x < current->coordinate.x ) {
-        xDistance = (game->width + start->coordinate.x - current->coordinate.x) % game->width;
-    } else{
-        xDistance = (game->width + current->coordinate.x - start->coordinate.x) % game->width;
+    return distanceBetweenCells(game ,start, current);
+}
+
+double angleBasedOnDirection(Game *game, Snake *pSnake, Cell *pCell, Cell *food) {
+    double angle = 0;
+    int xd, yd;
+    int xd1 = food->coordinate.x - pCell->coordinate.x;
+    if (pCell->coordinate.x < food->coordinate.x) {
+        int xd2 = food->coordinate.x - (pCell->coordinate.x + game->width);
+        xd = abs(xd1) < abs(xd2) ? xd1 : xd2;
+    } else {
+        int xd2 = (food->coordinate.x + game->width) - pCell->coordinate.x;
+        xd = abs(xd1) < abs(xd2) ? xd1 : xd2;
     }
-    if (start->coordinate.y < current->coordinate.y ) {
-        yDistance = (game->width + start->coordinate.y - current->coordinate.y) % game->width;
-    } else{
-        yDistance = (game->width + current->coordinate.y - start->coordinate.y) % game->width;
+    int yd1 = -(food->coordinate.y - pCell->coordinate.y);
+    //because y grows downwards but we want to calculate angle as if it went upwards
+    if (pCell->coordinate.y < food->coordinate.y) {
+        int yd2 = (pCell->coordinate.y + game->height) - food->coordinate.y;
+        yd = abs(yd1) < abs(yd2) ? yd1 : yd2;
+    } else {
+        int yd2 = pCell->coordinate.y - (food->coordinate.y + game->height);
+        yd = abs(yd1) < abs(yd2) ? yd1 : yd2;
     }
-    return xDistance + yDistance;
+    switch (pSnake->direction.dir) {
+        case 0:
+            angle = atan2(xd, yd);
+            break;
+        case 1:
+            angle = atan2(yd, xd);
+            break;
+        case 2:
+            angle = atan2(xd, -yd);
+            break;
+        case 3:
+            angle = atan2(yd, -xd);
+            break;
+    }
+    return angle * (180.0 / M_PI);
 }
 
 void writeMove(Game *pGame, Snake *pSnake) {
@@ -638,14 +671,13 @@ void writeMove(Game *pGame, Snake *pSnake) {
         bool check1 = getNextCell(pGame, pSnake)->occupier != food && getNextCell(pGame, pSnake)->occupier != nothing;
         //wrong move if you move further away from closest food thats not blocke
         Cell *food = nearestFoodCell(pGame, pSnake->head);
-        int xD = food->coordinate.x - pSnake->head->coordinate.x;
-        int yD = pSnake->head->coordinate.y - food->coordinate.y;
-        double angle = atan2( xD, yD);
-        angle = angle * (180.0 / M_PI);
+        double angle = angleBasedOnDirection(pGame, pSnake, pSnake->head, food);
+        
         fprintf(pGame->output, "%.5lf ", angle);
         fprintf(pGame->output, "%d\n", getMoveID(pSnake->direction, check));
-        bool check2 =
-                distanceToNearestFood(pGame, pSnake->head) >= distanceBetweenCells(pGame, getNextCell(pGame, pSnake), food);
+        int oldDistance = distanceBetweenCells(pGame, pSnake->head, food);
+        int newDistance = distanceBetweenCells(pGame, getNextCell(pGame, pSnake), food);
+        bool check2 = oldDistance <= newDistance;
         if (check1 || check2) {
             correct = false;
         }

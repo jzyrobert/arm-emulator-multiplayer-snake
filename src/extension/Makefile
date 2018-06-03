@@ -6,7 +6,7 @@ LIBS_PATH = -L./fannF/src
 
 .PHONY: all clean
 
-all: logic botsonly training fann runfann
+all: logic botsonly training fann runfann updateTraining
 
 logic: logic.o -lncurses -lmenu
 
@@ -19,6 +19,9 @@ fann: fann.o
 
 runfann: runfann.o
 	$(C) $(CFLAGS) runfann.o -o runfann $(LIBS_PATH) -lfann -lncurses -lm
+
+updateTraining: updateTraining.o
+	$(C) $(CFLAGS) updateTraining.o -o updateTraining $(LIBS_PATH) -lfann -lncurses -lm
 	
 clean:
 	rm -f $(wildcard *.o)
@@ -26,3 +29,5 @@ clean:
 	rm -f botsonly
 	rm -f fann
 	rm -f runfann
+	rm -f training
+	rm -f updateTraining

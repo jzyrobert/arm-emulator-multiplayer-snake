@@ -276,7 +276,8 @@ int main(int argc, char* argv[]) {
 
     getmaxyx(stdscr, game->tHeight, game->tWidth);
 
-    if (argc != 3 && argc != 1) {
+    /*
+    if (argc != 3 && argc != 1 ) {
         endwin();
         printf("Call game with height and width arguments (Includes borders).\n");
         printf("Use $LINES and $COLUMNS to find them\n");
@@ -296,6 +297,24 @@ int main(int argc, char* argv[]) {
             exit(EXIT_FAILURE);
         }
     } else if (argc == 1) {
+        if (game->tWidth < 100 || game->tHeight < 30) {
+            endwin();
+            printf("You can't have a game that small!\n");
+            exit(EXIT_FAILURE);
+        } else {
+            game->height = game->tHeight - 2;
+            game->width = game->tWidth - 2;
+        }
+    }
+     */
+
+    char* input;
+    if (argc != 2) {
+        endwin();
+        printf("Enter net input file!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        input = argv[1];
         if (game->tWidth < 100 || game->tHeight < 30) {
             endwin();
             printf("You can't have a game that small!\n");
@@ -348,7 +367,7 @@ int main(int argc, char* argv[]) {
         game->snakes[k]->isAI = true;
     }
 
-    game->ANN = fann_create_from_file("training.net");
+    game->ANN = fann_create_from_file(input);
 
     int x = STARTING_LENGTH;
     for (int j = 0; j < game->noOfSnakes; ++j) {
@@ -701,10 +720,10 @@ double angleBasedOnDirection(Game *game, Snake *pSnake, Cell *pCell, Cell *food)
             angle = atan2(xd, yd);
             break;
         case 1:
-            angle = atan2(yd, xd);
+            angle = atan2(-yd, xd);
             break;
         case 2:
-            angle = atan2(xd, -yd);
+            angle = atan2(-xd, -yd);
             break;
         case 3:
             angle = atan2(yd, -xd);

@@ -10,6 +10,7 @@
 #include <menu.h>
 #include <fcntl.h>
 #include <math.h>
+#include <assert.h>
 #include "fannF/src/include/fann.h"
 
 #ifndef GRID_SIZE
@@ -116,9 +117,8 @@ void initialiseRandomSeed(void) {
 }
 
 void addSnake(Game *game,int up, int down, int left, int right) {
-    int x = 0;
-    int y = 0;
-    getmaxyx(stdscr, y, x);
+    int x = game->width;
+    int y = game->height;
     Snake *newSnake = malloc(sizeof(Snake));
     game->snakes[game->noOfSnakes] = newSnake;
     newSnake->body = malloc(game->width * game->height * sizeof(Cell *));
@@ -248,10 +248,8 @@ void freeEverything(Game *pGame) {
 }
 
 int main(int argc, char* argv[]) {
-    Game *game = malloc(sizeof(Game));
-    game->food = 0;
-    initialiseRandomSeed();
     //Ncurses initialisation
+    /*
     if (initscr() == NULL) {
         printf("Window failure!");
         free(game);
@@ -261,11 +259,9 @@ int main(int argc, char* argv[]) {
     noecho();
     cbreak();
     timeout(1);
+     */
 
-    game->ANN = fann_create_from_file("pastData/V1.net");
-    game->output = fopen("updatetraining.data", "a");
-
-
+    /*
     start_color();
     int background = COLOR_BLACK;
     init_color(8, 204,120, 50);
@@ -280,6 +276,7 @@ int main(int argc, char* argv[]) {
     init_pair(9, COLOR_YELLOW, background);
 
     getmaxyx(stdscr, game->tHeight, game->tWidth);
+
 
     if (argc != 3 && argc != 1) {
         endwin();
@@ -310,58 +307,84 @@ int main(int argc, char* argv[]) {
             game->width = game->tWidth - 2;
         }
     }
+     */
 
-    game->foodAmount = (game->height * game->width) / 10;
-    game->grid = calloc(game->height, sizeof(Cell *));
-    if (game->grid == NULL) {
-        printf("Allocation failure!\n");
+    //custom non window training mode
+    initialiseRandomSeed();
+    int rounds = 0;
+    char* input;
+    char* output;
+    if (argc != 4) {
+        printf("Enter input, output and rounds of training\n");
         exit(EXIT_FAILURE);
+    } else {
+        input = argv[1];
+        output = argv[2];
+        rounds = strtol(argv[3], NULL, 10);
+        assert(rounds > 0);
     }
-    for (int i = 0; i < game->height; ++i) {
-        game->grid[i] = calloc(game->width, sizeof(Cell));
-    }
-    buildGrid(game);
+    for (int l = 0; l < rounds; ++l) {
+        Game *game = malloc(sizeof(Game));
+        game->food = 0;
 
+        game->output = fopen(output, "a");
+        game->ANN = fann_create_from_file(input);
 
-    game->players = 0;
-    game->noOfBots = 7;
+        game->height = 100;
+        game->width = 150;
 
-    switch (game->players + game->noOfBots) {
-        case 7:
-            addSnake(game, KEY_HOME, KEY_END, KEY_DC, KEY_NPAGE);
-        case 6:
-            addSnake(game, '5', '2', '1', '3');
-        case 5:
-            addSnake(game, '[', '\'', ';', '#');
-        case 4:
-            addSnake(game, 'i', 'k', 'j', 'l');
-        case 3:
-            addSnake(game, 't', 'g', 'f', 'h');
-        case 2:
-            addSnake(game, 'w', 's', 'a', 'd');
-        case 1:
-            addSnake(game, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT);
-            break;
-        default:
-            endwin();
-            freeEverything(game);
+        game->foodAmount = (game->height * game->width) / 10;
+        game->grid = calloc(game->height, sizeof(Cell *));
+        if (game->grid == NULL) {
+            printf("Allocation failure!\n");
             exit(EXIT_FAILURE);
-    }
-
-    for (int k = 0; k < game->noOfBots; ++k) {
-        game->snakes[k]->isAI = true;
-    }
-
-    int x = STARTING_LENGTH;
-    for (int j = 0; j < game->noOfSnakes; ++j) {
-        for (int i = 0; i < x; ++i) {
-            addLength(game, game->snakes[j]);
         }
-    }
+        for (int i = 0; i < game->height; ++i) {
+            game->grid[i] = calloc(game->width, sizeof(Cell));
+        }
+        buildGrid(game);
 
-    addFoods(game, game->foodAmount);
 
-    int ch;
+        game->players = 0;
+        game->noOfBots = 7;
+
+        switch (game->players + game->noOfBots) {
+            case 7:
+                addSnake(game, KEY_HOME, KEY_END, KEY_DC, KEY_NPAGE);
+            case 6:
+                addSnake(game, '5', '2', '1', '3');
+            case 5:
+                addSnake(game, '[', '\'', ';', '#');
+            case 4:
+                addSnake(game, 'i', 'k', 'j', 'l');
+            case 3:
+                addSnake(game, 't', 'g', 'f', 'h');
+            case 2:
+                addSnake(game, 'w', 's', 'a', 'd');
+            case 1:
+                addSnake(game, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT);
+                break;
+            default:
+                endwin();
+                freeEverything(game);
+                exit(EXIT_FAILURE);
+        }
+
+        for (int k = 0; k < game->noOfBots; ++k) {
+            game->snakes[k]->isAI = true;
+        }
+
+        int x = STARTING_LENGTH;
+        for (int j = 0; j < game->noOfSnakes; ++j) {
+            for (int i = 0; i < x; ++i) {
+                addLength(game, game->snakes[j]);
+            }
+        }
+
+        addFoods(game, game->foodAmount);
+
+        /*
+        int ch;
     printGame(game);
     struct timeval start, next;
     gettimeofday(&start, 0);
@@ -369,21 +392,28 @@ int main(int argc, char* argv[]) {
     int speed = 1;
     usleep(1000000);
     clear();
-    while(!game->finished) {
-        gettimeofday(&next, 0);
-        elapsed = timedifference_msec(start, next);
-        if (elapsed > speed) {
-            gettimeofday(&start, 0);
+         */
+        while (!game->finished) {
+            /*
+        }
+            gettimeofday(&next, 0);
+            elapsed = timedifference_msec(start, next);
+            if (elapsed > speed) {
+                gettimeofday(&start, 0);
+                updateGame(game);
+                printGame(game);
+            }
+            if ((ch = getch()) != ERR) {
+                updateDir(ch, game);
+            }
+             */
             updateGame(game);
-            printGame(game);
         }
-        if ((ch = getch()) != ERR) {
-            updateDir(ch, game);
-        }
+        //endgame(game);
+        //endwin();
+        freeEverything(game);
+        printf("Round %d of training\n", l + 1);
     }
-    //endgame(game);
-    endwin();
-    freeEverything(game);
     return 0;
 }
 
@@ -642,10 +672,10 @@ double angleBasedOnDirection(Game *game, Snake *pSnake, Cell *pCell, Cell *food)
             angle = atan2(xd, yd);
             break;
         case 1:
-            angle = atan2(yd, xd);
+            angle = atan2(-yd, xd);
             break;
         case 2:
-            angle = atan2(xd, -yd);
+            angle = atan2(-xd, -yd);
             break;
         case 3:
             angle = atan2(yd, -xd);
@@ -851,6 +881,10 @@ void calcFann(Game *pGame, Snake *pSnake) {
         input[6] = (fann_type) angle;
         input[7] = getMoveID(pSnake->direction, pSnake->nextDir);
         calc_out = fann_run(pGame->ANN, input);
+        /*
+        fprintf(pGame->debug , "For inputs %d %d %d %d %d %d %.5f direction %d weight is %.5f\n", (int) input[0],
+                (int) input[1], (int) input[2],(int) input[3], (int) input[4], (int) input[5],input[6], i, calc_out[0]);
+                */
         if (calc_out[0] > max) {
             max = calc_out[0];
             c = i;
@@ -861,6 +895,23 @@ void calcFann(Game *pGame, Snake *pSnake) {
         }
     }
     pSnake->nextDir = getDirection((pSnake->direction.dir + c + 4) % 4);
+    /*
+    for (int i = -1; i < 2; ++i) {
+        pSnake->nextDir = getDirection((pSnake->direction.dir + i + 4) % 4);
+        input[n] = getNextCell(pGame, pSnake)->occupier == food;
+        n++;
+    }
+    calc_out = fann_run(pGame->ANN, input);
+    for (int j = 0; j < 3; ++j) {
+        if (calc_out[j] > max) {
+            c = j -1;
+            max = calc_out[j];
+        }
+    }
+    //printf("%d\n", c);
+    pSnake->nextDir = getDirection((pSnake->direction.dir + c + 4) % 4);
+     */
+
 }
 
 void updateGame(Game *game) {
@@ -917,5 +968,3 @@ void updateGame(Game *game) {
         addFoods(game, game->foodAmount - (game->food));
     }
 }
-
-

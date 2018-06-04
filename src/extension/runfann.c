@@ -325,7 +325,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    game->foodAmount = (game->height * game->width) / 10;
+    game->foodAmount = (game->height * game->width) / 50;
     game->grid = calloc(game->height, sizeof(Cell *));
     if (game->grid == NULL) {
         printf("Allocation failure!\n");

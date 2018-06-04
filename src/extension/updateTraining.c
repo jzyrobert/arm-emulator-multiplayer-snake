@@ -596,8 +596,8 @@ bool notIn(Cell *pCell[100], Cell *next, int n) {
 
 Cell * nearestFoodCell(Game *game, Cell *start) {
     //start a breadth first search
-    Cell *seen[1000];
-    Cell *queue[2000];
+    Cell **seen = malloc(game->width * game->height * sizeof(Cell *));
+    Cell **queue = malloc(game->width * game->height * sizeof(Cell *));
     int n = 0;
     int q = 0;
     int qc = 0;
@@ -615,6 +615,8 @@ Cell * nearestFoodCell(Game *game, Cell *start) {
         current = queue[qc];
         qc++;
     }
+    free(seen);
+    free(queue);
     return current;
 }
 
@@ -698,11 +700,11 @@ void writeMove(Game *pGame, Snake *pSnake) {
             pSnake->nextDir = getDirection((pSnake->direction.dir + i + 4) % 4);
             fprintf(pGame->output, "%d ", getNextCell(pGame, pSnake)->occupier == food);
         }
-        bool correct = true;
+        int correct = 0;
         pSnake->nextDir = check;
         //tells its a wrong move if you die
         bool check1 = getNextCell(pGame, pSnake)->occupier != food && getNextCell(pGame, pSnake)->occupier != nothing;
-        //wrong move if you move further away from closest food thats not blocke
+        //wrong move if you move further away from closest food thats not blocked
         Cell *food = nearestFoodCell(pGame, pSnake->head);
         double angle = angleBasedOnDirection(pGame, pSnake, pSnake->head, food);
 
@@ -711,8 +713,14 @@ void writeMove(Game *pGame, Snake *pSnake) {
         int oldDistance = distanceBetweenCells(pGame, pSnake->head, food);
         int newDistance = distanceBetweenCells(pGame, getNextCell(pGame, pSnake), food);
         bool check2 = oldDistance <= newDistance;
-        if (check1 || check2) {
-            correct = false;
+        if (check1) {
+            correct = -1;
+        } else {
+            if (check2) {
+                correct = 0;
+            } else {
+                correct = 1;
+            }
         }
         fprintf(pGame->output, "%d\n", correct);
     }
@@ -859,7 +867,7 @@ void calculateNextMove(Game *game, Snake *pSnake, int check) {
 }
 
 void calcFann(Game *pGame, Snake *pSnake) {
-    float max = 0;
+    float max = -1;
     int c = 0;
     for (int i = -1; i < 2; ++i) {
         fann_type *calc_out;

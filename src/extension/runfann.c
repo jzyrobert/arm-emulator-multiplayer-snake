@@ -631,8 +631,8 @@ bool notIn(Cell *pCell[100], Cell *next, int n) {
 
 Cell * nearestFoodCell(Game *game, Cell *start) {
     //start a breadth first search
-    Cell *seen[1000];
-    Cell *queue[2000];
+    Cell **seen = malloc(game->width * game->height * sizeof(Cell *));
+    Cell **queue = malloc(game->width * game->height * sizeof(Cell *));
     int n = 0;
     int q = 0;
     int qc = 0;
@@ -650,6 +650,8 @@ Cell * nearestFoodCell(Game *game, Cell *start) {
         current = queue[qc];
         qc++;
     }
+    free(seen);
+    free(queue);
     return current;
 }
 
@@ -733,7 +735,7 @@ double angleBasedOnDirection(Game *game, Snake *pSnake, Cell *pCell, Cell *food)
 }
 
 void calcFann(Game *pGame, Snake *pSnake) {
-    float max = 0;
+    float max = -1;
     int c = 0;
     for (int i = -1; i < 2; ++i) {
         fann_type *calc_out;

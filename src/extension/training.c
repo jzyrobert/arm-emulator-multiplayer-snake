@@ -691,7 +691,7 @@ void writeMove(Game *pGame, Snake *pSnake) {
             pSnake->nextDir = getDirection((pSnake->direction.dir + i + 4) % 4);
             fprintf(pGame->output, "%d ", getNextCell(pGame, pSnake)->occupier == food);
         }
-        bool correct = true;
+        int correct = 0;
         pSnake->nextDir = check;
         //tells its a wrong move if you die
         bool check1 = getNextCell(pGame, pSnake)->occupier != food && getNextCell(pGame, pSnake)->occupier != nothing;
@@ -704,8 +704,14 @@ void writeMove(Game *pGame, Snake *pSnake) {
         int oldDistance = distanceBetweenCells(pGame, pSnake->head, food);
         int newDistance = distanceBetweenCells(pGame, getNextCell(pGame, pSnake), food);
         bool check2 = oldDistance <= newDistance;
-        if (check1 || check2) {
-            correct = false;
+        if (check1) {
+            correct = -1;
+        } else {
+            if (check2) {
+                correct = 0;
+            } else {
+                correct = 1;
+            }
         }
         fprintf(pGame->output, "%d\n", correct);
     }

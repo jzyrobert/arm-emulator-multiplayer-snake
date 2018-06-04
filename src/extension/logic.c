@@ -432,6 +432,7 @@ int main(int argc, char* argv[]) {
     }
     keypad(stdscr, TRUE);
     noecho();
+    curs_set(FALSE);
     cbreak();
     timeout(1);
 

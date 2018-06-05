@@ -437,7 +437,7 @@ void bitEor(STATE *state, bool b) {
 }
 
 void bitAnd(STATE *state, bool b) {
-//b decides if content is written or not
+    //b decides if content is written or not
     word op2 = processOp2(state);
     word result = state->reg[state->instruction.Rn] & op2;
     updateCPSR(state, result);

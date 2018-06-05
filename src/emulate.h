@@ -1,16 +1,11 @@
-#ifndef PROCESSOR_FLOW_TYPEDEFS
-#define PROCESSOR_FLOW_TYPEDEFS
+#ifndef EMULATE_H
+#define EMULATE_H
 typedef struct instruction INSTRUCTION;
 typedef struct state STATE;
-#endif
-
-#ifndef ARM_TYPE_TYPEDEFS
-#define ARM_TYPE_TYPEDEFS
 typedef uint8_t byte;
 typedef uint32_t word;
 typedef int32_t wordS;
 typedef uint16_t address;
-#endif
 
 // Decode bits into the state struct depending on the instruction to decode
 void decodeMult(STATE *state);
@@ -39,6 +34,8 @@ void print(STATE *ptr);
 // Given a word, checks for cond (1 = go, 0 = no)
 int checkCond(word instruction, word cpsr) ;
 
+// Sets the state according to the necessary instruction, depending on the
+// value of b
 void bitAnd(STATE *state, bool b);
 
 void bitEor(STATE *state, bool b);
@@ -52,3 +49,5 @@ void addRO(STATE *state);
 void bitOR(STATE *state);
 
 void processMove(STATE *state);
+
+#endif

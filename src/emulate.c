@@ -5,25 +5,7 @@
 #include "emulate.h"
 
 // MEM_SIZE must be greater than 8 to prevent
-#ifndef MEM_SIZE
-#define MEM_SIZE 65536
-#endif
 
-#ifndef REG_SIZE
-#define REG_SIZE 17
-#endif
-
-#ifndef PC
-#define PC 15
-#endif
-
-#ifndef CPSR
-#define CPSR 16
-#endif
-
-#ifndef PC_OFFSET
-#define PC_OFFSET 8
-#endif
 
 enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH, HALT};
 
@@ -57,17 +39,17 @@ void readFile(char* file_name, byte* memory){
 }
 
 word fetchData(STATE* state, int start){
-    return (state->mem[start + 3] << 24) + (state->mem[start + 2] << 16) +
+    return (state->mem[start + 3] << branchOffset) + (state->mem[start + 2] << 16) +
            (state->mem[start + 1] << 8) + state->mem[start];
 }
 
 void writeData(STATE* state, word memLoc, word data){
     state->mem[memLoc] = (byte) data;
-    data >>= 8;
+    data >>= PC_OFFSET;
     state->mem[memLoc+1] = (byte) data;
-    data >>= 8;
+    data >>= PC_OFFSET;
     state->mem[memLoc+2] = (byte) data;
-    data >>= 8;
+    data >>= PC_OFFSET;
     state->mem[memLoc+3] = (byte) data;
 }
 
@@ -118,7 +100,7 @@ void decode(STATE* state) {
 }
 
 void decodeBranch(STATE *state) {
-    state->instruction.largeOffset = extractBits(state->instruction.binary, 0, 23) << 2;
+    state->instruction.largeOffset = extractBits(state->instruction.binary, 0, upBit) << 2;
     if (state->instruction.largeOffset & (1<<18)) {
         state->instruction.largeOffset = state->instruction.largeOffset | (word) 0xFC000000;
     }
@@ -126,10 +108,10 @@ void decodeBranch(STATE *state) {
 
 void decodeTransfer(STATE *state) {
     word b = state->instruction.binary;
-    state->instruction.I = (bool) (b & (1<<25));
-    state->instruction.P = (bool) (b & (1<<24));
-    state->instruction.U = (bool) (b & (1<<23));
-    state->instruction.L = (bool) (b & (1<<20));
+    state->instruction.I = (bool) (b & (1<<immediateOffset));
+    state->instruction.P = (bool) (b & (1<<ppIndexBit));
+    state->instruction.U = (bool) (b & (1<<upBit));
+    state->instruction.L = (bool) (b & (1<<SBit));
     state->instruction.Rn = (address) extractBits(b, 16, 19);
     state->instruction.Rd = (address) extractBits(b, 12, 15);
     state->instruction.smallOffset = (address) extractBits(b, 0, 11);
@@ -137,8 +119,8 @@ void decodeTransfer(STATE *state) {
 
 void decodeProcess(STATE *state) {
     word b = state->instruction.binary;
-    state->instruction.I = (bool) (b & (1<<25));
-    state->instruction.S = (bool) (b & (1<<20));
+    state->instruction.I = (bool) (b & (1<<immediateOffset));
+    state->instruction.S = (bool) (b & (1<<SBit));
     state->instruction.Opcode = (byte) extractBits(b, 21, 24);
     state->instruction.Rn = (address) extractBits(b, 16, 19);
     state->instruction.Rd = (address) extractBits(b, 12, 15);
@@ -147,8 +129,8 @@ void decodeProcess(STATE *state) {
 
 void decodeMult(STATE *state) {
     word b = state->instruction.binary;
-    state->instruction.A = (bool) (b & (1<<21));
-    state->instruction.S = (bool) (b & (1<<20));
+    state->instruction.A = (bool) (b & (1<<ABit));
+    state->instruction.S = (bool) (b & (1<<SBit));
     state->instruction.Rd = (address) extractBits(b, 16, 19);
     state->instruction.Rn = (address) extractBits(b, 12, 15);
     state->instruction.Rs = (address) extractBits(b, 8, 11);
@@ -167,11 +149,11 @@ void replaceBit(word* destination, int location, word source, int location2) {
 void updateCPSR(STATE *state, word result) {
     if (state->instruction.S) {
         if (!result) {
-            replaceBitDirect(&state->reg[CPSR],30, 1);
+            replaceBitDirect(&state->reg[CPSR],flagZ, 1);
         } else {
-            replaceBitDirect(&state->reg[CPSR], 30, 0);
+            replaceBitDirect(&state->reg[CPSR], flagZ, 0);
         }
-        replaceBit(&state->reg[CPSR], 31, result, 31);
+        replaceBit(&state->reg[CPSR], flagN, result, flagN);
     }
 }
 
@@ -228,27 +210,27 @@ word processOp2(STATE *state) {
         switch (shiftType) {
             case 0:
                 if (state->instruction.S && (shiftAmount > 0)) {
-                    replaceBit(&state->reg[CPSR], 29, result, (32-shiftAmount));
+                    replaceBit(&state->reg[CPSR], flagC, result, (32-shiftAmount));
                 }
                 result <<= shiftAmount;
                 break;
             case 1:
                 if (state->instruction.S && (shiftAmount > 0)) {
-                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
+                    replaceBit(&state->reg[CPSR], flagC, result, shiftAmount-1);
                 }
                 result >>= shiftAmount;
                 break;
             case 2:
                 if (state->instruction.S && (shiftAmount > 0)) {
-                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
+                    replaceBit(&state->reg[CPSR], flagC, result, shiftAmount-1);
                 }
                 result = (word) ((int32_t) result >> shiftAmount);
                 break;
             case 3:
                 if (state->instruction.S) {
-                    replaceBit(&state->reg[CPSR], 29, result, shiftAmount-1);
+                    replaceBit(&state->reg[CPSR], flagC, result, shiftAmount-1);
                 }
-                result = (result >> 1) | (result << 31);
+                result = (result >> 1) | (result << flagN);
                 break;
             default:
                 printf("Invalid shift!");
@@ -387,7 +369,7 @@ void addRO(STATE *state) {
     word op2 = processOp2(state);
     uint64_t result = state->reg[state->instruction.Rn]+op2;
     if (state->instruction.S) {
-        replaceBit(&state->reg[CPSR], 29, (word)(result >> 32), 0);
+        replaceBit(&state->reg[CPSR], flagC, (word)(result >> 32), 0);
     }
     updateCPSR(state, (word) result);
     state->reg[state->instruction.Rd] = (word) result;
@@ -397,7 +379,7 @@ void subOR(STATE *state) {
     word op2 = processOp2(state);
     uint64_t result = (uint64_t) op2 - (uint64_t) state->reg[state->instruction.Rn];
     if (state->instruction.S) {
-        replaceBit(&state->reg[CPSR], 29, (word) ~(result >> 32), 0);
+        replaceBit(&state->reg[CPSR], flagC, (word) ~(result >> 32), 0);
     }
     updateCPSR(state, (word) result);
     state->reg[state->instruction.Rd] = (word) result;
@@ -407,7 +389,7 @@ void subRO(STATE *state, bool b) {
     word op2 = processOp2(state);
     uint64_t result = (uint64_t) state->reg[state->instruction.Rn] - (uint64_t) op2;
     if (state->instruction.S) {
-        replaceBit(&state->reg[CPSR], 29,(word) ~(result >> 32), 0);
+        replaceBit(&state->reg[CPSR], flagC,(word) ~(result >> 32), 0);
     }
     updateCPSR(state, (word) result);
     if (b) {
@@ -446,18 +428,18 @@ int converted(int i) {
 //given a word, checks for cond (1 = go, 0 = no)
 int checkCond(word instruction, word cpsr) {
     word op = 1;
-    int zSet = cpsr & 1 << 30;
-    int nEqV = ((cpsr & 1 << 31) == (cpsr & 1 << 28));
-    if (instruction & (op << 31)) {
+    int zSet = cpsr & 1 << flagZ;
+    int nEqV = ((cpsr & 1 << flagN) == (cpsr & 1 << flagV));
+    if (instruction & (op << flagN)) {
         //1xxx
-        if (instruction & (op << 30)) {
+        if (instruction & (op << flagZ)) {
             //11xx
-            if (instruction & (op << 28)) {
+            if (instruction & (op << flagV)) {
                 //11x1
                 return zSet || !nEqV;
             } else {
                 //11x0
-                if (instruction & (op << 29)) {
+                if (instruction & (op << flagC)) {
                     //1110
                     return 1;
                 } else {
@@ -466,12 +448,12 @@ int checkCond(word instruction, word cpsr) {
                 }
             }
         } else {
-            return ((instruction & (op << 28)) != 0) == !nEqV;
+            return ((instruction & (op << flagV)) != 0) == !nEqV;
             //10x1 or 10x0
         }
     } else {
         //0xxx
-        return ((instruction & (op << 28)) != 0) == !zSet;
+        return ((instruction & (op << flagV)) != 0) == !zSet;
     }
 }
 
@@ -490,7 +472,7 @@ enum I_Type getInstruction(word inst) {
             return TRANSFER;
             } else {
             //00x
-            if (!(inst & op << 25) && (inst & op << 7) && (inst & op << 4)) {
+            if (!(inst & op << immediateOffset) && (inst & op << 7) && (inst & op << 4)) {
                 //1001 at bits 7-4
                 return MULT;
                 } else {

@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     const unsigned int num_input = 8;
     const unsigned int num_output = 1;
     const unsigned int num_layers = 3;
-    const unsigned int num_neurons_hidden = 5;
+    const unsigned int num_neurons_hidden = 20;
     const float desired_error = (const float) 0.001;
     const unsigned int epochs_between_reports = 100;
 

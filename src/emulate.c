@@ -30,33 +30,21 @@ enum I_Type {PROCESS = 1, MULT, TRANSFER, BRANCH, HALT};
 struct instruction {
     wordS largeOffset;
     word binary;
-    address Rn;
-    address Rd;
-    address Operand2;
-    address Rs;
-    address Rm;
+    address Rn, Rd, Operand2, Rs, Rm, smallOffset;
     byte Opcode;
-    address smallOffset;
-    bool I;
-    bool P;
-    bool U;
-    bool A;
-    bool S;
-    bool L;
+    bool I, P, U, A, S, L;
     enum I_Type type;
 };
 
 struct state {
     byte mem[MEM_SIZE];
     //memory as 8 bit array
-    word reg[REG_SIZE];
+    word reg[REG_SIZE], fetch;
     //registers as 32 bit array
     INSTRUCTION instruction;
-    word fetch;
-    bool instruction_exists;
-    bool decode_exists;
-    bool finished;
+    bool instruction_exists, decode_exists, finished;
 };
+
 
 void readFile(char* file_name, byte* memory){
     FILE* binary = fopen(file_name, "rb");
@@ -514,7 +502,6 @@ enum I_Type getInstruction(word inst) {
 
 
 int main(int argc, char **argv) {
-    STATE *state = calloc(1, sizeof(STATE));
     //initialise(&state);
     //read file
     //1 argument only (so 2 in total)
@@ -525,6 +512,7 @@ int main(int argc, char **argv) {
     }
 
     char *file_name = argv[1];
+    STATE *state = calloc(1, sizeof(STATE));
     readFile(file_name, state->mem);
 
     while (!state->finished) {
@@ -542,7 +530,7 @@ int main(int argc, char **argv) {
     //print out stuff
     print(state);
 
-
+    free(state);
     return EXIT_SUCCESS;
 }
 

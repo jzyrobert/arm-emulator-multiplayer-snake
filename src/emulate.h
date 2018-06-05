@@ -1,11 +1,13 @@
-#ifndef EMULATE_H
-#define EMULATE_H
+#include <stdint.h>
+#include <stdbool.h>
+#include "typedefs.h"
+
+#ifndef PROCESSOR_FLOW_TYPEDEFS
+#define PROCESSOR_FLOW_TYPEDEFS
 typedef struct instruction INSTRUCTION;
 typedef struct state STATE;
-typedef uint8_t byte;
-typedef uint32_t word;
-typedef int32_t wordS;
-typedef uint16_t address;
+#endif
+
 
 // Decode bits into the state struct depending on the instruction to decode
 void decodeMult(STATE *state);

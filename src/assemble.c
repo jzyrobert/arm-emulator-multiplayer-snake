@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "assemble.h"
-
+#include "emulate.c"
 
 struct label {
     char label[20];
@@ -59,7 +59,7 @@ bool isDirectLDR(char* string) {
 }
 
 void setAlwaysCond(word *output){
-    setBits(output, 0xE, 28);
+    setBits(output, 0xE, flagV);
 }
 
 void setBits(word *output, word bits, word end){
@@ -88,14 +88,14 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
             //pre-index RN
             stripBrackets(as->tokens[1]);
             setBits(output, getRegNum(as->tokens[1]), 16);
-            setBits(output, 1, 24);
-            setBits(output, 1, 23);
+            setBits(output, 1, ppIndexBit);
+            setBits(output, 1, upBit);
         } else {
             //post index [RN], expression
             stripBrackets(as->tokens[1]);
             if (strchr(as->tokens[2], '-') == NULL) {
                 //its not negative, sets U;
-                setBits(output, 1, 23);
+                setBits(output, 1, upBit);
             }
             //set Rn
             setBits(output, getRegNum(as->tokens[1]), 16);
@@ -106,12 +106,12 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
                     setBits(output, (word) decodeEXP(as->tokens[2]), 0);
                 } else {
                     //sets register
-                    setBits(output, 1, 25);
+                    setBits(output, 1, immediateOffset);
                     setBits(output, (word) getRegNum(as->tokens[2]), 0);
                 }
             } else {
                 //shift case
-                setBits(output, 1, 25);
+                setBits(output, 1, immediateOffset);
                 if (strchr(as->tokens[2], '-') != NULL) {
                     //if negative remove sign before processing;
                     as->tokens[2] = as->tokens[2] + 1;
@@ -121,18 +121,18 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
         }
     } else {
         //[Rn - Expression]
-        setBits(output, 1, 24);
+        setBits(output, 1, ppIndexBit);
         //Sets P
         if (strchr(as->tokens[2], '-') == NULL) {
             //its not negative, sets U;
-            setBits(output, 1, 23);
+            setBits(output, 1, upBit);
         }
         //Setting RN
         setBits(output,getRegNum(as->tokens[1] + 1) , 16);
         if (as->noOfTokens == 3) {
             if (strchr(as->tokens[2], 'r') != NULL) {
                 //reg
-                setBits(output, 1, 25);
+                setBits(output, 1, immediateOffset);
                 setBits(output, (word) getRegNum(as->tokens[2]), 0);
             } else {
                 //Imm value
@@ -140,7 +140,7 @@ void processTransfers(ASSEMBLY *as, STATE *state, word *output) {
             }
         } else {
             //optional shift case
-            setBits(output, 1, 25);
+            setBits(output, 1, immediateOffset);
             if (strchr(as->tokens[2], '-') != NULL) {
                 //if negative remove sign before processing;
                 as->tokens[2] = as->tokens[2] + 1;
@@ -314,7 +314,7 @@ int rangeOfBits(word imm) {
 word evalAdd(ASSEMBLY *as, STATE *state) {
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, 4, 21);
+    setBits(&output, 4, ABit);
     evalOperand2(as, &output, 2);
     setBits(&output, getRegNum(as->tokens[0]), 12);
     setBits(&output, getRegNum(as->tokens[1]), 16);
@@ -324,7 +324,7 @@ word evalAdd(ASSEMBLY *as, STATE *state) {
 word evalSub(ASSEMBLY *as, STATE *state) {
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, 2, 21);
+    setBits(&output, 2, ABit);
     setBits(&output, getRegNum(as->tokens[0]), 12);
     setBits(&output, getRegNum(as->tokens[1]), 16);
     evalOperand2(as, &output, 2);
@@ -334,7 +334,7 @@ word evalSub(ASSEMBLY *as, STATE *state) {
 word evalMov(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, 13, 21);
+    setBits(&output, 13, ABit);
     setBits(&output, getRegNum(as->tokens[0]), 12);
     evalOperand2(as, &output, 1);
     return output;
@@ -345,7 +345,7 @@ word evalRsb(ASSEMBLY *as, STATE *state){
     setAlwaysCond(&output);
     setBits(&output, getRegNum(as->tokens[0]), 12);
     setBits(&output, getRegNum(as->tokens[1]), 16);
-    setBits(&output, 3, 21);
+    setBits(&output, 3, ABit);
     evalOperand2(as, &output, 2);
     return output;
 }
@@ -364,7 +364,7 @@ word evalEor(ASSEMBLY *as, STATE *state){
     setAlwaysCond(&output);
     setBits(&output, getRegNum(as->tokens[0]), 12);
     setBits(&output, getRegNum(as->tokens[1]), 16);
-    setBits(&output, 1, 21);
+    setBits(&output, 1, ABit);
     evalOperand2(as, &output, 2);;
     return output;
 }
@@ -374,7 +374,7 @@ word evalOrr(ASSEMBLY *as, STATE *state){
     setAlwaysCond(&output);
     setBits(&output, getRegNum(as->tokens[0]), 12);
     setBits(&output, getRegNum(as->tokens[1]), 16);
-    setBits(&output, 12, 21);
+    setBits(&output, 12, ABit);
     evalOperand2(as, &output, 2);
     return output;
 }
@@ -382,8 +382,8 @@ word evalOrr(ASSEMBLY *as, STATE *state){
 word evalTst(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, 1, 20);
-    setBits(&output, 8, 21);
+    setBits(&output, 1, SBit);
+    setBits(&output, 8, ABit);
     setBits(&output, getRegNum(as->tokens[0]), 16);
     evalOperand2(as, &output, 1);
     return output;
@@ -392,8 +392,8 @@ word evalTst(ASSEMBLY *as, STATE *state){
 word evalTeq(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, 1, 20);
-    setBits(&output, 9, 21);
+    setBits(&output, 1, SBit);
+    setBits(&output, 9, ABit);
     setBits(&output, getRegNum(as->tokens[0]), 16);
     evalOperand2(as, &output, 1);
     return output;
@@ -402,8 +402,8 @@ word evalTeq(ASSEMBLY *as, STATE *state){
 word evalCmp(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, 1, 20);
-    setBits(&output, 10, 21);
+    setBits(&output, 1, SBit);
+    setBits(&output, 10, ABit);
     setBits(&output, getRegNum(as->tokens[0]), 16);
     evalOperand2(as, &output, 1);
     return output;
@@ -422,7 +422,7 @@ word evalMul(ASSEMBLY *as, STATE *state){
 
 word evalMla(ASSEMBLY *as, STATE *state){
     word output = evalMul(as, state);
-    setBits(&output, 1, 21);
+    setBits(&output, 1, ABit);
     setBits(&output, getRegNum(as->tokens[3]), 12); //sets Rn;
     return output;
 }
@@ -437,7 +437,7 @@ word evalBranc(ASSEMBLY *as, STATE *state){
 
 word evalBNE(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 1, 28);
+    setBits(&output, 1, flagV);
     setBits(&output, 1, 27);
     setBits(&output, 1, 25);
     setBranchOffset(state, as, &output);
@@ -446,7 +446,7 @@ word evalBNE(ASSEMBLY *as, STATE *state){
 
 word evalBLT(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 11, 28);
+    setBits(&output, 11, flagV);
     setBits(&output, 5, 25);
     setBranchOffset(state, as, &output);
     return output;
@@ -454,7 +454,7 @@ word evalBLT(ASSEMBLY *as, STATE *state){
 
 word evalBGE(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 10, 28);
+    setBits(&output, 10, flagV);
     setBits(&output, 5, 25);
     setBranchOffset(state, as, &output);
     return output;
@@ -462,7 +462,7 @@ word evalBGE(ASSEMBLY *as, STATE *state){
 
 word evalBGT(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 12, 28);
+    setBits(&output, 12, flagV);
     setBits(&output, 5, 25);
     setBranchOffset(state, as, &output);
     return output;
@@ -470,7 +470,7 @@ word evalBGT(ASSEMBLY *as, STATE *state){
 
 word evalBLE(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 13, 28);
+    setBits(&output, 13, flagV);
     setBits(&output, 5, 25);
     setBranchOffset(state, as, &output);
     return output;
@@ -514,7 +514,7 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
         setAlwaysCond(&output);
         setBits(&output, getRegNum(as->tokens[0]), 12);
         setBits(&output, 1, 26);
-        setBits(&output, 1, 20);
+        setBits(&output, 1, SBit);
         processTransfers(as, state, &output);
         return output;
     }
@@ -587,9 +587,9 @@ void assignLabels(STATE *state){
 
 void writeToFile(STATE *state, word binary) {
     byte first = (byte) binary;
-    byte second = (byte) (binary >> 8);
+    byte second = (byte) (binary >> PC_OFFSET);
     byte third = (byte) (binary >> 16);
-    byte last = (byte) (binary >> 24);
+    byte last = (byte) (binary >> branchOffset);
     fwrite(&first, sizeof(byte),1,state->outputFile);
     fwrite(&second, sizeof(byte),1,state->outputFile);
     fwrite(&third, sizeof(byte),1,state->outputFile);

@@ -96,6 +96,8 @@ Direction getDirection(int choice) ;
 
 Cell getCellAhead(Game *game, Snake *snake, int n) ;
 
+void recordFann(Game *pGame, Snake *pSnake) ;
+
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
         for (int j = 0; j < game->width; j++) {
@@ -503,6 +505,7 @@ void updateSnake(Game *game, Snake *snake) {
     Cell *next = snake->nextCell;
     if (next->occupier != nothing && next->occupier != food) {
         //rip snake
+        recordFann(game, snake);
         killSnake(game, snake);
     } else if (next->occupier == food){
         game->food--;
@@ -734,6 +737,34 @@ double angleBasedOnDirection(Game *game, Snake *pSnake, Cell *pCell, Cell *food)
     return angle * (180.0 / M_PI);
 }
 
+void recordFann(Game *pGame, Snake *pSnake) {
+    Direction save = pSnake->nextDir;
+    for (int i = -1; i < 2; ++i) {
+        fann_type *calc_out;
+        fann_type input[8];
+        int n = 0;
+        for (int j = -1; j < 2; ++j) {
+            pSnake->nextDir = getDirection((pSnake->direction.dir + j + 4) % 4);
+            input[n] = getNextCell(pGame, pSnake)->occupier != nothing && getNextCell(pGame, pSnake)->occupier != food;
+            n++;
+        }
+        for (int k = -1; k < 2; ++k) {
+            pSnake->nextDir = getDirection((pSnake->direction.dir + k + 4) % 4);
+            input[n] = getNextCell(pGame, pSnake)->occupier == food;
+            n++;
+        }
+        pSnake->nextDir = getDirection((pSnake->direction.dir + i + 4) % 4);
+        Cell *food = nearestFoodCell(pGame, pSnake->head);
+        double angle = angleBasedOnDirection(pGame, pSnake, pSnake->head, food);
+        input[6] = (fann_type) angle;
+        input[7] = getMoveID(pSnake->direction, pSnake->nextDir);
+        calc_out = fann_run(pGame->ANN, input);
+        fprintf(pGame->debug , "For inputs %d %d %d %d %d %d %.5f direction %d weight is %.5f\n", (int) input[0],
+                (int) input[1], (int) input[2],(int) input[3], (int) input[4], (int) input[5],input[6], i, calc_out[0]);
+        }
+        pSnake->nextDir = save;
+}
+
 void calcFann(Game *pGame, Snake *pSnake) {
     float max = -1;
     int c = 0;
@@ -757,8 +788,6 @@ void calcFann(Game *pGame, Snake *pSnake) {
         input[6] = (fann_type) angle;
         input[7] = getMoveID(pSnake->direction, pSnake->nextDir);
         calc_out = fann_run(pGame->ANN, input);
-        fprintf(pGame->debug , "For inputs %d %d %d %d %d %d %.5f direction %d weight is %.5f\n", (int) input[0],
-                (int) input[1], (int) input[2],(int) input[3], (int) input[4], (int) input[5],input[6], i, calc_out[0]);
         if (calc_out[0] > max) {
             max = calc_out[0];
             c = i;

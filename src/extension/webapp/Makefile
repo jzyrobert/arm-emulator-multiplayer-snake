@@ -1,2 +1,2 @@
-newServer : newServer.c
-	gcc newServer.c -lrt -o newServer
+server : server.c
+	gcc server.c -lrt -o server

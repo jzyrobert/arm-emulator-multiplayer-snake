@@ -738,7 +738,7 @@ double angleBasedOnDirection(Game *game, Snake *pSnake, Cell *pCell, Cell *food)
             angle = atan2(yd, -xd);
             break;
     }
-    return angle * (180.0 / M_PI);
+    return angle / M_PI;
 }
 
 void recordFann(Game *pGame, Snake *pSnake) {

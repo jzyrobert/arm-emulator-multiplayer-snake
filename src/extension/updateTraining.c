@@ -602,7 +602,7 @@ Cell * nearestFoodCell(Game *game, Cell *start) {
     int q = 0;
     int qc = 0;
     Cell *current = start;
-    while (current->occupier != food) {
+    while (current && (current->occupier != food)) {
         seen[n] = current;
         n++;
         for (int i = 0; i < 4; ++i) {
@@ -617,7 +617,11 @@ Cell * nearestFoodCell(Game *game, Cell *start) {
     }
     free(seen);
     free(queue);
-    return current;
+    if (current) {
+        return current;
+    } else {
+        return start;
+    }
 }
 
 int distanceBetweenCells(Game *game, Cell *start, Cell *end) {
@@ -683,7 +687,7 @@ double angleBasedOnDirection(Game *game, Snake *pSnake, Cell *pCell, Cell *food)
             angle = atan2(yd, -xd);
             break;
     }
-    return angle * (180.0 / M_PI);
+    return angle / M_PI;
 }
 
 void writeMove(Game *pGame, Snake *pSnake) {

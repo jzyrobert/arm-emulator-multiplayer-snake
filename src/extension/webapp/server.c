@@ -7,6 +7,7 @@
 #include <bits/signum.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 int list_s; //Listening socket
 
@@ -20,7 +21,6 @@ enum DIRECTION{
 
 
 typedef struct {
-    enum COLOUR col;
     enum DIRECTION dir;
     char *msg;
     char *file;
@@ -40,7 +40,6 @@ Request parseRequest(int sock) {
     int count = 0;
     int lim = 0;
 
-    char *col = malloc(sizeof(char) * 10);
     char *dir = malloc(sizeof(char) * 10);
     char *file = malloc(sizeof(char) * 30);
     char *cont = malloc(sizeof(char) * 40);

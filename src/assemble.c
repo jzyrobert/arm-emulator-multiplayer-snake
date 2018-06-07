@@ -253,7 +253,7 @@ word calculateBOffset(STATE *state, ASSEMBLY *as, char *offset) {
             break;
         }
     }
-    address = (word) (((int32_t) address - (int32_t) as->address - 8) >> 2 & ((1 << 25) - 1));
+    address = (word) (((int32_t) address - (int32_t) as->address - 8) >> 2 & ((1 << immediateOffset)-1));
     return address;
 }
 
@@ -315,8 +315,8 @@ word evalAdd(ASSEMBLY *as, STATE *state) {
     setAlwaysCond(&output);
     setBits(&output, 4, ABit);
     evalOperand2(as, &output, 2);
-    setBits(&output, getRegNum(as->tokens[0]), unsignedImmOffset);
-    setBits(&output, getRegNum(as->tokens[1]), 16);
+    setBits(&output, getRegNum(as->tokens[0]), Rd_Start);
+    setBits(&output, getRegNum(as->tokens[1]), Rn_Start);
     return output;
 }
 
@@ -324,8 +324,8 @@ word evalSub(ASSEMBLY *as, STATE *state) {
     word output = 0;
     setAlwaysCond(&output);
     setBits(&output, 2, ABit);
-    setBits(&output, getRegNum(as->tokens[0]), unsignedImmOffset);
-    setBits(&output, getRegNum(as->tokens[1]), 16);
+    setBits(&output, getRegNum(as->tokens[0]), Rd_Start);
+    setBits(&output, getRegNum(as->tokens[1]), Rn_Start);
     evalOperand2(as, &output, 2);
     return output;
 }
@@ -334,7 +334,7 @@ word evalMov(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
     setBits(&output, 13, ABit);
-    setBits(&output, getRegNum(as->tokens[0]), unsignedImmOffset);
+    setBits(&output, getRegNum(as->tokens[0]), Rd_Start);
     evalOperand2(as, &output, 1);
     return output;
 }
@@ -342,8 +342,8 @@ word evalMov(ASSEMBLY *as, STATE *state){
 word evalRsb(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, getRegNum(as->tokens[0]), unsignedImmOffset);
-    setBits(&output, getRegNum(as->tokens[1]), 16);
+    setBits(&output, getRegNum(as->tokens[0]), Rd_Start);
+    setBits(&output, getRegNum(as->tokens[1]), Rn_Start);
     setBits(&output, 3, ABit);
     evalOperand2(as, &output, 2);
     return output;
@@ -352,8 +352,8 @@ word evalRsb(ASSEMBLY *as, STATE *state){
 word evalAnd(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, getRegNum(as->tokens[0]), unsignedImmOffset);
-    setBits(&output, getRegNum(as->tokens[1]), 16);
+    setBits(&output, getRegNum(as->tokens[0]), Rd_Start);
+    setBits(&output, getRegNum(as->tokens[1]), Rn_Start);
     evalOperand2(as, &output, 2);
     return output;
 }
@@ -361,8 +361,8 @@ word evalAnd(ASSEMBLY *as, STATE *state){
 word evalEor(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, getRegNum(as->tokens[0]), unsignedImmOffset);
-    setBits(&output, getRegNum(as->tokens[1]), 16);
+    setBits(&output, getRegNum(as->tokens[0]), Rd_Start);
+    setBits(&output, getRegNum(as->tokens[1]), Rn_Start);
     setBits(&output, 1, ABit);
     evalOperand2(as, &output, 2);;
     return output;
@@ -371,8 +371,8 @@ word evalEor(ASSEMBLY *as, STATE *state){
 word evalOrr(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, getRegNum(as->tokens[0]), unsignedImmOffset);
-    setBits(&output, getRegNum(as->tokens[1]), 16);
+    setBits(&output, getRegNum(as->tokens[0]), Rd_Start);
+    setBits(&output, getRegNum(as->tokens[1]), Rn_Start);
     setBits(&output, 12, 21);
     evalOperand2(as, &output, 2);
     return output;
@@ -383,7 +383,7 @@ word evalTst(ASSEMBLY *as, STATE *state){
     setAlwaysCond(&output);
     setBits(&output, 1, SBit);
     setBits(&output, 8, ABit);
-    setBits(&output, getRegNum(as->tokens[0]), 16);
+    setBits(&output, getRegNum(as->tokens[0]), Rn_Start);
     evalOperand2(as, &output, 1);
     return output;
 }
@@ -393,7 +393,7 @@ word evalTeq(ASSEMBLY *as, STATE *state){
     setAlwaysCond(&output);
     setBits(&output, 1, SBit);
     setBits(&output, 9, ABit);
-    setBits(&output, getRegNum(as->tokens[0]), 16);
+    setBits(&output, getRegNum(as->tokens[0]), Rn_Start);
     evalOperand2(as, &output, 1);
     return output;
 }
@@ -403,7 +403,7 @@ word evalCmp(ASSEMBLY *as, STATE *state){
     setAlwaysCond(&output);
     setBits(&output, 1, SBit);
     setBits(&output, 10, ABit);
-    setBits(&output, getRegNum(as->tokens[0]), 16);
+    setBits(&output, getRegNum(as->tokens[0]), Rn_Start);
     evalOperand2(as, &output, 1);
     return output;
 }
@@ -411,9 +411,9 @@ word evalCmp(ASSEMBLY *as, STATE *state){
 word evalMul(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, getRegNum(as->tokens[0]), 16); //sets Rd
-    setBits(&output, getRegNum(as->tokens[1]), 0); //sets Rm
-    setBits(&output, getRegNum(as->tokens[2]), 8);  //sets Rs
+    setBits(&output, getRegNum(as->tokens[0]), Rn_Start); //sets Rn
+    setBits(&output, getRegNum(as->tokens[1]), Rm_Start); //sets Rm
+    setBits(&output, getRegNum(as->tokens[2]), Rs_Start);  //sets Rs
 
     setBits(&output, 9, 4);
     return output;
@@ -421,63 +421,63 @@ word evalMul(ASSEMBLY *as, STATE *state){
 
 word evalMla(ASSEMBLY *as, STATE *state){
     word output = evalMul(as, state);
-    setBits(&output, 1, 21);
-    setBits(&output, getRegNum(as->tokens[3]), unsignedImmOffset); //sets Rn;
+    setBits(&output, 1, ABit);
+    setBits(&output, getRegNum(as->tokens[3]), Rd_Start); //sets Rd;
     return output;
 }
 
 word evalBranc(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
-    setBits(&output, 5, 25);
+    setBits(&output, 5, Branch_Start);
     setBranchOffset(state, as, &output);
     return output;
 }
 
 word evalBNE(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 1, 28);
-    setBits(&output, 1, 27);
-    setBits(&output, 1, 25);
+    setBits(&output, 1, Br_Cond_Start);
+    setBits(&output, 1, Branch_End);
+    setBits(&output, 1, Branch_Start);
     setBranchOffset(state, as, &output);
     return output;
 }
 
 word evalBLT(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 11, 28);
-    setBits(&output, 5, 25);
+    setBits(&output, 11, Br_Cond_Start);
+    setBits(&output, 5, Branch_Start);
     setBranchOffset(state, as, &output);
     return output;
 }
 
 word evalBGE(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 10, 28);
-    setBits(&output, 5, 25);
+    setBits(&output, 10, Br_Cond_Start);
+    setBits(&output, 5, Branch_Start);
     setBranchOffset(state, as, &output);
     return output;
 }
 
 word evalBGT(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 12, 28);
-    setBits(&output, 5, 25);
+    setBits(&output, 12, Br_Cond_Start);
+    setBits(&output, 5, Branch_Start);
     setBranchOffset(state, as, &output);
     return output;
 }
 
 word evalBLE(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 13, 28);
-    setBits(&output, 5, 25);
+    setBits(&output, 13, Br_Cond_Start);
+    setBits(&output, 5, Branch_Start);
     setBranchOffset(state, as, &output);
     return output;
 }
 
 word evalBeq(ASSEMBLY *as, STATE *state){
     word output = 0;
-    setBits(&output, 5, 25);
+    setBits(&output, 5, Branch_Start);
     setBranchOffset(state, as, &output);
     return output;
 }
@@ -511,9 +511,9 @@ word evalLDR(ASSEMBLY *as, STATE *state) {
         //pre/post indexed address
         word output = 0;
         setAlwaysCond(&output);
-        setBits(&output, getRegNum(as->tokens[0]), 12);
+        setBits(&output, getRegNum(as->tokens[0]), Rd_Start);
         setBits(&output, 1, 26);
-        setBits(&output, 1, 20);
+        setBits(&output, 1, SBit);
         processTransfers(as, state, &output);
         return output;
     }
@@ -522,7 +522,7 @@ word evalSTR(ASSEMBLY *as, STATE *state){
     word output = 0;
     setAlwaysCond(&output);
     setBits(&output, 1, 26);
-    setBits(&output, getRegNum(as->tokens[0]), 12);
+    setBits(&output, getRegNum(as->tokens[0]), Rd_Start);
     processTransfers(as, state, &output);
     return output;
 }

@@ -22,7 +22,7 @@ enum DIRECTION{
 
 
 typedef struct {
-    enum DIRECTION dir;
+    char* dir;
     char *msg;
     char *file;
     bool get;
@@ -40,14 +40,15 @@ Request parseRequest(int sock) {
     FILE *fileStream;
     fileStream = fdopen(sock, "r");
     Request request;
+    request.dir = 0;
     size_t size = 1;
-    char *msg = '\0';
+    char *msg = malloc(sizeof(char));
+    msg[0] = '\0';
     size = 1;
     char buff[2000];
     int count = 0;
     int lim = 0;
 
-    char *dir = malloc(sizeof(char) * 10);
     char *file = malloc(sizeof(char) * 30);
     char *cont = malloc(sizeof(char) * 40);
     int length = 10;
@@ -65,7 +66,9 @@ Request parseRequest(int sock) {
                 strcat(msg, buff);
                 count++;
                 parseBody(&request, buff);
-                puts(buff);
+                char* temp = malloc(sizeof(char) * (1 + strlen(buff)));
+                strcpy(temp, buff);
+                request.dir = temp;
             }
             break;
         }
@@ -83,6 +86,8 @@ Request parseRequest(int sock) {
             length = atoi(cont);
         }
 
+
+
         size += strlen(buff);
         msg = realloc(msg, size);
         strcat(msg, buff);
@@ -90,6 +95,7 @@ Request parseRequest(int sock) {
     //puts(msg);
     request.msg = msg;
     request.file = file;
+    //puts(msg);
     return request;
 
 }
@@ -128,7 +134,9 @@ void returnFile(Request request, int con){
             }
         }
         if (!exists) {
-            globa_ips[global_ip_num] = request.ip;
+            char* ip = malloc(sizeof(char) * (strlen(request.ip)+1));
+            strcpy(ip, request.ip);
+            globa_ips[global_ip_num] = ip;
             n = global_ip_num;
             global_ip_num++;
         }
@@ -140,6 +148,7 @@ void returnFile(Request request, int con){
         strcat(site, nr);
         strcat(site, ".html");
         writeFile(site, con);
+        free(site);
         return;
     }
     /*
@@ -154,6 +163,21 @@ void clean(int sig) {
     puts("\nCleaning");
     close(list_s);
     exit(EXIT_SUCCESS);
+}
+
+void processCommand(Request request) {
+    if (request.dir) {
+        char *dir = strstr(request.dir, "=");
+        dir++;
+        for (int i = 0; i < global_ip_num; ++i) {
+            if (!strcmp(globa_ips[i], request.ip)) {
+                printf("Player %d has given command %s\n", i, dir);
+            }
+        }
+    }
+    free(request.dir);
+    free(request.file);
+    free(request.msg);
 }
 
 int main() {
@@ -201,6 +225,7 @@ int main() {
         Request request = parseRequest(conn_s);
         request.ip = inet_ntoa(serverAddress.sin_addr);
         returnFile(request ,conn_s);
+        processCommand(request);
         close(conn_s);
     }
     return 0;

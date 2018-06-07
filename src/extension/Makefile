@@ -9,7 +9,7 @@ LIBS_PATH = -L./fannF/src
 all: logic botsonly
 
 logic: logic.o
-	$(C) $(CFLAGS) logic.o -o logic $(LIBS_PATH) -lfann -lncurses -lm -lmenu
+	$(C) $(CFLAGS) logic.o -o logic $(LIBS_PATH) -lfann -lncurses -lm -lmenu -lrt -pthread
 
 botsonly: botsonly.o -lncurses
 	

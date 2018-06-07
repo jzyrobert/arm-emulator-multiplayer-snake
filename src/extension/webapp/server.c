@@ -12,15 +12,6 @@
 
 int list_s; //Listening socket
 
-enum DIRECTION{
-    Up,
-    Down,
-    Left,
-    Right
-};
-
-
-
 typedef struct {
     char* dir;
     char *msg;
@@ -182,7 +173,7 @@ void processCommand(Request request) {
 
 int main() {
     printf("Starting server\n");
-    int port = 2034;
+    int port = 2035;
 
     (void) signal(SIGINT, clean);
 

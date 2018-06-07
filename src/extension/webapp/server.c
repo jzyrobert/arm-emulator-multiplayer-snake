@@ -27,7 +27,9 @@ typedef struct {
     bool get;
 }Request;
 
-
+void parseBody(Request *request, char buff[]) {
+    //TODO: parse body to extract arguments and set them in the request strcut
+}
 
 Request parseRequest(int sock) {
     FILE *fileStream;
@@ -86,10 +88,6 @@ Request parseRequest(int sock) {
 
 }
 
-void parseBody(Request *request, char buff[]) {
-    //TODO: parse body to extract arguments and set them in the request strcut
-}
-
 
 void writeFile(char *file, int soc){
     char *str = "HTTP/1.0 200 OK\nServer: CS241Serv v0.1\nContent-Type: text/html\n\n";
@@ -114,14 +112,26 @@ void writeFile(char *file, int soc){
 }
 
 void returnFile(Request request, int con){
+    static int n = 0;
     if(!strcmp(request.file, "/")){
-        writeFile("webapp.html", con);
+        char *site = malloc(sizeof(char) * 13);
+        strcpy(site, "webapp");
+        char nr[2];
+        nr[1] = '\0';
+        nr[0] = (char) (n + '0');
+        strcat(site, nr);
+        strcat(site, ".html");
+        writeFile(site, con);
         return;
     }
+    n++;
+    n = n % 2;
+    /*
     if(!strcmp(request.file, "/processInput.php")){
         writeFile("webapp.html", con);
         return;
     }
+     */
 }
 
 void clean(int sig) {

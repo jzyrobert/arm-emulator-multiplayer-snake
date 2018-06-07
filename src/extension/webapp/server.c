@@ -26,7 +26,11 @@ typedef struct {
     char *msg;
     char *file;
     bool get;
+    char* ip;
 }Request;
+
+char *globa_ips[7];
+int global_ip_num = 0;
 
 void parseBody(Request *request, char buff[]) {
     //TODO: parse body to extract arguments and set them in the request strcut
@@ -114,8 +118,20 @@ void writeFile(char *file, int soc){
 }
 
 void returnFile(Request request, int con){
-    static int n = 0;
     if(!strcmp(request.file, "/")){
+        bool exists = false;
+        int n = 0;
+        for (int i = 0; i < global_ip_num; ++i) {
+            if (!strcmp(globa_ips[i], request.ip)) {
+              exists = true;
+              n = i;
+            }
+        }
+        if (!exists) {
+            globa_ips[global_ip_num] = request.ip;
+            n = global_ip_num;
+            global_ip_num++;
+        }
         char *site = malloc(sizeof(char) * 13);
         strcpy(site, "webapp");
         char nr[2];
@@ -126,8 +142,6 @@ void returnFile(Request request, int con){
         writeFile(site, con);
         return;
     }
-    n++;
-    n = n % 2;
     /*
     if(!strcmp(request.file, "/processInput.php")){
         writeFile("webapp.html", con);
@@ -184,8 +198,8 @@ int main() {
         if (conn_s == -1) {
             puts("Error handling connection");
         }
-        printf("ip is: %s\n", inet_ntoa(serverAddress.sin_addr));
         Request request = parseRequest(conn_s);
+        request.ip = inet_ntoa(serverAddress.sin_addr);
         returnFile(request ,conn_s);
         close(conn_s);
     }

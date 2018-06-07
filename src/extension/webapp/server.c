@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 int list_s; //Listening socket
 
@@ -82,6 +83,7 @@ Request parseRequest(int sock) {
         msg = realloc(msg, size);
         strcat(msg, buff);
     }
+    //puts(msg);
     request.msg = msg;
     request.file = file;
     return request;
@@ -182,6 +184,7 @@ int main() {
         if (conn_s == -1) {
             puts("Error handling connection");
         }
+        printf("ip is: %s\n", inet_ntoa(serverAddress.sin_addr));
         Request request = parseRequest(conn_s);
         returnFile(request ,conn_s);
         close(conn_s);

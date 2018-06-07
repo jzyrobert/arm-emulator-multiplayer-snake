@@ -662,8 +662,8 @@ void processCommand(Game *game,Request request) {
         }
         for (int i = 0; i < global_ip_num; ++i) {
             if (!strcmp(globa_ips[i], request.ip)) {
-                if (!oppositeDir(game->snakes[i], next)) {
-                    game->snakes[i]->nextDir = next;
+                if (!oppositeDir(game->snakes[game->noOfSnakes - i - 1], next)) {
+                    game->snakes[game->noOfSnakes - i - 1]->nextDir = next;
                 }
             }
         }
@@ -779,19 +779,11 @@ int main(int argc, char* argv[]) {
 
     game->players = selectFromMenu();
 
-    if (game->players > 0) {
+    if (game->players > 0 && game->players < MAX_PLAYERS) {
         if (botMenu()) {
-            if (game->noOfBots == 0) {
-                endwin();
-                freeEverything(game);
-                exit(EXIT_FAILURE);
-            } else {
-                game->noOfBots = botnumMenu(game);
-                //Whether to use the neural net or not
-                game->AI = annMenu();
-                //If the bot menu is exited
-            }
-
+            game->noOfBots = botnumMenu(game);
+            //Whether to use the neural net or not
+            game->AI = annMenu();
         } else {
             game->noOfBots = 0;
         }
@@ -838,6 +830,7 @@ int main(int argc, char* argv[]) {
     (void) signal(SIGINT, clean);
 
     if ((list_s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        endwin();
         fprintf(stderr, "Error creating listening socket.\n");
         exit(EXIT_FAILURE);
     }
@@ -851,17 +844,20 @@ int main(int argc, char* argv[]) {
     SO_REUSEADDR;
     int yes = 1;
     if (setsockopt(list_s,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) == -1) {
+        endwin();
         perror("setsockopt");
         exit(1);
     }
 
     if (bind(list_s, (struct sockaddr *) &serverAddress,
              sizeof(serverAddress)) < 0) {
+        endwin();
         fprintf(stderr, "Error calling bind() %d %s\n",errno, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     if ((listen(list_s, 10)) == -1) {
+        endwin();
         fprintf(stderr, "Error Listening\n");
         exit(EXIT_FAILURE);
     }
@@ -872,7 +868,7 @@ int main(int argc, char* argv[]) {
     int ch;
     printGame(game);
     //Allow 3 seconds for players to see what is happening
-    usleep(300000);
+    usleep(100000);
     struct timeval start, next;
     gettimeofday(&start, 0);
     float elapsed = 0;

@@ -27,6 +27,75 @@
 #define FOOD_PERCENTAGE 10
 #define GAME_REFRESH_SPEED 100
 
+enum Occupier {
+    nothing,
+    head_up,
+    head_down,
+    head_left,
+    head_right,
+    snake_body,
+    //dead_snake used if wishing to make dead snakes stay as obstacles
+            dead_snake,
+    food
+};
+
+// positive y values go down the screen
+struct direction {
+    int xOffset;
+    int yOffset;
+    int dir;
+    enum Occupier headOccupier;
+};
+
+Direction upDir = {0,-1,0,head_up};
+Direction rightDir = {1,0,1,head_right};
+Direction downDir = {0,1,2,head_down};
+Direction leftDir = {-1,0,3,head_left};
+// we use head_up as the default direction Occupier
+Direction noDir = {0,0,0,head_up};
+
+struct coordinate {
+    int x;
+    int y;
+};
+
+struct cell {
+    enum Occupier occupier;
+    Coordinate coordinate;
+};
+
+struct snake {
+    Cell *head;
+    Cell *nextCell;
+    Cell **body;
+    int length;
+    Direction nextDir;
+    Direction direction;
+    int up;
+    int down;
+    int left;
+    int right;
+    bool alive;
+    bool toDie;
+};
+
+struct game {
+    Cell **grid;
+    Snake *snakes[MAX_PLAYERS];
+    struct fann *ANN;
+    int noOfSnakes;
+    int noOfBots;
+    int width;
+    int height;
+    int tWidth;
+    int tHeight;
+    int food;
+    int foodAmount;
+    int players;
+    bool finished;
+    bool AI;
+};
+
 typedef struct request Request;
 int list_s;
 char *globa_ips[7];
@@ -132,40 +201,37 @@ void writeFile(char *file, int soc){
     write(soc, "\n", 1);
 }
 
-void returnFile(Request request, int con){
-    if(!strcmp(request.file, "/")){
-        bool exists = false;
-        int n = 0;
-        for (int i = 0; i < global_ip_num; ++i) {
-            if (!strcmp(globa_ips[i], request.ip)) {
-                exists = true;
-                n = i;
+void returnFile(Request request, int con, Game *game){
+        if (!strcmp(request.file, "/")) {
+            bool exists = false;
+            int n = 0;
+            for (int i = 0; i < global_ip_num; ++i) {
+                if (!strcmp(globa_ips[i], request.ip)) {
+                    exists = true;
+                    n = i;
+                }
             }
+            if (!exists && (global_ip_num == game->players)) {
+                writeFile("webapp/err.html", con);
+                return;
+            } else if (!exists) {
+                char *ip = malloc(sizeof(char) * (strlen(request.ip) + 1));
+                strcpy(ip, request.ip);
+                globa_ips[global_ip_num] = ip;
+                n = global_ip_num;
+                global_ip_num++;
+            }
+            char *site = malloc(sizeof(char) * 13);
+            strcpy(site, "webapp/webapp");
+            char nr[2];
+            nr[1] = '\0';
+            nr[0] = (char) (n + '0');
+            strcat(site, nr);
+            strcat(site, ".html");
+            writeFile(site, con);
+            free(site);
+            return;
         }
-        if (!exists) {
-            char* ip = malloc(sizeof(char) * (strlen(request.ip)+1));
-            strcpy(ip, request.ip);
-            globa_ips[global_ip_num] = ip;
-            n = global_ip_num;
-            global_ip_num++;
-        }
-        char *site = malloc(sizeof(char) * 13);
-        strcpy(site, "webapp/webapp");
-        char nr[2];
-        nr[1] = '\0';
-        nr[0] = (char) (n + '0');
-        strcat(site, nr);
-        strcat(site, ".html");
-        writeFile(site, con);
-        free(site);
-        return;
-    }
-    /*
-    if(!strcmp(request.file, "/processInput.php")){
-        writeFile("webapp.html", con);
-        return;
-    }
-     */
 }
 
 void clean(int sig) {
@@ -174,76 +240,6 @@ void clean(int sig) {
     exit(EXIT_SUCCESS);
 }
 
-
-
-enum Occupier {
-    nothing,
-    head_up,
-    head_down,
-    head_left,
-    head_right,
-    snake_body,
-    //dead_snake used if wishing to make dead snakes stay as obstacles
-    dead_snake,
-    food
-};
-
-// positive y values go down the screen
-struct direction {
-    int xOffset;
-    int yOffset;
-    int dir;
-    enum Occupier headOccupier;
-};
-
-Direction upDir = {0,-1,0,head_up};
-Direction rightDir = {1,0,1,head_right};
-Direction downDir = {0,1,2,head_down};
-Direction leftDir = {-1,0,3,head_left};
-// we use head_up as the default direction Occupier
-Direction noDir = {0,0,0,head_up};
-
-struct coordinate {
-    int x;
-    int y;
-};
-
-struct cell {
-    enum Occupier occupier;
-    Coordinate coordinate;
-};
-
-struct snake {
-    Cell *head;
-    Cell *nextCell;
-    Cell **body;
-    int length;
-    Direction nextDir;
-    Direction direction;
-    int up;
-    int down;
-    int left;
-    int right;
-    bool alive;
-    bool toDie;
-};
-
-struct game {
-    Cell **grid;
-    Snake *snakes[MAX_PLAYERS];
-    struct fann *ANN;
-    int noOfSnakes;
-    int noOfBots;
-    int width;
-    int height;
-    int tWidth;
-    int tHeight;
-    int food;
-    int foodAmount;
-    int players;
-    bool finished;
-    bool AI;
-};
 
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
@@ -690,7 +686,7 @@ void *processPosts(void *ptr) {
         }
         Request request = parseRequest(conn_s);
         request.ip = inet_ntoa(serverAddress->sin_addr);
-        returnFile(request, conn_s);
+        returnFile(request, conn_s, game);
         processCommand(game, request);
         close(conn_s);
     }

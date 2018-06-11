@@ -15,6 +15,8 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <errno.h>
+#include <ifaddrs.h>
+#include <sys/socket.h>
 
 #ifndef GRID_SIZE
 #define GRID_SIZE 10
@@ -26,6 +28,7 @@
 #define CHECK_LENGTH 200
 #define FOOD_PERCENTAGE 10
 #define GAME_REFRESH_SPEED 100
+#define PORT 2035
 
 enum Occupier {
     nothing,
@@ -770,7 +773,7 @@ bool servermenu() {
     }
 
 utils *startServer(Game *game) {
-    int port = 2035;
+    int port = PORT;
 
     (void) signal(SIGINT, clean);
 
@@ -816,17 +819,33 @@ utils *startServer(Game *game) {
 void waitForConnections(utils *u) {
     clear();
     int ch;
+    struct ifaddrs *ifap, *ifa;
+    struct sockaddr_in *sa;
+    char *addr = NULL;
+    getifaddrs (&ifap);
+    for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family==AF_INET) {
+            sa = (struct sockaddr_in *) ifa->ifa_addr;
+            if (strcmp(ifa->ifa_name, "lo") != 0) {
+                addr = inet_ntoa(sa->sin_addr);
+            }
+        }
+    }
+    freeifaddrs(ifap);
     while((ch = getch()) != 10) {
         if (ch == 'x') {
             endwin();
             exit(EXIT_FAILURE);
         }
         move(0,0);
-        printw("Connections:\n");
-        for (int i = 0; i < global_ip_num; ++i) {
-            mvprintw(i + 1, 0 , "Player %d has connected\n", i + 1);
+        if (addr != NULL) {
+            printw("Connect to: %s:%d", addr, PORT);
         }
-        mvprintw(8, 0,  "Press enter to continue\n");
+        mvprintw(1, 0, "Connections:\n");
+        for (int i = 0; i < global_ip_num; ++i) {
+            mvprintw(i + 2, 0 , "Player %d has connected\n", i + 1);
+        }
+        mvprintw(9, 0,  "Press enter to continue\n");
         refresh();
     }
     clear();

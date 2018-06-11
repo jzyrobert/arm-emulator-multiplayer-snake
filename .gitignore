@@ -5,7 +5,7 @@
 
 src/arm11_1718_testsuite/*
 src/extension/logic
-
+src/extension/webapp/server
 .idea/*
 CMakeLists.txt
 cmake-build-debug/*

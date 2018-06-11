@@ -673,8 +673,8 @@ void processCommand(Game *game,Request request) {
         }
         for (int i = 0; i < global_ip_num; ++i) {
             if (!strcmp(globa_ips[i], request.ip)) {
-                if (!oppositeDir(game->snakes[i], next)) {
-                    game->snakes[i]->nextDir = next;
+                if (!oppositeDir(game->snakes[game->noOfSnakes - i - 1], next)) {
+                    game->snakes[game->noOfSnakes - i - 1]->nextDir = next;
                 }
             }
         }
@@ -700,7 +700,7 @@ void *processPosts(void *ptr) {
         }
         Request request = parseRequest(conn_s);
         request.ip = inet_ntoa(serverAddress->sin_addr);
-        returnFile(request, conn_s);
+        returnFile(request, conn_s, game);
         processCommand(game, request);
         close(conn_s);
     }
@@ -917,23 +917,14 @@ int main(int argc, char* argv[]) {
             waitForConnections(u);
         }
         if (botMenu()) {
-            if (game->noOfBots == 0) {
-                endwin();
-                freeEverything(game);
-                exit(EXIT_FAILURE);
-            } else {
-                game->noOfBots = botnumMenu(game);
-                //Whether to use the neural net or not
-                game->AI = annMenu();
-                //If the bot menu is exited
-            }
-
+            game->noOfBots = botnumMenu(game);
+            //Whether to use the neural net or not
+            game->AI = annMenu();
         } else {
             game->noOfBots = 0;
         }
     } else {
         endwin();
-        freeEverything(game);
         exit(EXIT_FAILURE);
     }
 

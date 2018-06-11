@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Snake Wars</title>
+    <h>Your number is 6</h>
+    <h>You can also use arrow keys if JavaScript is enabled</h>
+  </head>
+  <body>
+  <form action="" method="post">
+    <input type="submit" name="Direction" value="Up"></button>
+    <input type="submit" name="Direction" value="Down"></button>
+    <input type="submit" name="Direction" value="Left"></button>
+    <input type="submit" name="Direction" value="Right"></button>
+  </form>
+  <script>
+    document.onkeydown = function(e) {
+    switch (e.keyCode) {
+        case 37:
+            sub("Left");
+            break;
+        case 38:
+            sub("Up");
+            break;
+        case 39:
+            sub("Right");
+            break;
+        case 40:
+            sub("Down");
+            break;
+            }
+        };
+
+    function sub(dir) {
+    var form = document.createElement("form");
+    var element1 = document.createElement("input");
+
+    form.method = "POST";
+    form.action = "";
+
+    element1.value=dir;
+    element1.name="Direction";
+    form.appendChild(element1);
+
+    document.body.appendChild(form);
+
+    form.submit();
+    };
+</script>
+  </body>
+</html>

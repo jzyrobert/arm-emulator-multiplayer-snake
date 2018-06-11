@@ -10,6 +10,13 @@
 #include <menu.h>
 #include "fannF/src/include/fann.h"
 #include <math.h>
+#include <bits/signum.h>
+#include <signal.h>
+#include <arpa/inet.h>
+#include <pthread.h>
+#include <errno.h>
+#include <ifaddrs.h>
+#include <sys/socket.h>
 
 #ifndef GRID_SIZE
 #define GRID_SIZE 10
@@ -21,6 +28,7 @@
 #define CHECK_LENGTH 200
 #define FOOD_PERCENTAGE 10
 #define GAME_REFRESH_SPEED 100
+#define PORT 2035
 
 enum Occupier {
     nothing,
@@ -30,7 +38,7 @@ enum Occupier {
     head_right,
     snake_body,
     //dead_snake used if wishing to make dead snakes stay as obstacles
-    dead_snake,
+            dead_snake,
     food
 };
 
@@ -89,7 +97,158 @@ struct game {
     int players;
     bool finished;
     bool AI;
+    bool started;
 };
+
+typedef struct request Request;
+int list_s;
+char *globa_ips[7];
+int global_ip_num = 0;
+
+struct request{
+    char* dir;
+    char *msg;
+    char *file;
+    bool get;
+    char* ip;
+};
+
+typedef struct ServerUtils {
+  Game* game;
+  struct sockaddr_in *serverAddress;
+  int* addrSize;
+} utils;
+
+Request parseRequest(int sock) {
+    FILE *fileStream;
+    fileStream = fdopen(sock, "r");
+    Request request;
+    request.dir = 0;
+    size_t size = 1;
+    char *msg = malloc(sizeof(char));
+    msg[0] = '\0';
+    size = 1;
+    char buff[2000];
+    int count = 0;
+    int lim = 0;
+
+    char *file = malloc(sizeof(char) * 30);
+    char *cont = malloc(sizeof(char) * 40);
+    int length = 10;
+    while (1) {
+        if (!fgets(buff, 2000, fileStream)) {
+            puts("Read failed");
+            break;
+        }
+
+        if(!strcmp(buff, "\r\n")){
+            while(count < lim){
+                fgets(buff, length + 1, fileStream);
+                size += strlen(buff);
+                msg = realloc(msg, size);
+                strcat(msg, buff);
+                count++;
+                char* temp = malloc(sizeof(char) * (1 + strlen(buff)));
+                strcpy(temp, buff);
+                request.dir = temp;
+            }
+            break;
+        }
+        if(strstr(buff, "GET") != NULL){
+            sscanf(buff, "GET %s HTTP/1.1", file);
+            request.get = true;
+        }
+        if(strstr(buff, "POST") != NULL){
+            sscanf(buff, "POST %s HTTP/1.1", file);
+            lim++;
+            request.get = false;
+        }
+        if(strstr(buff, "Content-Length:") != NULL){
+            sscanf(buff, "Content-Length: %s", cont);
+            length = atoi(cont);
+        }
+
+
+
+        size += strlen(buff);
+        msg = realloc(msg, size);
+        strcat(msg, buff);
+    }
+    //puts(msg);
+    request.msg = msg;
+    request.file = file;
+    //puts(msg);
+    return request;
+
+}
+
+
+void writeFile(char *file, int soc){
+    char *str = "HTTP/1.0 200 OK\nServer: CS241Serv v0.1\nContent-Type: text/html\n\n";
+    FILE *fp;
+    fp = fopen(file, "r");
+    if(fp == NULL){
+        puts("Failed to open file");
+    }
+    char buff[2000];
+    write(soc ,str, strlen(str));
+    fread(buff, 1, 2000, fp);
+    write(soc, buff, strlen(buff));
+    while(!feof(fp)){
+        fread(buff, 1, 2000, fp);
+        //puts(buff);
+        if(strcmp(buff, "\n\r")){
+            break;
+        }
+        write(soc, buff, strlen(buff));
+    }
+    write(soc, "\n", 1);
+}
+
+int getIP(const char *ip, Game *game) {
+    //gets index of IP or adds it if it doesn't exist yet
+    //returns -1 if too many players
+    for (int i = 0; i < global_ip_num; ++i) {
+        if (!strcmp(globa_ips[i], ip)) {
+            return i + 1;
+        }
+    }
+    //IP doesn't exit yet
+            if (global_ip_num < game->players) {
+                char *newip = malloc(sizeof(char) * (strlen(ip) + 1));
+                strcpy(newip, ip);
+                globa_ips[global_ip_num] = newip;
+                global_ip_num++;
+                return global_ip_num;
+            } else {
+                return -1;
+    }
+}
+
+void returnFile(Request request, int con, Game *game){
+    if(!strcmp(request.file, "/")){
+        int n = getIP(request.ip, game);
+        if (n == -1){
+            writeFile("webapp/err.html", con);
+        } else {
+            char *site = malloc(sizeof(char) * 13);
+            strcpy(site, "webapp/webapp");
+            char nr[2];
+            nr[1] = '\0';
+            nr[0] = (char) (n + '0');
+            strcat(site, nr);
+            strcat(site, ".html");
+            writeFile(site, con);
+            free(site);
+        }
+    }
+}
+
+void clean(int sig) {
+    puts("\nCleaning");
+    close(list_s);
+    exit(EXIT_SUCCESS);
+}
 
 void buildGrid(Game *game) {
     for (int i = 0; i < game->height; i++) {
@@ -101,6 +260,7 @@ void buildGrid(Game *game) {
     }
     game->noOfSnakes = 0;
     game->finished = false;
+    game->started = false;
 }
 
 //Generates random seed
@@ -283,6 +443,10 @@ bool annMenu(void) {
             break;
         }
     }
+    if (c == 'x') {
+        endwin();
+        exit(EXIT_FAILURE);
+    }
     for (int i = 0; i < Num_choices; ++i) {
         if (cur_item == bot_num[i]) {
             unpost_menu(bot_menu);
@@ -339,6 +503,10 @@ int botnumMenu(Game *game) {
             break;
         }
     }
+    if (c == 'x') {
+        endwin();
+        exit(EXIT_FAILURE);
+    }
     for (int i = 0; i < Num_choices; ++i) {
         if (cur_item == bot_num[i]) {
             unpost_menu(bot_menu);
@@ -389,6 +557,10 @@ bool botMenu(void) {
         if (c == KEY_ENTER || c == 10) {
             break;
         }
+    }
+    if (c == 'x') {
+        endwin();
+        exit(EXIT_FAILURE);
     }
     for (int i = 0; i < Num_choices; ++i) {
         if (cur_item == bot_num[i]) {
@@ -457,6 +629,10 @@ int selectFromMenu(void) {
             break;
         }
     }
+    if (c == 'x') {
+        endwin();
+        exit(EXIT_FAILURE);
+    }
     for (int i = 0; i < Num_choices; ++i) {
         if (cur_item == player_num[i]) {
             unpost_menu(player_menu);
@@ -490,6 +666,189 @@ void printNoPlayers() {
     refresh();
     nodelay(stdscr, false);
     getch();
+}
+
+void processCommand(Game *game,Request request) {
+    if (game->started && request.dir) {
+        char *dir = strstr(request.dir, "=");
+        dir++;
+        Direction next;
+        if (!strcmp(dir, "Up")) {
+            next = upDir;
+        } else if (!strcmp(dir, "Right")) {
+            next = rightDir;
+        } else if (!strcmp(dir, "Down")) {
+            next = downDir;
+        } else {
+            next = leftDir;
+        }
+        for (int i = 0; i < global_ip_num; ++i) {
+            if (!strcmp(globa_ips[i], request.ip)) {
+                if (!oppositeDir(game->snakes[game->noOfSnakes - i - 1], next)) {
+                    game->snakes[game->noOfSnakes - i - 1]->nextDir = next;
+                }
+            }
+        }
+    }
+    free(request.dir);
+    free(request.file);
+    free(request.msg);
+}
+
+void *processPosts(void *ptr) {
+    //Server setup
+    utils *u = (utils *) ptr;
+    Game *game = u->game;
+    struct sockaddr_in *serverAddress = u->serverAddress;
+    int *addrSize = u->addrSize;
+
+    while (!game->finished) {
+        //Processes a post request
+        int conn_s = accept(list_s, (struct sockaddr *) serverAddress,
+                            (socklen_t *) addrSize);
+        if (conn_s == -1) {
+            puts("Error handling connection");
+        }
+        Request request = parseRequest(conn_s);
+        request.ip = inet_ntoa(serverAddress->sin_addr);
+        returnFile(request, conn_s, game);
+        processCommand(game, request);
+        close(conn_s);
+    }
+    return NULL;
+}
+
+bool servermenu() {
+        char *choices[] = {
+                "Play locally",
+                "Start server and enable LAN connections"
+        };
+        ITEM **server_num;
+        MENU *server_menu;
+        ITEM *cur_item = NULL;
+        int c;
+        int Num_choices = 2;
+        server_num = calloc(Num_choices + 1, sizeof(ITEM *));
+        for (int k = 0; k < Num_choices; ++k) {
+            server_num[k] = new_item(choices[k], "");
+        }
+        server_num[Num_choices] = (ITEM *) NULL;
+
+        server_menu = new_menu(server_num);
+        mvprintw(LINES - 2, 2, "X to Exit");
+        post_menu(server_menu);
+        refresh();
+        while ((c = getch()) != 'x') {
+            switch (c) {
+                case KEY_DOWN:
+                    menu_driver(server_menu, REQ_DOWN_ITEM);
+                    break;
+                case KEY_UP:
+                    menu_driver(server_menu, REQ_UP_ITEM);
+                    break;
+                case 10:
+                    cur_item = current_item(server_menu);
+                    break;
+            }
+            if (c == KEY_ENTER || c == 10) {
+                break;
+            }
+        }
+        if (c == 'x') {
+            endwin();
+            exit(EXIT_FAILURE);
+        }
+        for (int i = 0; i < Num_choices; ++i) {
+            if (cur_item == server_num[i]) {
+                unpost_menu(server_menu);
+                for (int l = 0; l < Num_choices + 1; ++l) {
+                    free_item(server_num[l]);
+                }
+                free_menu(server_menu);
+                free(server_num);
+                return (bool) i;
+            }
+        }
+        return 0;
+    }
+
+utils *startServer(Game *game) {
+    int port = PORT;
+
+    (void) signal(SIGINT, clean);
+
+    if ((list_s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        fprintf(stderr, "Error creating listening socket.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    struct sockaddr_in *serverAddress = malloc(sizeof(struct sockaddr_in));
+    memset(serverAddress, 0, sizeof(*serverAddress));
+    serverAddress->sin_family = AF_INET;
+    serverAddress->sin_addr.s_addr = htonl(INADDR_ANY);
+    serverAddress->sin_port = htons(port);
+
+    SO_REUSEADDR;
+    int yes = 1;
+    if (setsockopt(list_s,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) == -1) {
+        perror("setsockopt");
+        exit(1);
+    }
+
+    if (bind(list_s, (struct sockaddr *) serverAddress,
+             sizeof(*serverAddress)) < 0) {
+        fprintf(stderr, "Error calling bind() %d %s\n",errno, strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    if ((listen(list_s, 10)) == -1) {
+        fprintf(stderr, "Error Listening\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int *addrSize = malloc(sizeof(int));
+    *addrSize = sizeof(*serverAddress);
+
+    utils *u = malloc(sizeof(utils));
+    u->game = game;
+    u->serverAddress = serverAddress;
+    u->addrSize = addrSize;
+    return u;
+}
+
+void waitForConnections(utils *u) {
+    clear();
+    int ch;
+    struct ifaddrs *ifap, *ifa;
+    struct sockaddr_in *sa;
+    char *addr = NULL;
+    getifaddrs (&ifap);
+    for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family==AF_INET) {
+            sa = (struct sockaddr_in *) ifa->ifa_addr;
+            if (strcmp(ifa->ifa_name, "lo") != 0) {
+                addr = inet_ntoa(sa->sin_addr);
+            }
+        }
+    }
+    freeifaddrs(ifap);
+    while((ch = getch()) != 10) {
+        if (ch == 'x') {
+            endwin();
+            exit(EXIT_FAILURE);
+        }
+        move(0,0);
+        if (addr != NULL) {
+            printw("Connect to: %s:%d", addr, PORT);
+        }
+        mvprintw(1, 0, "Connections:\n");
+        for (int i = 0; i < global_ip_num; ++i) {
+            mvprintw(i + 2, 0 , "Player %d has connected\n", i + 1);
+        }
+        mvprintw(9, 0,  "Press enter to continue\n");
+        refresh();
+    }
+    clear();
 }
 
 int main(int argc, char* argv[]) {
@@ -573,23 +932,27 @@ int main(int argc, char* argv[]) {
     buildGrid(game);
 
     game->players = selectFromMenu();
+    bool server = false;
+    utils *u;
+    pthread_t thread_id;
 
     if (game->players > 0) {
+        server = servermenu();
+        if (server) {
+            u = startServer(game);
+            pthread_create(&thread_id, NULL, processPosts, (void *) u);
+            waitForConnections(u);
+        }
         if (botMenu()) {
-            if (game->noOfBots == 0) {
-                endwin();
-                freeEverything(game);
-                exit(EXIT_FAILURE);
-            } else {
-                game->noOfBots = botnumMenu(game);
-                //Whether to use the neural net or not
-                game->AI = annMenu();
-                //If the bot menu is exited
-            }
-
+            game->noOfBots = botnumMenu(game);
+            //Whether to use the neural net or not
+            game->AI = annMenu();
         } else {
             game->noOfBots = 0;
         }
+    } else {
+        endwin();
+        exit(EXIT_FAILURE);
     }
 
     //loads neural net
@@ -631,25 +994,32 @@ int main(int argc, char* argv[]) {
     int ch;
     printGame(game);
     //Allow 3 seconds for players to see what is happening
-    usleep(300000);
+    usleep(100000);
     struct timeval start, next;
     gettimeofday(&start, 0);
     float elapsed = 0;
     clear();
-
-    while(!game->finished) {
+    game->started = true;
+    while (!game->finished) {
         gettimeofday(&next, 0);
         elapsed = timedifference_msec(start, next);
         //Screen refreshes every SPEED milliseconds
-        if (elapsed > GAME_REFRESH_SPEED) {
-            gettimeofday(&start, 0);
-            updateGame(game);
-            printGame(game);
+                if (elapsed > GAME_REFRESH_SPEED) {
+                gettimeofday(&start, 0);
+                updateGame(game);
+                printGame(game);
+            }
+
+            //Constantly loops for input
+            if ((ch = getch()) != ERR) {
+                updateDir(ch, game);
+            }
         }
-        //Constantly loops for input
-        if ((ch = getch()) != ERR) {
-            updateDir(ch, game);
-        }
+    if (server) {
+         pthread_cancel(thread_id);
+         free(u->addrSize);
+         free(u->serverAddress);
+         free(u);
     }
     endgame(game);
     endwin();

@@ -202,34 +202,42 @@ void writeFile(char *file, int soc){
     write(soc, "\n", 1);
 }
 
-int getIP(const char *ip) {
+int getIP(const char *ip, Game *game) {
     //gets index of IP or adds it if it doesn't exist yet
+    //returns -1 if too many players
     for (int i = 0; i < global_ip_num; ++i) {
         if (!strcmp(globa_ips[i], ip)) {
             return i + 1;
         }
     }
     //IP doesn't exit yet
-        char* newip = malloc(sizeof(char) * (strlen(ip)+1));
-        strcpy(newip, ip);
-        globa_ips[global_ip_num] = newip;
-        global_ip_num++;
-        return global_ip_num;
+            if (global_ip_num < game->players) {
+                char *newip = malloc(sizeof(char) * (strlen(ip) + 1));
+                strcpy(newip, ip);
+                globa_ips[global_ip_num] = newip;
+                global_ip_num++;
+                return global_ip_num;
+            } else {
+                return -1;
+    }
 }
 
-void returnFile(Request request, int con){
+void returnFile(Request request, int con, Game *game){
     if(!strcmp(request.file, "/")){
-        int n = getIP(request.ip);
-        char *site = malloc(sizeof(char) * 13);
-        strcpy(site, "webapp/webapp");
-        char nr[2];
-        nr[1] = '\0';
-        nr[0] = (char) (n + '0');
-        strcat(site, nr);
-        strcat(site, ".html");
-        writeFile(site, con);
-        free(site);
-        return;
+        int n = getIP(request.ip, game);
+        if (n == -1){
+            writeFile("webapp/err.html", con);
+        } else {
+            char *site = malloc(sizeof(char) * 13);
+            strcpy(site, "webapp/webapp");
+            char nr[2];
+            nr[1] = '\0';
+            nr[0] = (char) (n + '0');
+            strcat(site, nr);
+            strcat(site, ".html");
+            writeFile(site, con);
+            free(site);
+        }
     }
 }
 

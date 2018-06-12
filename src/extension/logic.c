@@ -821,13 +821,15 @@ void waitForConnections(utils *u) {
     int ch;
     struct ifaddrs *ifap, *ifa;
     struct sockaddr_in *sa;
-    char *addr = NULL;
+    int n = 1;
     getifaddrs (&ifap);
+    mvprintw(0, 0, "Connections:\n");
     for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
         if (ifa->ifa_addr && ifa->ifa_addr->sa_family==AF_INET) {
             sa = (struct sockaddr_in *) ifa->ifa_addr;
             if (strcmp(ifa->ifa_name, "lo") != 0) {
-                addr = inet_ntoa(sa->sin_addr);
+                mvprintw(n, 0, "Device: %s : %s : %d", ifa->ifa_name, inet_ntoa(sa->sin_addr), PORT);
+                n++;
             }
         }
     }
@@ -837,15 +839,10 @@ void waitForConnections(utils *u) {
             endwin();
             exit(EXIT_FAILURE);
         }
-        move(0,0);
-        if (addr != NULL) {
-            printw("Connect to: %s:%d", addr, PORT);
-        }
-        mvprintw(1, 0, "Connections:\n");
         for (int i = 0; i < global_ip_num; ++i) {
-            mvprintw(i + 2, 0 , "Player %d has connected\n", i + 1);
+            mvprintw(i + n, 0 , "Player %d has connected\n", i + 1);
         }
-        mvprintw(9, 0,  "Press enter to continue\n");
+        mvprintw(7 + n, 0,  "Press enter to continue\n");
         refresh();
     }
     clear();

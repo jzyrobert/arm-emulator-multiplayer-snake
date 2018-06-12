@@ -828,7 +828,7 @@ void waitForConnections(utils *u) {
         if (ifa->ifa_addr && ifa->ifa_addr->sa_family==AF_INET) {
             sa = (struct sockaddr_in *) ifa->ifa_addr;
             if (strcmp(ifa->ifa_name, "lo") != 0) {
-		mvprintw(n, 0, "Device: %s : %s", ifa->ifa_name, sa->sin_addr);
+                mvprintw(n, 0, "Device: %s : %s : %d", ifa->ifa_name, inet_ntoa(sa->sin_addr), PORT);
                 n++;
             }
         }

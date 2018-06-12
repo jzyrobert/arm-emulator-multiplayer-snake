@@ -834,7 +834,7 @@ void waitForConnections(utils *u) {
         }
     }
     freeifaddrs(ifap);
-    while((ch = getch()) != 10) {
+    while((ch = getch()) != 10 || global_ip_num != u->game->players) {
         if (ch == 'x') {
             endwin();
             exit(EXIT_FAILURE);
@@ -1467,7 +1467,7 @@ void updateGame(Game *game) {
         }
     }
     //If more than 1 snake, we end game when there is 1 snake left to make games faster.
-    if ((game->noOfSnakes > 1 && dead == (game->noOfSnakes - 1)) || (game->noOfSnakes == 1 && dead == 1)) {
+    if ((game->noOfSnakes > 1 && dead >= (game->noOfSnakes - 1)) || (game->noOfSnakes == 1 && dead == 1)) {
         game->finished = true;
     }
     //Replenishes food back to the amount required.
@@ -1475,4 +1475,3 @@ void updateGame(Game *game) {
         addFoods(game, game->foodAmount - (game->food));
     }
 }
-

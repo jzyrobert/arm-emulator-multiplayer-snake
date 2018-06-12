@@ -32,7 +32,7 @@ public class Controller extends AppCompatActivity {
         if (num == -1) {
             Toast toast = Toast.makeText(context, "Invalid number!", Toast.LENGTH_SHORT);
             toast.show();
-            finishActivity(0);
+            finish();
         }
         TextView textView;
         String text = "You are Player " + num;
@@ -61,15 +61,21 @@ public class Controller extends AppCompatActivity {
         } catch (ProtocolException e) {
             Toast toast = Toast.makeText(context, "Could not initialise Post request!", Toast.LENGTH_SHORT);
             toast.show();
-            finishActivity(0);
+            finish();
         } catch (UnsupportedEncodingException e) {
             Toast toast = Toast.makeText(context, "Error encoding command!", Toast.LENGTH_SHORT);
             toast.show();
-            finishActivity(0);
+            finish();
         } catch (IOException e) {
             Toast toast = Toast.makeText(context, "Error: Connection failed!", Toast.LENGTH_SHORT);
             toast.show();
-            finishActivity(0);
+            finish();
         }
+    }
+
+    @Override
+    public void onPause(){
+        finish();
+        super.onPause();
     }
 }

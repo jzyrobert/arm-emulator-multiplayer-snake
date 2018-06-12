@@ -269,9 +269,8 @@ void initialiseRandomSeed(void) {
 }
 
 void addSnake(Game *game,int up, int down, int left, int right) {
-    int x = 0;
-    int y = 0;
-    getmaxyx(stdscr, y, x);
+    int x = game->width;
+    int y = game->height;
     Snake *newSnake = malloc(sizeof(Snake));
     game->snakes[game->noOfSnakes] = newSnake;
     newSnake->body = malloc(game->width * game->height * sizeof(Cell *));
@@ -848,6 +847,20 @@ void waitForConnections(utils *u) {
     clear();
 }
 
+void sigHandler(int sig_num) {
+  signal(SIGINT, sigHandler);
+  endwin();
+  fflush(stdout);
+  exit(EXIT_FAILURE);
+}
+
+void segHandler(int seg_num) {
+  signal(SIGSEGV, segHandler);
+  endwin();
+  fflush(stdout);
+  exit(EXIT_FAILURE);
+}
+
 int main(int argc, char* argv[]) {
     Game *game = malloc(sizeof(Game));
     game->food = 0;
@@ -858,6 +871,10 @@ int main(int argc, char* argv[]) {
         free(game);
         exit(EXIT_FAILURE);
     }
+    //closes ncurses before failures
+
+    signal(SIGINT, sigHandler);
+    signal(SIGSEGV, segHandler);
     //Allows usage of all keyboard keys
     keypad(stdscr, TRUE);
     curs_set(FALSE);

@@ -27,7 +27,6 @@ public class SignIn extends AppCompatActivity {
 
     public void sendMessage(View view) {
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-
         StrictMode.setThreadPolicy(policy);
         Intent intent = new Intent(this, Controller.class);
         EditText editText = findViewById(R.id.editText);
@@ -35,16 +34,18 @@ public class SignIn extends AppCompatActivity {
         Context context = getApplicationContext();
         CharSequence text = "";
         int duration = Toast.LENGTH_SHORT;
+
         if (IP.equals("")) {
             text = "No IP Address entered!";
             Toast toast = Toast.makeText(context, text, duration);
             toast.show();
         } else {
             if (IP.indexOf(':') > 0) {
+                boolean tooMany = false;
                 try {
                     IP = "http://" + IP + "/";
                     Toast toast = Toast.makeText(context, "Connecting to: " + IP, duration);
-                    toast.show();
+                    //toast.show();
                     URL host = new URL(IP);
                     URLConnection connection = host.openConnection();
                     connection.connect();
@@ -52,16 +53,18 @@ public class SignIn extends AppCompatActivity {
                     String input;
                     boolean correctSite = false;
                     while (((input = in.readLine()) != null)) {
-                        if (input.contains("Snake Wars")) {
-                            correctSite = true;
-                            text = "Connection successfull";
-                            toast = Toast.makeText(context, text, duration);
-                            toast.show();
-                        }
+
                         if (input.contains("Too many")) {
+                            tooMany = true;
                             correctSite = false;
                             toast = Toast.makeText(context, "Too many players! You cannot join this round", duration);
                             toast.show();
+                        }
+                        if (!tooMany && input.contains("Snake Wars")) {
+                            correctSite = true;
+                            text = "Connection successfull";
+                            toast = Toast.makeText(context, text, duration);
+                            //toast.show();
                         }
                         if (input.contains("Your number is")) {
                             input = input.replaceAll("\\D+","");
@@ -72,15 +75,17 @@ public class SignIn extends AppCompatActivity {
                     in.close();
                     if (correctSite) {
                         startActivity(intent);
-                    } else {
+                    } else if(!tooMany){
                         text = "Incorrect site!";
                         toast = Toast.makeText(context, text, duration);
                         toast.show();
                     }
                 } catch (IOException e) {
-                    text = "Invalid connection!";
-                    Toast toast = Toast.makeText(context, text, duration);
-                    toast.show();
+                    if(!tooMany){
+                        text = "Invalid connection!";
+                        Toast toast = Toast.makeText(context, text, duration);
+                        toast.show();
+                    }
                 }
             } else {
                 text = "No port specified!";

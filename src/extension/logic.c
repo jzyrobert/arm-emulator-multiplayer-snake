@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <ifaddrs.h>
 #include <sys/socket.h>
+#include <signal.h>
 
 #ifndef GRID_SIZE
 #define GRID_SIZE 10
@@ -269,9 +270,8 @@ void initialiseRandomSeed(void) {
 }
 
 void addSnake(Game *game,int up, int down, int left, int right) {
-    int x = 0;
-    int y = 0;
-    getmaxyx(stdscr, y, x);
+    int x = game->width;
+    int y = game->height;
     Snake *newSnake = malloc(sizeof(Snake));
     game->snakes[game->noOfSnakes] = newSnake;
     newSnake->body = malloc(game->width * game->height * sizeof(Cell *));
@@ -314,15 +314,19 @@ void findBody(Game *pGame, int j, int i) {
 
 void printGame(Game *game) {
     //Each refresh we print from the top left again
+    getmaxyx(stdscr, game->tHeight, game->tWidth);
+    if (game->width > (game->tWidth - 2) || game->height > (game->tHeight - 2)) {
+        endwin();
+        printf("Error: Detected terminal resizing below game size!\n");
+        exit(EXIT_FAILURE);
+    }
     move(0,0);
     attron(COLOR_PAIR(1));
     for (int i = 0; i < game->width + 2; ++i) {
         printw("#");
     }
-    if (game->width < (game->tWidth-2)) {
-        printw("\n");
-    }
     for (int j = 0; j < game->height; ++j) {
+        move(1 + j,0);
         printw("#");
         for (int i = 0; i < game->width; ++i) {
             char c;
@@ -364,16 +368,11 @@ void printGame(Game *game) {
             attron(COLOR_PAIR(1));
         }
         printw("#");
-        if (game->width < (game->tWidth-2)) {
-            printw("\n");
-        }
         attron(COLOR_PAIR(1));
     }
+    move(game->height+1,0);
     for (int i = 0; i < game->width + 2; ++i) {
         printw("#");
-    }
-    if (game->height < (game->tHeight-2)) {
-        printw("\n");
     }
     refresh();
 }
@@ -821,34 +820,37 @@ void waitForConnections(utils *u) {
     int ch;
     struct ifaddrs *ifap, *ifa;
     struct sockaddr_in *sa;
-    char *addr = NULL;
+    int n = 1;
     getifaddrs (&ifap);
+    mvprintw(0, 0, "Connections:\n");
     for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
         if (ifa->ifa_addr && ifa->ifa_addr->sa_family==AF_INET) {
             sa = (struct sockaddr_in *) ifa->ifa_addr;
             if (strcmp(ifa->ifa_name, "lo") != 0) {
-                addr = inet_ntoa(sa->sin_addr);
+                mvprintw(n, 0, "Device: %s : %s : %d", ifa->ifa_name, inet_ntoa(sa->sin_addr), PORT);
+                n++;
             }
         }
     }
     freeifaddrs(ifap);
-    while((ch = getch()) != 10) {
+    while(global_ip_num != u->game->players && ((ch = getch()) != 10 && ch != KEY_ENTER)) {
         if (ch == 'x') {
             endwin();
             exit(EXIT_FAILURE);
         }
-        move(0,0);
-        if (addr != NULL) {
-            printw("Connect to: %s:%d", addr, PORT);
-        }
-        mvprintw(1, 0, "Connections:\n");
         for (int i = 0; i < global_ip_num; ++i) {
-            mvprintw(i + 2, 0 , "Player %d has connected\n", i + 1);
+            mvprintw(i + n, 0 , "Player %d has connected\n", i + 1);
         }
-        mvprintw(9, 0,  "Press enter to continue\n");
+        mvprintw(7 + n, 0,  "Press enter to continue\n");
         refresh();
     }
     clear();
+}
+
+void sigHandler(int sig_num) {
+  endwin();
+  fflush(stdout);
+  exit(EXIT_FAILURE);
 }
 
 int main(int argc, char* argv[]) {
@@ -861,6 +863,14 @@ int main(int argc, char* argv[]) {
         free(game);
         exit(EXIT_FAILURE);
     }
+    //closes ncurses before failures
+    struct sigaction action;
+    action.sa_flags = 0;
+    action.sa_handler = sigHandler;
+    sigemptyset(&action.sa_mask);
+    sigaction(SIGINT, &action, NULL);
+    sigaction(SIGSEGV, &action, NULL);
+
     //Allows usage of all keyboard keys
     keypad(stdscr, TRUE);
     curs_set(FALSE);
@@ -1470,7 +1480,7 @@ void updateGame(Game *game) {
         }
     }
     //If more than 1 snake, we end game when there is 1 snake left to make games faster.
-    if ((game->noOfSnakes > 1 && dead == (game->noOfSnakes - 1)) || (game->noOfSnakes == 1 && dead == 1)) {
+    if ((game->noOfSnakes > 1 && dead >= (game->noOfSnakes - 1)) || (game->noOfSnakes == 1 && dead == 1)) {
         game->finished = true;
     }
     //Replenishes food back to the amount required.
@@ -1478,4 +1488,3 @@ void updateGame(Game *game) {
         addFoods(game, game->foodAmount - (game->food));
     }
 }
-

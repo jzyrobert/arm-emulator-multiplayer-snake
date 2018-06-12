@@ -2,10 +2,13 @@ package com.cproject.group1.snakewars;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,6 +41,34 @@ public class Controller extends AppCompatActivity {
         String text = "You are Player " + num;
         textView  = findViewById(R.id.textView);
         textView.setText(text);
+        ImageView col = findViewById(R.id.imageView2);
+        int colour = Color.WHITE;
+        switch (num) {
+            case 1:
+                colour = Color.GREEN;
+                break;
+            case 2:
+                colour = Color.BLUE;
+                break;
+            case 3:
+                colour = Color.CYAN;
+                break;
+            case 4:
+                colour = Color.MAGENTA;
+                break;
+            case 5:
+                colour = Color.RED;
+                break;
+            case 6:
+                colour = Color.argb(255, 255, 165, 0);
+                break;
+            case 7:
+                colour = Color.YELLOW;
+                break;
+                default:
+                    finish();
+        }
+        col.setColorFilter(colour, PorterDuff.Mode.SRC_IN);
     }
 
     public void sendCommand(View view) {

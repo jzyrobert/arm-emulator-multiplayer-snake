@@ -58,6 +58,11 @@ public class SignIn extends AppCompatActivity {
                             toast = Toast.makeText(context, text, duration);
                             toast.show();
                         }
+                        if (input.contains("Too many")) {
+                            correctSite = false;
+                            toast = Toast.makeText(context, "Too many players! You cannot join this round", duration);
+                            toast.show();
+                        }
                         if (input.contains("Your number is")) {
                             input = input.replaceAll("\\D+","");
                             intent.putExtra("Number", Integer.parseInt(input));

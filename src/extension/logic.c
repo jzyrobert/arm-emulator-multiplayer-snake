@@ -834,7 +834,7 @@ void waitForConnections(utils *u) {
         }
     }
     freeifaddrs(ifap);
-    while((ch = getch()) != 10 || global_ip_num != u->game->players) {
+    while(global_ip_num != u->game->players && ((ch = getch()) != 10 && ch != KEY_ENTER)) {
         if (ch == 'x') {
             endwin();
             exit(EXIT_FAILURE);

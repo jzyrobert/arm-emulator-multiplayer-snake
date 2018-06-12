@@ -16,6 +16,8 @@ import java.net.URL;
 import java.net.URLConnection;
 
 public class SignIn extends AppCompatActivity {
+    
+    public static String IP;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,20 +31,21 @@ public class SignIn extends AppCompatActivity {
         StrictMode.setThreadPolicy(policy);
         Intent intent = new Intent(this, Controller.class);
         EditText editText = findViewById(R.id.editText);
-        String message = editText.getText().toString();
+        IP = editText.getText().toString();
         Context context = getApplicationContext();
         CharSequence text = "";
         int duration = Toast.LENGTH_SHORT;
-        if (message.equals("")) {
+        if (IP.equals("")) {
             text = "No IP Address entered!";
             Toast toast = Toast.makeText(context, text, duration);
             toast.show();
         } else {
-            if (message.indexOf(':') > 0) {
+            if (IP.indexOf(':') > 0) {
                 try {
-                    Toast toast = Toast.makeText(context, "Connecting to: " + message, duration);
+                    IP = "http://" + IP + "/";
+                    Toast toast = Toast.makeText(context, "Connecting to: " + IP, duration);
                     toast.show();
-                    URL host = new URL(message);
+                    URL host = new URL(IP);
                     URLConnection connection = host.openConnection();
                     connection.connect();
                     BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -58,7 +61,6 @@ public class SignIn extends AppCompatActivity {
                         if (input.contains("Your number is")) {
                             input = input.replaceAll("\\D+","");
                             intent.putExtra("Number", Integer.parseInt(input));
-                            intent.putExtra("IP", message);
                             break;
                         }
                     }

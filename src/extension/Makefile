@@ -1,22 +1,22 @@
 C      = gcc
 CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
-LIBS_PATH = -L./fannF/src
+LIBS_PATH = -L./fannF/src -lfann -lncurses -lm -lmenu -lrt -pthread
 
 .SUFFIXES: .c .o
 
 .PHONY: all clean run
 
-all: logic botsonly
+all: snake botsonly
 
-run: logic  
-	LD_LIBRARY_PATH=./fannF/src/ ./logic
+snake: main.o logic.o server.o menus.o config.h
+	${CC} ${CFLAGS} -o snake $^ ${LIBS_PATH}
 
-logic: logic.o
-	$(C) $(CFLAGS) logic.o -o logic $(LIBS_PATH) -lfann -lncurses -lm -lmenu -lrt -pthread
-
-botsonly: botsonly.o -lncurses
+botsonly: botsonly.o
+	
+run: snake  
+	LD_LIBRARY_PATH=./fannF/src/ ./snake
 
 clean:
 	rm -f $(wildcard *.o)
-	rm -f logic
+	rm -f snake
 	rm -f botsonly

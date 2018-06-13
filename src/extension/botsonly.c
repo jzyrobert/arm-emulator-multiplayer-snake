@@ -1,4 +1,3 @@
-#include "logic.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -31,11 +30,11 @@ enum Occupier {
 };
 
 // positive y values go down the screen
-struct direction {
+typedef struct direction {
     int xOffset;
     int yOffset;
     enum Occupier headOccupier;
-};
+} Direction;
 
 Direction upDir = {0,-1,head_up};
 Direction rightDir = {1,0,head_right};
@@ -44,17 +43,17 @@ Direction leftDir = {-1,0,head_left};
 // we use head_up as the default direction Ocuupier
 Direction noDir = {0,0,head_up};
 
-struct coordinate {
+typedef struct coordinate {
     int x;
     int y;
-};
+} Coordinate;
 
-struct cell {
+typedef struct cell {
     enum Occupier occupier;
     Coordinate coordinate;
-};
+} Cell;
 
-struct snake {
+typedef struct snake {
     Cell *head;
     Cell *nextCell;
     Cell **body;
@@ -67,9 +66,9 @@ struct snake {
     int right;
     bool alive;
     bool toDie;
-};
+} Snake;
 
-struct game {
+typedef struct game {
     Cell **grid;
     Snake *snakes[MAX_PLAYERS];
     int noOfSnakes;
@@ -85,7 +84,7 @@ struct game {
     bool finished;
     bool justDied;
     FILE *output;
-};
+} Game;
 
 Direction getDirection(int choice) ;
 
@@ -216,6 +215,24 @@ void printGame(Game *game) {
     refresh();
 }
 
+void addFood(Game *pGame) {
+    Cell *empty[pGame->width * pGame->height];
+    int n = 0;
+    for (int i = 0; i < pGame->height; ++i) {
+        for (int j = 0; j < pGame->width; ++j) {
+            if (pGame->grid[i][j].occupier == nothing) {
+                empty[n] = &pGame->grid[i][j];
+                n++;
+            }
+        }
+    }
+    if (n > 0) {
+        pGame->food++;
+        int x = rand() % n;
+        empty[x]->occupier = food;
+    }
+}
+
 void addFoods(Game *game, int num) {
     for (int i = 0; i < num; ++i) {
         addFood(game);
@@ -238,6 +255,268 @@ void freeEverything(Game *pGame) {
     }
     fclose(pGame->output);
     free(pGame);
+}
+
+int getXOffset(Snake *snake) {
+    return snake->nextDir.xOffset;
+}
+
+int getYOffset(Snake *snake) {
+    return snake->nextDir.yOffset;
+}
+
+enum Occupier getHeadChar(Snake *theSnake) {
+    return theSnake->nextDir.headOccupier;
+}
+
+void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) {
+    Cell *previous = theSnake->head;
+    theSnake->head = next;
+    theSnake->head->occupier = getHeadChar(theSnake);
+    for (int i = 0; i < theSnake->length; ++i) {
+        next = previous;
+        previous = theSnake->body[i];
+        theSnake->body[i] = next;
+        theSnake->body[i]->occupier = snake_body;
+    }
+    theSnake->body[theSnake->length] = previous;
+    theSnake->length++;
+    theSnake->direction = theSnake->nextDir;
+}
+
+void addLength(Game *game, Snake *theSnake) {
+    int xOffset = getXOffset(theSnake);
+    int yOffset = getYOffset(theSnake);
+    int nextX = (theSnake->head->coordinate.x + xOffset) % game->width;
+    int nextY = (theSnake->head->coordinate.y + yOffset) % game->height;
+    if (nextX < 0) {
+        nextX = game->width - 1;
+    }
+    if (nextY < 0) {
+        nextY = game->height - 1;
+    }
+    Cell *next = &game->grid[nextY][nextX];
+    moveSizeIncrease(game, theSnake, next);
+}
+
+void moveSnake(Game *game, Snake *theSnake, Cell *next) {
+    Cell *previous = theSnake->head;
+    theSnake->head = next;
+    theSnake->head->occupier = getHeadChar(theSnake);
+    for (int i = 0; i < theSnake->length; ++i) {
+        next = previous;
+        previous = theSnake->body[i];
+        theSnake->body[i] = next;
+        theSnake->body[i]->occupier = snake_body;
+    }
+    theSnake->direction = theSnake->nextDir;
+}
+
+void killSnake(Game *game, Snake *snake) {
+    for (int j = 0; j < 4; ++j) {
+        snake->nextDir = getDirection(j);
+        for (int i = 1; i < 100; ++i) {
+            if (getCellAhead(game ,snake, i).occupier != food && getCellAhead(game, snake, i).occupier != nothing) {
+                fprintf(game->output, " %d : %d ", j, i-1);
+                break;
+            }
+        }
+    }
+    fprintf(game->output, "\n");
+    snake->alive = false;
+    snake->head->occupier = food;
+    //snake->head->occupier = getHeadChar(snake);
+    game->food++;
+    for (int i = 0; i < snake->length; ++i) {
+        snake->body[i]->occupier = food;
+        //snake->body[i]->occupier = dead_snake;
+        game->food++;
+    }
+    game->justDied = true;
+    game->dead++;
+}
+
+void updateSnake(Game *game, Snake *snake) {
+    Cell *next = snake->nextCell;
+    if (next->occupier != nothing && next->occupier != food) {
+        //rip snake
+        killSnake(game, snake);
+    } else if (next->occupier == food){
+        game->food--;
+        moveSizeIncrease(game, snake, next);
+    } else {
+        moveSnake(game, snake, next);
+    }
+}
+
+Cell* getNextCell(Game *game, Snake *snake){
+    int xOffset = getXOffset(snake);
+    int yOffset = getYOffset(snake);
+    int nextX = (snake->head->coordinate.x + xOffset) % game->width;
+    int nextY = (snake->head->coordinate.y + yOffset) % game->height;
+    if (nextX < 0) {
+        nextX = game->width - 1;
+    }
+    if (nextY < 0) {
+        nextY = game->height - 1;
+    }
+    return &game->grid[nextY][nextX];
+}
+
+bool oppositeDir(Snake *pSnake, Direction newDirection) {
+    Direction oldDirection = pSnake->direction;
+    return oldDirection.xOffset != 0 ? oldDirection.yOffset + newDirection.yOffset == 0 :
+           oldDirection.xOffset + newDirection.xOffset == 0;
+}
+
+void calculateNextMove(Game *game, Snake *pSnake, int check) {
+    while (check > 0) {
+        int availableMoves = 0;
+        int movesID[3] = {0,0,0};
+        for (int i = 0; i < 4; ++i) {
+            if (!oppositeDir(pSnake, getDirection(i))) {
+                bool available = true;
+                pSnake->nextDir = getDirection(i);
+                for (int j = 1; j <= check; ++j) {
+                    Cell toCheck = getCellAhead(game, pSnake, j);
+                    if ((toCheck.occupier != food) && (toCheck.occupier != nothing)) {
+                        available = false;
+                    }
+                }
+                if (available) {
+                    movesID[availableMoves] = i;
+                    availableMoves++;
+                }
+            }
+        }
+        if (availableMoves > 0) {
+            pSnake->nextDir = getDirection(movesID[rand() % availableMoves]);
+            break;
+        } else {
+            check--;
+        }
+    }
+}
+
+void updateGame(Game *game) {
+    int dead = 0;
+    static int moves = 0;
+    //assign a random direction to all bots randomly
+    //bots will try not to hit things
+    for (int m = 0; m < game->noOfBots; ++m) {
+        calculateNextMove(game, game->snakes[m], CHECK_LENGTH);
+        /*
+        //move if about to hit or every 3rd square?
+        if ((getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food) || !(moves % 3)) {
+            int roll, n = 0;
+            do {
+                roll = rand() % 4;
+                game->snakes[m]->nextDir = getDirection(roll);
+                n++;
+            } while ((n < 1000) && oppositeDir(game->snakes[m], game->snakes[m]->nextDir) && (getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food));
+        }
+        */
+    }
+    moves++;
+    //check all tails and heads
+    for (int j = 0; j < game->noOfSnakes; ++j) {
+        if (game->snakes[j]->alive) {
+            game->snakes[j]->nextCell = getNextCell(game, game->snakes[j]);
+            for (int i = j - 1; i >= 0 ; --i) {
+                if (game->snakes[i]->alive) {
+                    if (game->snakes[j]->nextCell == game->snakes[i]->nextCell) {
+                        game->snakes[j]->toDie = true;
+                        game->snakes[i]->toDie = true;
+                    }
+                }
+            }
+        }
+    }
+    for (int k = 0; k < game->noOfSnakes; ++k) {
+        if (game->snakes[k]->toDie) {
+            killSnake(game, game->snakes[k]);
+            game->snakes[k]->toDie = false;
+        }
+    }
+    //check tails of remaining snakes
+    for (int l = 0; l < game->noOfSnakes; ++l) {
+        if (game->snakes[l]->alive) {
+            if (game->snakes[l]->nextCell->occupier != food) {
+                game->snakes[l]->body[game->snakes[l]->length - 1]->occupier = nothing;
+            }
+        }
+    }
+    for (int i = 0; i < game->noOfSnakes; ++i) {
+        if (game->snakes[i]->alive) {
+            updateSnake(game, game->snakes[i]);
+        } else {
+            dead++;
+        }
+    }
+    if (dead == game->dead) {
+        game->justDied = false;
+    }
+    if (dead == (game->noOfSnakes - 1)) {
+        game->finished = true;
+    }
+    if (game->food < game->foodAmount) {
+        addFoods(game, game->foodAmount - (game->food));
+    }
+}
+
+void updateDir(int ch, Game *pGame) {
+    if (ch == 'x') {
+        pGame->finished = true;
+    }
+    /* else {
+        for (int i = 0; i < pGame->noOfSnakes; ++i) {
+            Direction direction = noDir;
+            if (ch == pGame->snakes[i]->up) {
+                direction = upDir;
+            }
+            if (ch == pGame->snakes[i]->right) {
+                direction = rightDir;
+            }
+            if (ch == pGame->snakes[i]->down) {
+                direction = downDir;
+            }
+            if (ch == pGame->snakes[i]->left) {
+                direction = leftDir;
+            }
+            if ((direction.xOffset != 0) || (direction.yOffset != 0)) {
+                if (!oppositeDir(pGame->snakes[i], direction)) {
+                    pGame->snakes[i]->nextDir = direction;
+                }
+            }
+        }
+    }
+     */
+}
+
+void endgame(Game *game) {
+    int x;
+    int y;
+    int ch;
+    int l = STARTING_LENGTH;
+    getmaxyx(stdscr, y, x);
+    clear();
+    char msg1[] = "The game has ended!";
+    char msg3[] = "Scores:";
+    char msg2[] = "Press X to exit";
+    mvprintw(y/2 - 3, x/2 - strlen(msg1) / 2, "%s",msg1);
+    mvprintw(y/2 - 2, x/2 - strlen(msg3) / 2, "%s",msg3);
+    for (int i = game->noOfSnakes - 1; i >= 0; --i) {
+        // Print out the snake's scores in the middle of the screen
+        attron(COLOR_PAIR((2 + game->noOfSnakes) - i));
+        mvprintw(y/2 - 2 + (game->noOfSnakes - i), x/2 - strlen(msg3) / 2, "Snake %d: %d", game->noOfSnakes-i, game->snakes[i]->length - l);
+    }
+    attron(COLOR_PAIR(1));
+    mvprintw(y/2 - 1 + game->noOfSnakes, x/2 - strlen(msg2) / 2, "%s",msg2);
+    refresh();
+    nodelay(stdscr, false);
+    while ((ch = getch()) != 'x') {
+
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -370,191 +649,6 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void endgame(Game *game) {
-    int x;
-    int y;
-    int ch;
-    int l = STARTING_LENGTH;
-    getmaxyx(stdscr, y, x);
-    clear();
-    char msg1[] = "The game has ended!";
-    char msg3[] = "Scores:";
-    char msg2[] = "Press X to exit";
-    mvprintw(y/2 - 3, x/2 - strlen(msg1) / 2, "%s",msg1);
-    mvprintw(y/2 - 2, x/2 - strlen(msg3) / 2, "%s",msg3);
-    for (int i = game->noOfSnakes - 1; i >= 0; --i) {
-        // Print out the snake's scores in the middle of the screen
-        attron(COLOR_PAIR((2 + game->noOfSnakes) - i));
-        mvprintw(y/2 - 2 + (game->noOfSnakes - i), x/2 - strlen(msg3) / 2, "Snake %d: %d", game->noOfSnakes-i, game->snakes[i]->length - l);
-    }
-    attron(COLOR_PAIR(1));
-    mvprintw(y/2 - 1 + game->noOfSnakes, x/2 - strlen(msg2) / 2, "%s",msg2);
-    refresh();
-    nodelay(stdscr, false);
-    while ((ch = getch()) != 'x') {
-
-    }
-}
-
-void addFood(Game *pGame) {
-    Cell *empty[pGame->width * pGame->height];
-    int n = 0;
-    for (int i = 0; i < pGame->height; ++i) {
-        for (int j = 0; j < pGame->width; ++j) {
-            if (pGame->grid[i][j].occupier == nothing) {
-                empty[n] = &pGame->grid[i][j];
-                n++;
-            }
-        }
-    }
-    if (n > 0) {
-        pGame->food++;
-        int x = rand() % n;
-        empty[x]->occupier = food;
-    }
-}
-
-void updateDir(int ch, Game *pGame) {
-    if (ch == 'x') {
-        pGame->finished = true;
-    }
-    /* else {
-        for (int i = 0; i < pGame->noOfSnakes; ++i) {
-            Direction direction = noDir;
-            if (ch == pGame->snakes[i]->up) {
-                direction = upDir;
-            }
-            if (ch == pGame->snakes[i]->right) {
-                direction = rightDir;
-            }
-            if (ch == pGame->snakes[i]->down) {
-                direction = downDir;
-            }
-            if (ch == pGame->snakes[i]->left) {
-                direction = leftDir;
-            }
-            if ((direction.xOffset != 0) || (direction.yOffset != 0)) {
-                if (!oppositeDir(pGame->snakes[i], direction)) {
-                    pGame->snakes[i]->nextDir = direction;
-                }
-            }
-        }
-    }
-     */
-}
-
-bool oppositeDir(Snake *pSnake, Direction newDirection) {
-    Direction oldDirection = pSnake->direction;
-    return oldDirection.xOffset != 0 ? oldDirection.yOffset + newDirection.yOffset == 0 :
-           oldDirection.xOffset + newDirection.xOffset == 0;
-}
-
-int getXOffset(Snake *snake) {
-    return snake->nextDir.xOffset;
-}
-
-int getYOffset(Snake *snake) {
-    return snake->nextDir.yOffset;
-}
-
-enum Occupier getHeadChar(Snake *theSnake) {
-    return theSnake->nextDir.headOccupier;
-}
-
-Cell* getNextCell(Game *game, Snake *snake){
-    int xOffset = getXOffset(snake);
-    int yOffset = getYOffset(snake);
-    int nextX = (snake->head->coordinate.x + xOffset) % game->width;
-    int nextY = (snake->head->coordinate.y + yOffset) % game->height;
-    if (nextX < 0) {
-        nextX = game->width - 1;
-    }
-    if (nextY < 0) {
-        nextY = game->height - 1;
-    }
-    return &game->grid[nextY][nextX];
-}
-
-void killSnake(Game *game, Snake *snake) {
-    for (int j = 0; j < 4; ++j) {
-        snake->nextDir = getDirection(j);
-        for (int i = 1; i < 100; ++i) {
-            if (getCellAhead(game ,snake, i).occupier != food && getCellAhead(game, snake, i).occupier != nothing) {
-                fprintf(game->output, " %d : %d ", j, i-1);
-                break;
-            }
-        }
-    }
-    fprintf(game->output, "\n");
-    snake->alive = false;
-    snake->head->occupier = food;
-    //snake->head->occupier = getHeadChar(snake);
-    game->food++;
-    for (int i = 0; i < snake->length; ++i) {
-        snake->body[i]->occupier = food;
-        //snake->body[i]->occupier = dead_snake;
-        game->food++;
-    }
-    game->justDied = true;
-    game->dead++;
-}
-
-void updateSnake(Game *game, Snake *snake) {
-    Cell *next = snake->nextCell;
-    if (next->occupier != nothing && next->occupier != food) {
-        //rip snake
-        killSnake(game, snake);
-    } else if (next->occupier == food){
-        game->food--;
-        moveSizeIncrease(game, snake, next);
-    } else {
-        moveSnake(game, snake, next);
-    }
-}
-
-void moveSnake(Game *game, Snake *theSnake, Cell *next) {
-    Cell *previous = theSnake->head;
-    theSnake->head = next;
-    theSnake->head->occupier = getHeadChar(theSnake);
-    for (int i = 0; i < theSnake->length; ++i) {
-        next = previous;
-        previous = theSnake->body[i];
-        theSnake->body[i] = next;
-        theSnake->body[i]->occupier = snake_body;
-    }
-    theSnake->direction = theSnake->nextDir;
-}
-
-void moveSizeIncrease(Game *game, Snake *theSnake, Cell *next) {
-    Cell *previous = theSnake->head;
-    theSnake->head = next;
-    theSnake->head->occupier = getHeadChar(theSnake);
-    for (int i = 0; i < theSnake->length; ++i) {
-        next = previous;
-        previous = theSnake->body[i];
-        theSnake->body[i] = next;
-        theSnake->body[i]->occupier = snake_body;
-    }
-    theSnake->body[theSnake->length] = previous;
-    theSnake->length++;
-    theSnake->direction = theSnake->nextDir;
-}
-
-void addLength(Game *game, Snake *theSnake) {
-    int xOffset = getXOffset(theSnake);
-    int yOffset = getYOffset(theSnake);
-    int nextX = (theSnake->head->coordinate.x + xOffset) % game->width;
-    int nextY = (theSnake->head->coordinate.y + yOffset) % game->height;
-    if (nextX < 0) {
-        nextX = game->width - 1;
-    }
-    if (nextY < 0) {
-        nextY = game->height - 1;
-    }
-    Cell *next = &game->grid[nextY][nextX];
-    moveSizeIncrease(game, theSnake, next);
-}
-
 Direction getDirection(int choice) {
     switch (choice) {
         case 0:
@@ -583,99 +677,4 @@ Cell getCellAhead(Game *game, Snake *snake, int n) {
     return game->grid[y][x];
 }
 
-
-void calculateNextMove(Game *game, Snake *pSnake, int check) {
-    while (check > 0) {
-        int availableMoves = 0;
-        int movesID[3] = {0,0,0};
-        for (int i = 0; i < 4; ++i) {
-            if (!oppositeDir(pSnake, getDirection(i))) {
-                bool available = true;
-                pSnake->nextDir = getDirection(i);
-                for (int j = 1; j <= check; ++j) {
-                    Cell toCheck = getCellAhead(game, pSnake, j);
-                    if ((toCheck.occupier != food) && (toCheck.occupier != nothing)) {
-                        available = false;
-                    }
-                }
-                if (available) {
-                    movesID[availableMoves] = i;
-                    availableMoves++;
-                }
-            }
-        }
-        if (availableMoves > 0) {
-            pSnake->nextDir = getDirection(movesID[rand() % availableMoves]);
-            break;
-        } else {
-            check--;
-        }
-    }
-}
-
-void updateGame(Game *game) {
-    int dead = 0;
-    static int moves = 0;
-    //assign a random direction to all bots randomly
-    //bots will try not to hit things
-    for (int m = 0; m < game->noOfBots; ++m) {
-        calculateNextMove(game, game->snakes[m], CHECK_LENGTH);
-        /*
-        //move if about to hit or every 3rd square?
-        if ((getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food) || !(moves % 3)) {
-            int roll, n = 0;
-            do {
-                roll = rand() % 4;
-                game->snakes[m]->nextDir = getDirection(roll);
-                n++;
-            } while ((n < 1000) && oppositeDir(game->snakes[m], game->snakes[m]->nextDir) && (getNextCell(game, game->snakes[m])->occupier != nothing && getNextCell(game, game->snakes[m])->occupier != food));
-        }
-        */
-    }
-    moves++;
-    //check all tails and heads
-    for (int j = 0; j < game->noOfSnakes; ++j) {
-        if (game->snakes[j]->alive) {
-            game->snakes[j]->nextCell = getNextCell(game, game->snakes[j]);
-            for (int i = j - 1; i >= 0 ; --i) {
-                if (game->snakes[i]->alive) {
-                    if (game->snakes[j]->nextCell == game->snakes[i]->nextCell) {
-                        game->snakes[j]->toDie = true;
-                        game->snakes[i]->toDie = true;
-                    }
-                }
-            }
-        }
-    }
-    for (int k = 0; k < game->noOfSnakes; ++k) {
-        if (game->snakes[k]->toDie) {
-            killSnake(game, game->snakes[k]);
-            game->snakes[k]->toDie = false;
-        }
-    }
-    //check tails of remaining snakes
-    for (int l = 0; l < game->noOfSnakes; ++l) {
-        if (game->snakes[l]->alive) {
-            if (game->snakes[l]->nextCell->occupier != food) {
-                game->snakes[l]->body[game->snakes[l]->length - 1]->occupier = nothing;
-            }
-        }
-    }
-    for (int i = 0; i < game->noOfSnakes; ++i) {
-        if (game->snakes[i]->alive) {
-            updateSnake(game, game->snakes[i]);
-        } else {
-            dead++;
-        }
-    }
-    if (dead == game->dead) {
-        game->justDied = false;
-    }
-    if (dead == (game->noOfSnakes - 1)) {
-        game->finished = true;
-    }
-    if (game->food < game->foodAmount) {
-        addFoods(game, game->foodAmount - (game->food));
-    }
-}
 

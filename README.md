@@ -7,7 +7,7 @@ The extension is found in src/extension. After running `make`, running the gener
 
 Running `server` will start the server - you can now connect to the given IP address and port on your favourite device using your favourite browser - so long as you are on the same network as the device running the network - to control your snake.
 
-If you have an Android device, you can similarly install the [Snake Wars Controller App](https://play.google.com/store/apps/details?id=com.cproject.group1.snakewars] and connect as above.
+If you have an Android device, you can similarly install the [Snake Wars Controller App)(https://play.google.com/store/apps/details?id=com.cproject.group1.snakewars] and connect as above.
 
 Finally, running `botsonly` will provide you with a fun non-interactive simulation in your terminal for you to enjoy watching.
 

@@ -110,6 +110,9 @@ struct request{
     char *msg;
     char *file;
     bool get;
+    bool img;
+    bool css;
+    bool html;
     char* ip;
 };
 
@@ -123,6 +126,9 @@ Request parseRequest(int sock) {
     FILE *fileStream;
     fileStream = fdopen(sock, "r");
     Request request;
+    request.html = false;
+    request.css = false;
+    request.img = false;
     request.dir = 0;
     size_t size = 1;
     char *msg = malloc(sizeof(char));
@@ -154,12 +160,26 @@ Request parseRequest(int sock) {
             }
             break;
         }
+
+        if(strstr(buff, ".jpg") != NULL){
+            //puts("img");
+            request.img = true;
+        } else if(strstr(buff, ".html") != NULL){
+            //puts("html");
+            request.html = true;
+        } else if(strstr(buff, ".css") != NULL){
+            request.css = true;
+            //puts("css");
+        }
+
         if(strstr(buff, "GET") != NULL){
             sscanf(buff, "GET %s HTTP/1.1", file);
+            //printf("Get request for %s\n", file);
             request.get = true;
         }
         if(strstr(buff, "POST") != NULL){
             sscanf(buff, "POST %s HTTP/1.1", file);
+            //printf("Post request for %s\n", file);
             lim++;
             request.get = false;
         }
@@ -183,12 +203,44 @@ Request parseRequest(int sock) {
 }
 
 
-void writeFile(char *file, int soc){
+void writeFile(Request request, int soc){
     char *str = "HTTP/1.0 200 OK\nServer: CS241Serv v0.1\nContent-Type: text/html\n\n";
+    char *openCond = "r";
+    if(request.css){
+        str = "HTTP/1.0 200 OK\nServer: CS241Serv v0.1\nContent-Type: text/css\n\n";
+    }
+    if(request.img){
+        openCond = "rb";
+        str = "HTTP/1.0 200 OK\nServer: CS241Serv v0.1\nContent-Type: image/jpeg\n\n";
+        FILE *fp;
+        char *file =malloc(sizeof(char) * (strlen(request.file) + strlen("\\webapp")));
+        strcpy(file, "webapp");
+        strcat(file, request.file);
+        fp = fopen(file, openCond);
+        if(fp == NULL){
+            printf("Failed to open file %s\n", file);
+            return;
+        }
+
+        write(soc ,str, strlen(str));
+        fseek (fp, 0, SEEK_END);
+        long len = ftell(fp);
+        rewind(fp);
+        char buff[len];
+        fread(buff, 1, len, fp);
+        write(soc, buff, len);
+        fclose(fp);
+        return;
+
+    }
     FILE *fp;
-    fp = fopen(file, "r");
+    char *file =malloc(sizeof(char) * (strlen(request.file) + strlen("\\webapp")));
+    strcpy(file, "webapp");
+    strcat(file, request.file);
+    fp = fopen(file, openCond);
     if(fp == NULL){
-        puts("Failed to open file");
+        printf("Failed to open file %s\n", file);
+        return;
     }
     char buff[2000];
     write(soc ,str, strlen(str));
@@ -196,12 +248,12 @@ void writeFile(char *file, int soc){
     write(soc, buff, strlen(buff));
     while(!feof(fp)){
         fread(buff, 1, 2000, fp);
-        //puts(buff);
         if(strcmp(buff, "\n\r")){
             break;
         }
         write(soc, buff, strlen(buff));
     }
+    fclose(fp);
     write(soc, "\n", 1);
 }
 
@@ -229,18 +281,25 @@ void returnFile(Request request, int con, Game *game){
     if(!strcmp(request.file, "/")){
         int n = getIP(request.ip, game);
         if (n == -1){
-            writeFile("webapp/err.html", con);
+            strcpy(request.file, "/err.html");
+            writeFile(request, con);
         } else {
+            request.html = true;
+            request.css = false;
+            request.img = false;
             char *site = malloc(sizeof(char) * 13);
-            strcpy(site, "webapp/webapp");
+            strcpy(site, "/webapp");
             char nr[2];
             nr[1] = '\0';
             nr[0] = (char) (n + '0');
             strcat(site, nr);
             strcat(site, ".html");
-            writeFile(site, con);
+            strcpy(request.file, site);
+            writeFile(request, con);
             free(site);
         }
+    } else {
+        writeFile(request, con);
     }
 }
 

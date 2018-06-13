@@ -8,6 +8,12 @@ body {
   margin-top: 10%;
 }
 
+h {
+  color: #ffffff;
+  text-align: left;
+  font-family:  monospace;
+}
+
 h2 {
   color: #ffffff;
   text-align: left;

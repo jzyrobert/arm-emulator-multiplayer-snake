@@ -375,12 +375,18 @@ Cell* getNextCell(Game *game, Snake *snake){
 //Turns a dead snake into food, optionally obstacles
 void killSnake(Game *game, Snake *snake) {
     snake->alive = false;
-    snake->head->occupier = food;
-    //snake->head->occupier = getHeadChar(snake);
+    if (DEAD_SNAKES_ARE_OBSTACLES) {
+        snake->head->occupier = getHeadChar(snake);
+    } else {
+        snake->head->occupier = food;
+    }
     game->food++;
     for (int i = 0; i < snake->length; ++i) {
-        snake->body[i]->occupier = food;
-        //snake->body[i]->occupier = dead_snake;
+        if (DEAD_SNAKES_ARE_OBSTACLES) {
+            snake->body[i]->occupier = dead_snake;
+        } else {
+            snake->body[i]->occupier = food;
+        }
         game->food++;
     }
 }
@@ -707,7 +713,7 @@ void updateGame(Game *game) {
         }
     }
     //If more than 1 snake, we end game when there is 1 snake left to make games faster.
-    if ((game->noOfSnakes > 1 && dead == (game->noOfSnakes - 1)) || (game->noOfSnakes == 1 && dead == 1)) {
+    if ((QUICKER_MULTIPLAYER && game->noOfSnakes > 1 && dead >= (game->noOfSnakes - 1)) || (game->noOfSnakes == dead)) {
         game->finished = true;
     }
     //Replenishes food back to the amount required.

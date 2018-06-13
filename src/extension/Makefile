@@ -4,7 +4,7 @@ LIBS_PATH = -L./fannF/src -lfann -lncurses -lm -lmenu -lrt -pthread
 
 .SUFFIXES: .c .o
 
-.PHONY: all clean
+.PHONY: all clean run
 
 all: snake botsonly
 
@@ -13,6 +13,9 @@ snake: main.o logic.o server.o menus.o config.h
 
 botsonly: botsonly.o
 	
+run: snake  
+	LD_LIBRARY_PATH=./fannF/src/ ./snake
+
 clean:
 	rm -f $(wildcard *.o)
 	rm -f snake

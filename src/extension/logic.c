@@ -174,15 +174,19 @@ void findBody(Game *pGame, int j, int i) {
 
 void printGame(Game *game) {
     //Each refresh we print from the top left again
+    getmaxyx(stdscr, game->tHeight, game->tWidth);
+    if (game->width > (game->tWidth - 2) || game->height > (game->tHeight - 2)) {
+        endwin();
+        printf("Error: Detected terminal resizing below game size!\n");
+        exit(EXIT_FAILURE);
+    }
     move(0,0);
     attron(COLOR_PAIR(1));
     for (int i = 0; i < game->width + 2; ++i) {
         printw("#");
     }
-    if (game->width < (game->tWidth-2)) {
-        printw("\n");
-    }
     for (int j = 0; j < game->height; ++j) {
+        move(1 + j,0);
         printw("#");
         for (int i = 0; i < game->width; ++i) {
             char c;
@@ -224,16 +228,11 @@ void printGame(Game *game) {
             attron(COLOR_PAIR(1));
         }
         printw("#");
-        if (game->width < (game->tWidth-2)) {
-            printw("\n");
-        }
         attron(COLOR_PAIR(1));
     }
+    move(game->height+1,0);
     for (int i = 0; i < game->width + 2; ++i) {
         printw("#");
-    }
-    if (game->height < (game->tHeight-2)) {
-        printw("\n");
     }
     refresh();
 }
@@ -721,4 +720,3 @@ void updateGame(Game *game) {
         addFoods(game, game->foodAmount - (game->food));
     }
 }
-

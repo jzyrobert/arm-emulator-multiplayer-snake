@@ -212,26 +212,6 @@ void writeFile(Request request, int soc){
     if(request.img){
         openCond = "rb";
         str = "HTTP/1.0 200 OK\nServer: CS241Serv v0.1\nContent-Type: image/jpeg\n\n";
-        FILE *fp;
-        char *file =malloc(sizeof(char) * (strlen(request.file) + strlen("\\webapp")));
-        strcpy(file, "webapp");
-        strcat(file, request.file);
-        fp = fopen(file, openCond);
-        if(fp == NULL){
-            printf("Failed to open file %s\n", file);
-            return;
-        }
-
-        write(soc ,str, strlen(str));
-        fseek (fp, 0, SEEK_END);
-        long len = ftell(fp);
-        rewind(fp);
-        char buff[len];
-        fread(buff, 1, len, fp);
-        write(soc, buff, len);
-        fclose(fp);
-        return;
-
     }
     FILE *fp;
     char *file =malloc(sizeof(char) * (strlen(request.file) + strlen("\\webapp")));
@@ -242,19 +222,15 @@ void writeFile(Request request, int soc){
         printf("Failed to open file %s\n", file);
         return;
     }
-    char buff[2000];
+
     write(soc ,str, strlen(str));
-    fread(buff, 1, 2000, fp);
-    write(soc, buff, strlen(buff));
-    while(!feof(fp)){
-        fread(buff, 1, 2000, fp);
-        if(strcmp(buff, "\n\r")){
-            break;
-        }
-        write(soc, buff, strlen(buff));
-    }
+    fseek (fp, 0, SEEK_END);
+    long len = ftell(fp);
+    rewind(fp);
+    char buff[len];
+    fread(buff, 1, len, fp);
+    write(soc, buff, len);
     fclose(fp);
-    write(soc, "\n", 1);
 }
 
 int getIP(const char *ip, Game *game) {

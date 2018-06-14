@@ -112,29 +112,29 @@ void decodeTransfer(STATE *state) {
     state->instruction.P = (bool) (b & (1<<ppIndexBit));
     state->instruction.U = (bool) (b & (1<<upBit));
     state->instruction.L = (bool) (b & (1<<SBit));
-    state->instruction.Rn = (address) extractBits(b, 16, 19);
-    state->instruction.Rd = (address) extractBits(b, 12, 15);
-    state->instruction.smallOffset = (address) extractBits(b, 0, 11);
+    state->instruction.Rn = (address) extractBits(b, Rn_Start, Rn_End);
+    state->instruction.Rd = (address) extractBits(b, Rd_Start, Rd_End);
+    state->instruction.smallOffset = (address) extractBits(b, OP2_Start, OP2_End);
 }
 
 void decodeProcess(STATE *state) {
     word b = state->instruction.binary;
     state->instruction.I = (bool) (b & (1<<immediateOffset));
     state->instruction.S = (bool) (b & (1<<SBit));
-    state->instruction.Opcode = (byte) extractBits(b, 21, 24);
-    state->instruction.Rn = (address) extractBits(b, 16, 19);
-    state->instruction.Rd = (address) extractBits(b, 12, 15);
-    state->instruction.Operand2 = (address) extractBits(b, 0, 11);
+    state->instruction.Opcode = (byte) extractBits(b, Opcode_Start, Opcode_End);
+    state->instruction.Rn = (address) extractBits(b, Rn_Start, Rn_End);
+    state->instruction.Rd = (address) extractBits(b, Rd_Start, Rd_End);
+    state->instruction.Operand2 = (address) extractBits(b, OP2_Start, OP2_End);
 }
 
 void decodeMult(STATE *state) {
     word b = state->instruction.binary;
     state->instruction.A = (bool) (b & (1<<ABit));
     state->instruction.S = (bool) (b & (1<<SBit));
-    state->instruction.Rd = (address) extractBits(b, 16, 19);
-    state->instruction.Rn = (address) extractBits(b, 12, 15);
-    state->instruction.Rs = (address) extractBits(b, 8, 11);
-    state->instruction.Rm = (address) extractBits(b, 0, 3);
+    state->instruction.Rd = (address) extractBits(b, Rn_Start, Rn_End);
+    state->instruction.Rn = (address) extractBits(b, Rd_Start, Rd_End);
+    state->instruction.Rs = (address) extractBits(b, Rs_Start, Rs_End);
+    state->instruction.Rm = (address) extractBits(b, Rm_Start, Rm_End);
 }
 
 void replaceBitDirect(word* destination, int location, int bit) {
@@ -194,19 +194,20 @@ word processOp2(STATE *state) {
     word result;
     if (state->instruction.I) {
         //rotate IMM
-        result = extractBits(state->instruction.Operand2, 0, 7);
-        int rotateAmount = 2 * extractBits(state->instruction.Operand2, 8, 11);
+        result = extractBits(state->instruction.Operand2, OP2_IMM_Start, OP2_IMM_End);
+        int rotateAmount = 2 * extractBits(state->instruction.Operand2, OP2_Rt_St, OP2_Rt_End);
         result = (result >> rotateAmount) | (result << (32 - rotateAmount));
     } else {
         //shift RM
         byte shiftAmount;
         if (state->instruction.Operand2 & (1<<4)) {
-            shiftAmount = (byte) state->reg[extractBits(state->instruction.Operand2, 8, 11)];
+            shiftAmount = (byte) state->reg[extractBits(state->
+		instruction.Operand2, OP2_Rt_St,OP2_Rt_End)];
         } else {
-            shiftAmount = (byte) extractBits(state->instruction.Operand2, 7, 11);
+            shiftAmount = (byte) extractBits(state->instruction.Operand2, OP2_INT_Start, OP2_INT_End);
         }
-        result = state->reg[extractBits(state->instruction.Operand2, 0, 3)];
-        int shiftType = extractBits(state->instruction.Operand2, 5, 6);
+        result = state->reg[extractBits(state->instruction.Operand2, Rm_Start, Rm_End)];
+        int shiftType = extractBits(state->instruction.Operand2, OP2_Shift_Start, OP2_Shift_End);
         switch (shiftType) {
             case 0:
                 if (state->instruction.S && (shiftAmount > 0)) {

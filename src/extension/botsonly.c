@@ -15,7 +15,6 @@
 #define MAX_PLAYERS 7
 #define STARTING_LENGTH 4
 #define COLOR_ORANGE 8
-#define SCALE(a) a * 51 / 200
 #define CHECK_LENGTH 200
 
 enum Occupier {

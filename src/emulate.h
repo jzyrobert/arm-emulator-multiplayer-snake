@@ -6,8 +6,6 @@
 #define PROCESSOR_FLOW_TYPEDEFS
 typedef struct instruction INSTRUCTION;
 typedef struct state STATE;
-#endif
-
 
 // Decode bits into the state struct depending on the instruction to decode
 void decodeMult(STATE *state);

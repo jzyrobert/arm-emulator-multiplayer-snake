@@ -76,20 +76,20 @@ void decode(STATE* state) {
         state->instruction.binary = state->fetch;
         state->instruction.type = getInstruction(state->fetch);
         state->instruction_exists = true;
-        switch ((int) state->instruction.type) {
-            case 1 :
+        switch (state->instruction.type) {
+            case PROCESS :
                 decodeProcess(state);
                 break;
-                case 2:
+                case MULT:
                     decodeMult(state);
                     break;
-                case 3:
+                case TRANSFER:
                     decodeTransfer(state);
                     break;
-                    case 4:
+            case BRANCH:
             decodeBranch(state);
             break;
-            case 5:
+            case HALT:
                 break;
         default:
             printf("Invalid state!\n");
@@ -161,20 +161,20 @@ void execute(STATE* state){
     //checks if cond is allowed to continue
     if (state->instruction_exists && (checkCond(state->instruction.binary
             , state->reg[CPSR]) || !state->instruction.binary)) {
-        switch ((int) state->instruction.type) {
-            case 1:
+        switch (state->instruction.type) {
+            case PROCESS:
                 executeProcess(state);
                 break;
-            case 2:
+            case MULT:
                 executeMult(state);
                 break;
-            case 3:
+            case TRANSFER:
                 executeTransfer(state);
                 break;
-            case 4:
+            case BRANCH:
                 executeBranch(state);
                 break;
-            case 5:
+            case HALT:
                 state->finished = true;
                 break;
             default:

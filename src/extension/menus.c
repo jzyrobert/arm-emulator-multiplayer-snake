@@ -6,6 +6,8 @@
 #include "structs.h"
 #include "config.h"
 
+#define ENTER_KEY 10
+
 ITEM *showMenu(MENU *menu) {
     int c;
     mvprintw(LINES - 2, 2, "X to Exit");
@@ -20,12 +22,12 @@ ITEM *showMenu(MENU *menu) {
             case KEY_UP:
                 menu_driver(menu, REQ_UP_ITEM);
                 break;
-            case 10:
+            case ENTER_KEY:
                 cur_item = current_item(menu);
                 break;
         }
-        //For some reason KEY_ENTER isn't recognised but 10 is the actual enter key ID
-        if (c == KEY_ENTER || c == 10) {
+        //Enter keys on windows and linux are different
+        if (c == KEY_ENTER || c == ENTER_KEY) {
             break;
         }
     }

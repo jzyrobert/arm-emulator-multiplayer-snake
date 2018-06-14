@@ -190,34 +190,34 @@ void printGame(Game *game) {
         printw("#");
         for (int i = 0; i < game->width; ++i) {
             char c;
-            switch ((int) game->grid[j][i].occupier) {
-                case 0:
+            switch (game->grid[j][i].occupier) {
+                case nothing:
                     c = ' ';
                     break;
-                case 1:
+                case head_up:
                     findHead(game, j, i);
                     c = '^';
                     break;
-                case 2:
+                case head_down:
                     findHead(game, j, i);
                     c = 'v';
                     break;
-                case 3:
+                case head_left:
                     findHead(game, j, i);
                     c = '<';
                     break;
-                case 4:
+                case head_right:
                     findHead(game, j, i);
                     c = '>';
                     break;
-                case 5:
+                case snake_body:
                     findBody(game, j, i);
                     c = 'o';
                     break;
-                case 6:
+                case dead_snake:
                     c = 'x';
                     break;
-                case 7:
+                case food:
                     attron(COLOR_PAIR(2));
                     c = '*';
                     break;
@@ -550,7 +550,7 @@ Cell * nearestFoodCell(Game *game, Cell *start) {
 
 //Returns -1/0/1 (eg whether move is left/forwards/right) based on new to old direction
 int getMoveID(Direction old, Direction new) {
-    switch(old.dir) {
+    switch (old.dir) {
         case 0:
             switch (new.dir) {
                 case 1:

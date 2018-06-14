@@ -50,3 +50,5 @@ void bitOR(STATE *state);
 
 void processMove(STATE *state);
 
+#endif
+

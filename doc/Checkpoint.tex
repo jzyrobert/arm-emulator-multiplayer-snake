@@ -1,30 +1,52 @@
-\documentclass[11pt]{article}
+\documentclass[12pt,twoside]{article}
 
-\usepackage{fullpage}
+\usepackage{graphicx}
+\usepackage{rotating}
+\graphicspath{ {./figures/} }
+
+\newcommand{\reporttitle}{120.3 Programming III - Checkpoint Report}
+\newcommand{\reportauthor}{Your Name}
+\newcommand{\reporttype}{Coursework}
+\newcommand{\cid}{your college-id number}
+
+\newcommand{\TODO}{\textcolor{red}{TODO}}
+
+% include files that load packages and define macros
+\input{includes} % various packages needed for maths etc.
+\input{notation} % short-hand notation and macros
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{document}
+% front page
 
-\title{ARM Checkpoint... }
-\author{TODO}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% Main document
+\section{Division of work}
+\subsection{How have we been co-ordinating our work?}
+Team communication and organisation has been made easier by Trello and Messenger, allowing us to keep track of the state of the project and discuss questions with each other easily. This is useful since our lab hours are quite different, meaning questions can be answered quickly without us having to travel to be in the same room. We've also been meeting 2-3 times per week, usually in labs, working together to make communication easier. In this time, we're able to ensure that everyone understands what needs to be done, ask implementation questions and make group decisions more quickly than on group chats.\\
+\subsection{Division of work}
+\begin{itemize}
+\item Robert: Initial implementation of emulator, assembler and LED blinking assembly program. Bugfixes for emulator and assembler. Added menus, controls, game logic and output to the screen for the extension game.
+\item Luke: Initial implementation of emulator and assembler. Bugfixes for emulator and assembler. Created and managed Trello board for team communication. Various improvements to snake game, such as walls, refining screen update timing etc.
+\item Matthew: Initial implementation of extension project. Responsible for all reporting and consistent codestyle. Cleaned implementations of assembler and emulator. Added comments and extra documentation. Bugfixes for emulator. Found potential joysticks for game extension.
+\item Syed: Wrote various functions to handle different assembler instructions. Requested additional parts for us to use in our extension.
+\end{itemize}
+\section{How well is the group working and what do we need to change?}
+\subsection{What is working well?}
+Since we worked together as a Computing Topics group, we already understand how best to work and communicate with each other. Having shared a Git repository before, we all agree on a Git workflow: creating branches for each part of the implementation and merging these back into master only when that section is working correctly. Any further bug-fixes are done on the corresponding branch before being merged back into master. We are co-ordinating the project well - this is further discussed in part 1.
+\subsection{Necessary changes}
+At the beginning of the project, 2 people began implementing the emulator at the same time. Hence, we adopted Trello and our in-person lab meetings, assigning ourselves to different tasks so everyone could keep track of who is doing what.\\
 
-\maketitle
-
-\section{Group Organisation}
-
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
-nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-culpa qui officia deserunt mollit anim id est laborum.
-
-\section{Implementation Strategies}
-
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
-nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-culpa qui officia deserunt mollit anim id est laborum.
-
+The division of work has been quite loosely decided so far, with everyone just working on what they most feel comfortable with and communicating this through the tools mentioned in part 1. But in order to ensure more consistent contributions across the team it may be necessary to regularly discuss who is responsible for each part of the project for the coming few days. This will also make sure that no required tasks slip through the net because everyone thinks someone else is doing it.
+\section{How we've structured the emulator and what we've reused for the assembler}
+We start by reading the whole file in at once. Then, for each instruction, we store the type of the instruction (Process, Mult, Transfer, Branch or Halt) and call an associated helper function to execute the instruction as required. The structure is the same for decoding, with associated helper functions depending on the stored type of the instruction. Then, as we've already loaded the whole file, the fetch instruction simply examines the next instruction before the state of the registers and memory is printed.
+We've created a separate helper functions C file containing common functions used in the emulator and assembler (for instance a bit setting function that is useful in both areas). These functions take the role of abstracting common lower level operations - reducing the risk of programmer error and improving maintainability. We've also reused the type definitions for words, bytes, addresses etc. across the assembler and emulator.
+\section{What will we find difficult?}
+Having created a working solution for all the parts in the spec we believe the main challenges will be in refactoring our already working code to make it more consistent, creating more informative test cases to help us track down bugs and making sure our code is clearly documented. The person responsible for adding extra test cases and making sure the code is well documented and written cleanly is different from the people who have done the majority of the implementation - in order to mitigate this we will have pair programming meetings to make it quicker to understand exactly how the code is working. In addition, we will be ensuring that only fully working code that passes all test cases is committed, meaning we can very easily roll back to a known-to-be-working state if required.
 \end{document}
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+

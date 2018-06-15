@@ -1,21 +1,124 @@
-\documentclass[11pt]{article}
-
-\usepackage{fullpage}
-
+\documentclass{article}
+\usepackage[margin=1.1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
 \begin{document}
-
-\title{Our Extension...}
-\author{TODO}
-
+\title{Programming III: C Group Project Final Report}
+\author{Robert Jin, Luke Ely, Matthew Fennell, Syed Adeel Akhtar}
 \maketitle
+The following was published in the interim report, and updated:
+\section{Division of work}
+\subsection{How have we been co-ordinating our work?}
+Team communication and organisation has been made easier by Trello and Messenger, allowing us to keep track of the state of the project and discuss questions with each other easily. We've also been meeting 2-3 times per week, working together to make communication easier. In this time, we're able to ensure that everyone understands what needs to be done, ask implementation questions and make group decisions more quickly than on group chats.\\
+\subsection{Division of work}
+\begin{itemize}
+\item Robert: Initial implementation of emulator, assembler and LED GPIO assembly. Bugfixes for emulator and assembler. Added core functionality for the extension game. Designed computer opponents (regular and neural network). Wrote functionality for the android app controller.
+\item Luke: Initial implementation of emulator and assembler. Bugfixes for emulator and assembler. Created and managed Trello board for team communication. Various improvements to snake game, such as walls, refining screen update timing etc. Wrote server base code enabling LAN connections.
+\item Matthew: Initial implementation of extension project. Responsible for all reporting and consistent codestyle. Cleaned implementations of assembler and emulator. Added comments and extra documentation. Bugfixes for emulator. Found potential joysticks for game extension. Framework for the android controller application.
+\item Syed: Wrote various functions to handle different assembler instructions. Requested additional parts for us to use in our extension. Wrote additional test cases for the emulator and assembler, and cleaned up magic numbers in them. Added the CSS and controls for the LAN-based web controller.
+\end{itemize}
+\section{How well is the group working and what do we need to change?}
+\subsection{What is working well?}
+Since we worked together as a Computing Topics group, we already understand how best to work and communicate with each other. Having shared a Git repository before, we all agree on a Git workflow: creating branches for each part of the implementation and merging these back into master only when that section is working correctly. Any further bug-fixes are done on the corresponding branch before being merged back into master. We are co-ordinating the project well - this is further discussed in part 1.
+\subsection{Necessary changes}
+At the beginning of the project, 2 people began implementing the emulator at the same time. Hence, we adopted Trello and our in-person lab meetings, assigning ourselves to different tasks so everyone could keep track of who is doing what.\\
 
-\section{Introduction}
+The division of work has been quite loosely decided so far, with everyone just working on what they most feel comfortable with and communicating this to the team. But in order to ensure more consistent contributions across the team it may be necessary to regularly discuss who is responsible for each part of the project for the coming few days. This will also make sure that no required tasks slip through the net because everyone thinks someone else is doing it.
+\section{How we've structured the emulator and what we've reused for the assembler}
+We start by reading the binary into an array. Then, for each instruction, we store the type of the instruction (Process, Mult, Transfer, Branch or Halt) and call helper functions to execute the instruction as required. The structure is the same for decoding, with associated helper functions writing applicable variables into a struct. Lastly, the fetch instruction simply retrieves the next instruction from the virtual memory. Upon exit, the content of the registers and memory is printed out formatted correctly.\\
+We've reused the type definitions for words, bytes, addresses, CPSR bits etc. across the assembler and emulator.
+\section{What will we find difficult?}
+Having created a working solution for all the parts in the spec we believe the main challenges will be in refactoring our already working code to make it more consistent, creating more informative test cases to help us track down bugs and making sure our code is clearly documented. The person responsible for adding extra test cases and making sure the code is well documented and written cleanly is different from the people who have done the majority of the implementation - in order to mitigate this we will have pair programming meetings to make it quicker to understand exactly how the code is working. In addition, we will be ensuring that only fully working code that passes all test cases is committed, meaning we can very easily roll back to a known-to-be-working state if required. This has been successful throughout the project as major bugs were limited to the respective branch.\\
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
-nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-culpa qui officia deserunt mollit anim id est laborum.
+The following has been added since the checkpoint report:
+\section{Assembler}
+The assembler uses a simple 2 pass system. On the first pass, all labels are recorded with their addresses in a pseudo-map (array of structs). Function pointers are then grouped with their respective op code and each instruction is passed to the specific assembling function using a lookup, also making use of a set of common helper functions such as setting bits and calculating the operand. At the end, any extra numbers resulting from LDR instructions are written to the end of the file.
 
+\section{GPIO program}
+Our assembly code for part III to enable the flashing of the pi is very simple. It loads the corresponding GPIO addresses for enabling and turning off/on the pins into separate registers then moves and shifts to set bit 18/16 in those addresses.\\
+The main loop runs by turning off the led, moving $2^{24}$ into a register, counting down to 0, turning the led on, repeating the counting, and then repeating the main loop again. This enables a flashing period of about 1-2 seconds.\\
+
+\section{Extension}
+For our extension we started with something simple and then expanded it to broaden our knowledge of C. Essentially, it's just a game of snake that is able to run inside the terminal. Here are demos of one player against 6 computer opponents: \href{https://drive.google.com/file/d/1kb40j-NwFqyENvUz85JHg8sGjtWNsq--/view?usp=sharing}{Neural Net (Aggressive)}, \href{https://drive.google.com/file/d/1hcnIAag5ITqvQSusgQt79IjGtT2RDb-E/view?usp=sharing}{Dummy AI (Passive)}\\
+
+Our first goal was to make it locally multiplayer capable and be able to run like other interactive terminal programs, eg Emacs. Some of the programs make use of the curses library, which provides simple functions that enable drawing and refreshing a separate "window" inside the terminal, and the ability to pass keyboard input after a timeout, without waiting for the user to submit it.\\
+
+With this, we were able to maximise a standard desktop keyboard to enable 7 sets of "WASD" controls, ranging from the arrow keys, to PgUp/End/Home/PgDown. It is quite amusing to have 7 hands try to fit onto one keyboard and play snake together.\\
+
+The main challenges that arose where dealing with simultaneous input and exiting the curses window in case of a forced exit. Curses requires that endwin() is called to leave the window before returning to the regular terminal, but this is bypassed when a SIGINT (CTRL-C) or SIGSEGV (Seg fault) interruption occurs. It results in the terminal behaving strangely until it is restarted, leading to early annoyances when trying to debug these faults.\\
+We solved this by writing a Sighandler function that intercepts these signals and calls endwin() before exit(), and our main loop polls for input from the buffer every X millisecond (1 by default), but only refreshes the game every Y ms (100 by default), allowing almost instantaneous response to user input.\\
+
+Next, our goal was to add computer-controlled players to play against. For this, we have chosen 2 different implementations.\\
+The first one checks all 4 directions per snake, and chooses the path of "least resistance", where there are the most amount of non-obstacle cells in a line. This has resulted in the strange occurrence of the snakes "wiggling" almost like real snakes, and moving diagonally.\\
+
+For the second one, we trained a back-propagated neural network using the FANN (Fast artificial neural network) library. Similar to the one written in the C exam, it allows simple setup of layers, activation functions, training methods, and saving trained networks.\\
+The NN has 8 inputs and 1 output. It is given whether the cells on either direction (left/forward/right) of its head are obstacles, the normalized angle to the closest food cell (achieved using a Breadth-first search that avoids obstacle cells) and the direction we suggest it to take (-1/0/1 representing left/forward/right). The NN outputs a float from -1 (action will likely lead to death) to 1 (action is suggested).\\
+
+There was some difficulty in calculating the input data, such as finding the normalized angle in regards to the direction of the head, as Y increases downwards rather than upwards. This led to large amounts of mislabeled data initially.\\
+
+Then, training data was gathered firstly using 1000 simulated games of random moves. At each move, the correct output is created and stored for each direction. Afterwards, the NN is trained to 0.1\% accuracy using this data, and then more data is collected using the NN. This is because randomly moving snakes are likely to kill themselves within very few moves, and so in each iteration we encountered more possibilities that did not occur in previous games.\\
+
+However, we occurred upon situations where the snake would choose the incorrect decision, even when given the correct labeled training data for that situation. This led us to discover that out training data was heavily over-sampled, where certain situations would occur far more often (because starting positions are very similar) and so the NN would weigh these more heavily, even when the decision is incorrect.\\
+
+To solve this, the training data was cleared of duplicates, resulting in around 85,000 different possibly situations depending on the surrounding cells, angle to nearest food and suggested direction. We then trained this using a 3 layer NN, with a symmetric sigmoid function to allow output from -1 to 1. As we were unsure to how many neurons in the hidden layer were most effective (online advice ranges from less than input to far more), we tested it using from 5 to 25 neurons in the hidden layer.\\
+
+Although random initial weights play some factors, in the end, 23 and 19 neurons in the hidden layer proved most effective, leading to a 0.1\% error rate after just 2000-3000 epochs, where as most other nets did not reach 0.1\% within 10,000 training epochs. The NN with 23 hidden neurons was then chosen and implemented into the base game , which results in a aggressive playstyle that always heads for the nearest food cell, but can result in the snake spiraling and killing itself once it starts to become longer.\\
+
+We could have written a more effective net if we gave the snake more input (such as up to the whole board state), or if able to write or use a genetic version that trains itself over generations, but that would require difficult labeling of the data and/or more time, as we were unable to find a fitting genetic evolutionary neural net library for C.\\
+
+Next, as our main form of feedback from fellow students was that it was too cramped to play with more than 4-5 people on one keyboard, our goal was to enable network controls.\\
+
+This is done by starting a server on a certain port (default 2035, configurable) on the machine's IPV4 address, which allows connections over the local network without port-forwarding. Incoming requests are sent a html file corresponding to the player number (hard-coded for now), which allows the client to send POST requests by pressing the buttons or using the arrow keys to activate the javascript function.\\
+
+Clients are identified uniquely server-side by their IP address, and if the number of attempted connections exceed the number of selected players, a different html is returned that notifies the player and blocks them from joining.\\
+
+Post requests are handled by a separate thread running in a loop that accepts the requests, parses and filters the corresponding variable, and then applies the move to the corresponding snake.\\
+
+Lastly, as the website refreshes on each POST command and therefore does not work as well on mobile, we decided to write a quick Android application to allow control from mobile. The app has a login screen that allows connection to an IP address. If the connection is valid, and the returned html corresponds to the game, then the control screen is launched, along with an indicator of the player number and snake colour.\\
+
+As amusement, this app has been published in the Google Play store to allow others to play with it if they wish:\\
+https://play.google.com/store/apps/details?id=com.cproject.group1.snakewars\\
+
+\subsection{Testing for errors}
+We believe we have tested and accounted for the majority of errors that could occur in our extension.\\
+
+Upon regular game finishes, pointers are freed. Valgrind will still report some leaks, due to use of the ncurses library. We believe this is acceptable as defined in the NCurses FAQ, some pointers (especially the main window) are still held after calling endwin() and require a special debugging version of the library to free before exit. In addition, on program exit all memory allocated to a program is freed anyways.\\
+
+We have accounted for:\\
+-Trying to start the game with a size that is too small or too large for the current terminal window
+-Increasing terminal size mid-game will continue printing game in the top left corner.\\  
+-Decreasing terminal size below game size will exit game and print an error message\\
+-Although snake updates are handled sequentially, head collisions and tail collisions are checked beforehand to allow snake heads to be right behind the tail, and not to favour any snake in head-on collisions or narrow misses.\\
+-Once the snake becomes long enough, the game will not be stuck trying to assign new food if there is no available space.\\
+-Having the snake fill up the whole board ends the game as usual, as true to the original game.\\
+-Exiting the android app while in the control screen will reset itself to the login screen\\
+
+User defined variables that are modifiable:\\
+-Max players (real + computer) that are allowed. (Limited to 7 because of the limited amount of colours displayable in the terminal)\\
+-Starting length of a snake (4 by default)\\
+-Percentage of screen that is food (10\% by default)\\
+-Whether games that started with 2+ snakes should end at the last snake alive\\
+-Whether dead snakes should become permanent obstacles or food\\
+
+
+Things that could be changed:\\
+-Network connections still allow keyboard input for the same snake, and new connections are allowed beyond the "waiting for connections" screen.\\
+-Adding a 3-2-1 start countdown at the start of the game (currently just calls usleep() for 3 seconds)\\
+-Adding a message for winning snake in multiplayer games?\\
+-Determining whether survival time or length counts more towards score\\
+
+\section{Group reflection}
+\subsection{Individual}
+Robert: I believe I may be overly eager to get things done and have the capability to quickly push out working solutions for most tasks. This means that our team was quite ahead of schedule and allowed much time for the extension, but my code modularity needs improvement, and the speed at which I would like to get things done is often faster than necessary. This leads to our code requiring more clean-up than maybe if it was written with modularity in mind, to begin with. Creativity is not my strongest point, but I am happy to work on anything that is required, and I believe my teammates were able to come up with interesting ideas and supplementations to our extension.
+\\\\
+Luke: I feel that this team worked well together and that I was able to find a role where In which I could be useful. I spent most of my time adding to the code and discussing with Robert problems we encountered and how to solve them. This is our second time working as a group; I feel if we were to work together again we wouldn't change much about our approach. A different approach would have been to split the team between the first two parts from the beginning, however, we completed both very quickly and I feel the experience of writing emulate helped with assembler. Before we started on our extension I believe it would have been helpful to agree on what the end product looked like as without this we never quite felt the extension was done.
+\\\\
+Matthew: I am happy with my communication and organisation within the team, and contributed a fair amount to the project - especially the extension. However, if working on future projects, I would work with the team from the start to divide responsibilities more precisely. I have quite a methodical approach to programming, where I will take longer than others but want to "get it right" and have a very clean solution on the first go. As a result of this slower approach I often started implementing something, then found that the rest of the team had taken that part of the project and completed it soon afterwards! So then I would start on another part of the project, and so on. I should have communicated with the team from the start to explain this is the pace at which I work, offer timelines of when I expected to finish certain tasks, and reassurance that I was getting it done.
+\\\\
+Syed: Having worked together in a group project before, I felt that the communication in our group was strong since day one. I find myself incredibly lucky to have worked with these people, not only because they are very ambitious and smart but mostly because of how supportive everyone was throughout the project duration. Everyone made sure that nobody was ever stuck/lost with any part of the assignment and everyone was quick to provide support and constructive feedback on the progress. Even though I liked working on this intellectually stimulating project as I got to learn a lot, I found myself to be working at a slower pace than the other group members and as a result it took me longer to finish my allocated set of tasks. But despite that, everyone was very supportive throughout and I feel that played a major and very positive role in this learning experience. For future projects, I think it would be a good move to allocate responsibilities to everyone at the very start and then work onwards.
+\subsection{Group}
+Our communication was, on the whole, very good. Everyone made an effort to be contactable and was willing to work on different parts of the project. Our use of Trello was very helpful and is definitely a tool we would use again - it gave team members the autonomy to choose what they wanted to work on while making it easy for everyone to keep track of the project. We all made ourselves available in labs and remotely on the group chat.\\
+Everyone worked on a variety of parts of the project, so we are happy with the way the work was allocated. However, we may consider in the future allocating work more formally between team members at the beginning of the process, with clearer responsibilities in the team so that the expectations on different team members is more explicit.\\
+Another improvement could be to have one member of the team in charge of reviewing all merge requests to ensure consistent codestyle, clean implementations etc. This could have left us with a more consistent implementation in terms of codestyle, without us having to do extra "clean up" work at the end. We would aim to thoroughly check code every time we merge branches, rather than leaving that responsibility to the individual programmer.\\
+Otherwise, we are very happy with how we have worked together on this project and are proud of the results.
 \end{document}

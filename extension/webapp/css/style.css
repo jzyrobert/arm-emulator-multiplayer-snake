@@ -20,7 +20,7 @@ h2 {
   font-family:  monospace;
 }
 
-input[type=submit] {
+input[type=image] {
   background-color: #ffffff;
   width: 80px;
   height: 80px;
@@ -32,27 +32,6 @@ input[type=submit] {
   border: #ff0000 5px solid;
 }
 
-.UP {
-  width: 12vh;
-  height: 12vh;
-  margin: 30vh 0vh 0vh 0vh;
-}
-
-.DOWN {
-  width: 12vh;
-  height: 12vh;
-}
-
-.RIGHT {
-  width: 12vh;
-  height: 12vh;
-}
-
-.LEFT {
-  width: 12vh;
-  height: 12vh;
-}
-
 .container {
-  margin: 10% 0% 0% 50%;
+  margin: 40% 0% 0% 50%;
 }

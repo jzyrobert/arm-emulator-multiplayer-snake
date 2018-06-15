@@ -11,7 +11,7 @@ all: snake demo
 snake: main.o logic.o server.o menus.o config.h
 	${CC} ${CFLAGS} -o snake $^ ${LIBS_PATH}
 
-demo: demo.o logic.o menus.o democonfig.h
+demo: demo.o demologic.o demomenu.o democonfig.h
 	${CC} ${CFLAGS} -o demo $^ ${LIBS_PATH}
 	
 run: snake  

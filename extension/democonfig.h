@@ -15,6 +15,6 @@ typedef int placeholder;
 //If 1, dead snakes become obstacles
 #define DEAD_SNAKES_ARE_OBSTACLES 0
 //If 1, games end when there is 1 player left, IF it started with more than 1 player
-#define QUICKER_MULTIPLAYER 0
+#define QUICKER_MULTIPLAYER 1
 
 #endif //ARM11_01_CONFIG_H

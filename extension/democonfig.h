@@ -8,7 +8,7 @@ typedef int placeholder;
 //Check length for dummy AI movement
 #define CHECK_LENGTH 200
 //Total size / percentage, eg 1 = 100%, 100 = 1%;
-#define FOOD_PERCENTAGE 10
+#define FOOD_PERCENTAGE 100
 //in ms
 #define GAME_REFRESH_SPEED 10
 #define PORT 2035

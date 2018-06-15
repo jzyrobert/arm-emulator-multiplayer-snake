@@ -6,10 +6,11 @@
 #include <pthread.h>
 #include <zconf.h>
 #include "fannF/src/include/fann.h"
-#include "demologic.h"
+#include "logic.h"
 #include "structs.h"
+//File is a copy of logic.c, modified to use the demo configuration
 #include "democonfig.h"
-#include "demomenu.h"
+#include "menus.h"
 
 Direction upDir = {0,-1,0,head_up};
 Direction rightDir = {1,0,1,head_right};

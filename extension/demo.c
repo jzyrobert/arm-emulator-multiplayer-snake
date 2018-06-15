@@ -2,9 +2,9 @@
 #include <pthread.h>
 #include <zconf.h>
 #include <sys/time.h>
-#include "demologic.h"
+#include "logic.h"
 #include "democonfig.h"
-#include "demomenu.h"
+#include "menus.h"
 #include "structs.h"
 
 int list_s;

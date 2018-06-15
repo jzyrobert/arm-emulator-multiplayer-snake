@@ -2,8 +2,9 @@
 #include <menu.h>
 #include <stdlib.h>
 #include <string.h>
-#include "demomenu.h"
+#include "menus.h"
 #include "structs.h"
+//File is a copy of menus.c, modified to use democonfig
 #include "democonfig.h"
 
 #define ENTER_KEY 10

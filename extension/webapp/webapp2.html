@@ -1,60 +1,47 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Snake Wars</title>
-    <link rel="stylesheet" href="./css/style.css">
-  </head>
-  <body>
-    <h>Your number is 2</h>
-    <h2>You can also use arrow keys if JavaScript is enabled</h2>
-    <section>
-    <div class = "container">
-      <form action="" method="post">
-        <div class="dir1">
-          <input type="image" src="./css/up.jpg" class="UP"></button>
-          <input type="image" src="./css/right.jpg" name="Direction" class="RIGHT"></button>
-        </div>
-        <div class="dir2">
-          <input type="image" src="./css/left.jpg" class="LEFT"></button>
-          <input type="image" src="./css/down.jpg" class="DOWN"></button>
-        </div>
-      </form>
-    </div>
-    </section>
-  <script>
-    document.onkeydown = function(e) {
-    switch (e.keyCode) {
-        case 37:
-            sub("Left");
-            break;
-        case 38:
-            sub("Up");
-            break;
-        case 39:
-            sub("Right");
-            break;
-        case 40:
-            sub("Down");
-            break;
-            }
-        };
+<head>
+  <meta charset="UTF-8">
+  <title>Snake Wars</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+<h>Your number is 2</h>
+<h2>You can also use arrow keys if JavaScript is enabled</h2>
+<section>
+  <div class="container">
+    <input type="image" src="./css/right.jpg" onclick="sub('\'Right\'')"/>
+    <input type="image" src="./css/down.jpg" onclick="sub('\'Down\'')"/>
+    <input type="image" src="./css/up.jpg" onclick="sub('\'Up\'')"/>
+    <input type="image" src="./css/left.jpg" onclick="sub('\'Left\'')"/>
+  </div>
+</section>
+<script>
+    document.onkeydown = function (e) {
+        switch (e.keyCode) {
+            case 37:
+                sub("Left");
+                break;
+            case 38:
+                sub("Up");
+                break;
+            case 39:
+                sub("Right");
+                break;
+            case 40:
+                sub("Down");
+                break;
+        }
+    };
 
     function sub(dir) {
-    var form = document.createElement("form");
-    var element1 = document.createElement("input");
 
-    form.method = "POST";
-    form.action = "";
-
-    element1.value=dir;
-    element1.name="Direction";
-    form.appendChild(element1);
-
-    document.body.appendChild(form);
-
-    form.submit();
+        var xhttp = new XMLHttpRequest();
+        xhttp.open("POST", "", true);
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        console.log("Sending");
+        xhttp.send("Direction=" + dir);
     };
 </script>
-  </body>
+</body>
 </html>
